@@ -116,7 +116,15 @@ namespace Labyrinth_of_Secrets
                         mapa[x, y].typPole = Pole.TypPole.Obchod;
                     }
                 }
-                mistaNaMistnosti.RemoveAt(indexMistnosti);
+
+                for (int y = -1; y <= 1; y++)
+                {
+                    for (int x = -1; x <= 1; x++)
+                    {
+                        mistaNaMistnosti.Remove(new Point((pozice.X / 6 + x) * 6, (pozice.Y / 6 + y) * 6));
+                    }
+                }
+
                 pocet--;
             }
         }
@@ -172,27 +180,15 @@ namespace Labyrinth_of_Secrets
                 foreach (Point smer in mozneSmeryPromichany)
                 {
                     Point novaPozice = aktualniPozice + new Point(smer.X * 2, smer.Y * 2);
-                    if (novaPozice.X <= 0 || novaPozice.Y <= 0 || novaPozice.X >= VELIKOST_MAPY_X - 1 || novaPozice.Y >= VELIKOST_MAPY_Y - 1)
+                    if (novaPozice.X <= 0 || novaPozice.Y <= 0 || novaPozice.X >= VELIKOST_MAPY_X - 1 ||
+                        novaPozice.Y >= VELIKOST_MAPY_Y - 1 || mapa[novaPozice.X, novaPozice.Y].typPole != Pole.TypPole.Zed)
                         continue;
 
-                    bool vsechnyJsouZdi = true;
-                    for (int y = -1; y <= 1 && vsechnyJsouZdi; y++)
-                    {
-                        for (int x = -1; x <= 1 && vsechnyJsouZdi; x++)
-                        {
-                            if (mapa[novaPozice.X + x, novaPozice.Y + y].typPole != Pole.TypPole.Zed)
-                                vsechnyJsouZdi = false;
-                        }
-                    }
-
-                    if (vsechnyJsouZdi)
-                    {
-                        mapa[novaPozice.X, novaPozice.Y].typPole = Pole.TypPole.Prazdne;
-                        mapa[novaPozice.X - smer.X, novaPozice.Y - smer.Y].typPole = Pole.TypPole.Prazdne;
-                        zasobnik.Push(aktualniPozice);
-                        zasobnik.Push(novaPozice);
-                        break;
-                    }
+                    mapa[novaPozice.X, novaPozice.Y].typPole = Pole.TypPole.Prazdne;
+                    mapa[novaPozice.X - smer.X, novaPozice.Y - smer.Y].typPole = Pole.TypPole.Prazdne;
+                    zasobnik.Push(aktualniPozice);
+                    zasobnik.Push(novaPozice);
+                    break;
                 }
             }
         }
