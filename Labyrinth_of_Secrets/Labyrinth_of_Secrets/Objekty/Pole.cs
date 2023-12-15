@@ -12,7 +12,8 @@ namespace Labyrinth_of_Secrets
         {
             Prazdne,
             Zed,
-            Obchod
+            Obchod,
+            Obchodnik
         }
         public TypPole typPole = TypPole.Prazdne;
 

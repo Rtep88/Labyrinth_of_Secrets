@@ -21,10 +21,20 @@ namespace Labyrinth_of_Secrets
         public const int VELIKOST_BLOKU = 8; //Velikost vykresleni bloku
         public const int VELIKOST_MAPY_X = 101; //Urcuje sirku mapy - musi by delitelne 6 po pricteni 1
         public const int VELIKOST_MAPY_Y = 101; //Urcuje vysku mapy - Musi by delitelne 6 po pricteni 1
-        public const int MAX_POCET_MISTNOSTI = 20; //Max pocet mistnosti
+        public const int MAX_POCET_OBCHODU = 20; //Max pocet obchodu
+
+        //Enumy
+        public enum Smer
+        {
+            Nahore,
+            Vpravo,
+            Dole,
+            Vlevo
+        }
 
         //Promenne
         public Pole[,] mapa = new Pole[VELIKOST_MAPY_X, VELIKOST_MAPY_Y];
+        public List<Point> obchody = new List<Point>();
 
         public KomponentaMapa(Hra hra) : base(hra)
         {
@@ -56,16 +66,24 @@ namespace Labyrinth_of_Secrets
         public override void Draw(GameTime gameTime)
         {
             hra._spriteBatch.Begin();
+            VykresliMapu();
+            hra._spriteBatch.End();
+            base.Draw(gameTime);
+        }
+
+        //Vykreslí všechny bloky na mapě
+        void VykresliMapu()
+        {
             for (int x = 0; x < VELIKOST_MAPY_X; x++)
             {
                 for (int y = 0; y < VELIKOST_MAPY_Y; y++)
                 {
                     if (mapa[x, y].typPole == Pole.TypPole.Zed)
                         hra._spriteBatch.Draw(brick, new Rectangle(x * VELIKOST_BLOKU, y * VELIKOST_BLOKU, VELIKOST_BLOKU, VELIKOST_BLOKU), Color.White);
+                    if (mapa[x, y].typPole == Pole.TypPole.Obchodnik)
+                        hra._spriteBatch.Draw(brick, new Rectangle(x * VELIKOST_BLOKU, y * VELIKOST_BLOKU, VELIKOST_BLOKU, VELIKOST_BLOKU), new Color(180, 180, 180));
                 }
             }
-            hra._spriteBatch.End();
-            base.Draw(gameTime);
         }
 
         //Vygeneruje uplne celou mapu a umisti na ni vsechny struktury co na ni maji byt
@@ -74,9 +92,11 @@ namespace Labyrinth_of_Secrets
             if ((VELIKOST_MAPY_X + 1) % 6 != 0 || (VELIKOST_MAPY_Y + 1) % 6 != 0)
                 throw new Exception("Neplatné nastevené argumenty pro generování mapy!");
 
+            obchody = new List<Point>();
             VyplnCelouMapuZdmi();
-            PridejMistnosti(MAX_POCET_MISTNOSTI);
+            PridejObchody(MAX_POCET_OBCHODU);
             VyplnMapuBludistem(NajdiVolneMisto());
+            PropojObchodyZBludistem();
         }
 
         //Umisti na kazdy blok na mape zed
@@ -92,22 +112,22 @@ namespace Labyrinth_of_Secrets
         }
 
         //Nahodne na mape rozmisti prazdna mista na obchody tak aby se neprekryvaly
-        void PridejMistnosti(int pocet)
+        void PridejObchody(int pocet)
         {
-            List<Point> mistaNaMistnosti = new List<Point>();
+            List<Point> mistaNaObchody = new List<Point>();
 
             for (int y = 0; y < (VELIKOST_MAPY_Y + 1) / 6; y++)
             {
                 for (int x = 0; x < (VELIKOST_MAPY_X + 1) / 6; x++)
                 {
-                    mistaNaMistnosti.Add(new Point(x * 6, y * 6));
+                    mistaNaObchody.Add(new Point(x * 6, y * 6));
                 }
             }
 
-            while (pocet > 0 && mistaNaMistnosti.Count != 0)
+            while (pocet > 0 && mistaNaObchody.Count != 0)
             {
-                int indexMistnosti = hra.rnd.Next(0, mistaNaMistnosti.Count);
-                Point pozice = mistaNaMistnosti[indexMistnosti];
+                int indexMistaNaObchod = hra.rnd.Next(0, mistaNaObchody.Count);
+                Point pozice = mistaNaObchody[indexMistaNaObchod];
 
                 for (int y = pozice.Y + 1; y < pozice.Y + 4; y++)
                 {
@@ -116,12 +136,13 @@ namespace Labyrinth_of_Secrets
                         mapa[x, y].typPole = Pole.TypPole.Obchod;
                     }
                 }
+                obchody.Add(pozice);
 
                 for (int y = -1; y <= 1; y++)
                 {
                     for (int x = -1; x <= 1; x++)
                     {
-                        mistaNaMistnosti.Remove(new Point((pozice.X / 6 + x) * 6, (pozice.Y / 6 + y) * 6));
+                        mistaNaObchody.Remove(new Point((pozice.X / 6 + x) * 6, (pozice.Y / 6 + y) * 6));
                     }
                 }
 
@@ -155,7 +176,7 @@ namespace Labyrinth_of_Secrets
             return new Point(-1, -1);
         }
 
-        //Pouziva Randomized depth-first search algoritmus pro vygenerovani bludiste tak aby neprekrylo mistnost
+        //Pouziva Randomized depth-first search algoritmus pro vygenerovani bludiste tak aby neprekrylo obchod
         void VyplnMapuBludistem(Point pocatecniPozice)
         {
             List<Point> mozneSmery = new List<Point>()
@@ -189,6 +210,89 @@ namespace Labyrinth_of_Secrets
                     zasobnik.Push(aktualniPozice);
                     zasobnik.Push(novaPozice);
                     break;
+                }
+            }
+        }
+
+        //Udela v obchodech pruchod do zbytku bludiste a oznaci pole obchodnika
+        void PropojObchodyZBludistem()
+        {
+            //V tomto listu jsou ulozeny mozne steny na probourani
+            List<(Point, Point, Smer)> stredoveSteny = new List<(Point, Point, Smer)>()
+            {
+                (new Point(2, 4), new Point(2, 5), Smer.Dole),
+                (new Point(2, 0), new Point(2, -1), Smer.Nahore),
+                (new Point(0, 2), new Point(-1, 2), Smer.Vlevo),
+                (new Point(4, 2), new Point(5, 2), Smer.Vpravo),
+            };
+
+            //V tomto listu jsou ulozeny mozne steny na probourani pokud by nebylo mozne probouranim steny z predchoziho listu vytvorit pruchod
+            List<(Point, Point, Smer)> krajoveStredy = new List<(Point, Point, Smer)>()
+            {
+                (new Point(1, 4), new Point(1, 5), Smer.Dole),
+                (new Point(3, 4), new Point(3, 5), Smer.Dole),
+                (new Point(1, 0), new Point(1, -1), Smer.Nahore),
+                (new Point(3, 0), new Point(3, -1), Smer.Nahore),
+                (new Point(0, 1), new Point(-1, 1), Smer.Vlevo),
+                (new Point(0, 3), new Point(-1, 3), Smer.Vlevo),
+                (new Point(4, 1), new Point(5, 1), Smer.Vpravo),
+                (new Point(4, 3), new Point(5, 3), Smer.Vpravo)
+            };
+
+
+            //Prevadi smer vchodu na pozici obchodnika
+            Dictionary<Smer, Point> smerNaPozici = new Dictionary<Smer, Point>()
+            {
+                { Smer.Dole, new Point(2, 1) },
+                { Smer.Nahore, new Point(2, 3) },
+                { Smer.Vlevo, new Point(3, 2) },
+                { Smer.Vpravo, new Point(1, 2) }
+            };
+
+            foreach (Point poziceObchodu in obchody)
+            {
+                hra.PromichejList(stredoveSteny);
+                hra.PromichejList(krajoveStredy);
+                List<(Point, Point, Smer)> stenyNaProjiti = stredoveSteny.Union(krajoveStredy).ToList();
+
+                bool obchodPropojen = false;
+
+                //Pokus o probourani stredove steny
+                foreach (var stena in stenyNaProjiti)
+                {
+                    Point poziceBouraneSteny = stena.Item1 + poziceObchodu;
+                    Point poziceCestyPredObchodem = stena.Item2 + poziceObchodu;
+                    Point poziceObchodnika = smerNaPozici[stena.Item3] + poziceObchodu;
+
+                    if (poziceCestyPredObchodem.X == 0)
+                        poziceCestyPredObchodem.X = -1;
+                    if (poziceCestyPredObchodem.X == 4)
+                        poziceCestyPredObchodem.X = 5;
+                    if (poziceCestyPredObchodem.Y == 0)
+                        poziceCestyPredObchodem.Y = -1;
+                    if (poziceCestyPredObchodem.Y == 4)
+                        poziceCestyPredObchodem.Y = 5;
+
+                    if (poziceCestyPredObchodem.X >= 0 && poziceCestyPredObchodem.Y >= 0 && poziceCestyPredObchodem.X < VELIKOST_MAPY_X &&
+                        poziceCestyPredObchodem.Y < VELIKOST_MAPY_Y && mapa[poziceCestyPredObchodem.X, poziceCestyPredObchodem.Y].typPole == Pole.TypPole.Prazdne)
+                    {
+                        mapa[poziceBouraneSteny.X, poziceBouraneSteny.Y].typPole = Pole.TypPole.Prazdne;
+                        mapa[poziceObchodnika.X, poziceObchodnika.Y].typPole = Pole.TypPole.Obchodnik;
+                        obchodPropojen = true;
+                        break;
+                    }
+                }
+
+                if (obchodPropojen)
+                    continue;
+
+                //Pokud obchod nelze propojit je odstranen
+                for (int y = poziceObchodu.Y + 1; y < poziceObchodu.Y + 4; y++)
+                {
+                    for (int x = poziceObchodu.X + 1; x < poziceObchodu.X + 4; x++)
+                    {
+                        mapa[x, y].typPole = Pole.TypPole.Zed;
+                    }
                 }
             }
         }
