@@ -19,9 +19,10 @@ namespace Labyrinth_of_Secrets
 
         //Konstanty
         public const int VELIKOST_BLOKU = 8; //Velikost vykresleni bloku
-        public const int VELIKOST_MAPY_X = 101; //Urcuje sirku mapy - musi by delitelne 6 po pricteni 1
+        public const int VELIKOST_MAPY_X = 101; //Urcuje sirku mapy - Musi by delitelne 6 po pricteni 1
         public const int VELIKOST_MAPY_Y = 101; //Urcuje vysku mapy - Musi by delitelne 6 po pricteni 1
-        public const int MAX_POCET_OBCHODU = 20; //Max pocet obchodu
+        public const int MAX_POCET_OBCHODU = 20; //Max pocet obchodu - Musi byt minimalne 2
+        public const int MIN_DELKA_ODBOCKY = 5; //Urcuje kolik musi minimalne mit odbocka delku
 
         //Enumy
         public enum Smer
@@ -89,14 +90,15 @@ namespace Labyrinth_of_Secrets
         //Vygeneruje uplne celou mapu a umisti na ni vsechny struktury co na ni maji byt
         void VygenerujMapu()
         {
-            if ((VELIKOST_MAPY_X + 1) % 6 != 0 || (VELIKOST_MAPY_Y + 1) % 6 != 0)
-                throw new Exception("Neplatné nastevené argumenty pro generování mapy!");
+            if ((VELIKOST_MAPY_X + 1) % 6 != 0 || (VELIKOST_MAPY_Y + 1) % 6 != 0 || MAX_POCET_OBCHODU < 2)
+                throw new Exception("Neplatně nastevené argumenty pro generování mapy!");
 
             obchody = new List<Point>();
             VyplnCelouMapuZdmi();
             PridejObchody(MAX_POCET_OBCHODU);
             VyplnMapuBludistem(NajdiVolneMisto());
             PropojObchodyZBludistem();
+            OdstranPrilizKratkeOdbocky(NajdiVchodDoObchodu(), MIN_DELKA_ODBOCKY);
         }
 
         //Umisti na kazdy blok na mape zed
@@ -173,7 +175,7 @@ namespace Labyrinth_of_Secrets
                 }
             }
 
-            return new Point(-1, -1);
+            throw new Exception("Neplatně nastevené argumenty pro generování mapy!");
         }
 
         //Pouziva Randomized depth-first search algoritmus pro vygenerovani bludiste tak aby neprekrylo obchod
@@ -200,7 +202,7 @@ namespace Labyrinth_of_Secrets
 
                 foreach (Point smer in mozneSmeryPromichany)
                 {
-                    Point novaPozice = aktualniPozice + new Point(smer.X * 2, smer.Y * 2);
+                    Point novaPozice = aktualniPozice + smer * new Point(2);
                     if (novaPozice.X <= 0 || novaPozice.Y <= 0 || novaPozice.X >= VELIKOST_MAPY_X - 1 ||
                         novaPozice.Y >= VELIKOST_MAPY_Y - 1 || mapa[novaPozice.X, novaPozice.Y].typPole != Pole.TypPole.Zed)
                         continue;
@@ -257,7 +259,7 @@ namespace Labyrinth_of_Secrets
 
                 bool obchodPropojen = false;
 
-                //Pokus o probourani stredove steny
+                //Pokus o probourani steny
                 foreach (var stena in stenyNaProjiti)
                 {
                     Point poziceBouraneSteny = stena.Item1 + poziceObchodu;
@@ -292,6 +294,120 @@ namespace Labyrinth_of_Secrets
                     for (int x = poziceObchodu.X + 1; x < poziceObchodu.X + 4; x++)
                     {
                         mapa[x, y].typPole = Pole.TypPole.Zed;
+                    }
+                }
+            }
+        }
+
+        //Najde na mape volne blok ktery je pruchod do obchodu
+        Point NajdiVchodDoObchodu()
+        {
+            List<Point> mozneSmery = new List<Point>()
+            {
+                new Point(-1, 0),
+                new Point(0, -1),
+                new Point(1, 0),
+                new Point(0, 1)
+            };
+
+            for (int y = 1; y < VELIKOST_MAPY_Y - 1; y++)
+            {
+                for (int x = 1; x < VELIKOST_MAPY_X - 1; x++)
+                {
+                    foreach (Point smer in mozneSmery)
+                    {
+                        Point novaPozice = new Point(x, y) + smer;
+
+                        if (mapa[x, y].typPole == Pole.TypPole.Prazdne && mapa[novaPozice.X, novaPozice.Y].typPole == Pole.TypPole.Obchod)
+                            return new Point(x, y);
+                    }
+                }
+            }
+
+            throw new Exception("Neplatně nastevené argumenty pro generování mapy!");
+        }
+
+        //Odstrani vsechny pripojeni kratsi nez pozadovana hodnota
+        void OdstranPrilizKratkeOdbocky(Point pocatecniPozice, int minDelkaOdbocky)
+        {
+            List<Point> mozneSmery = new List<Point>()
+            {
+                new Point(-1, 0),
+                new Point(0, -1),
+                new Point(1, 0),
+                new Point(0, 1)
+            };
+
+            //Urcuje na kterych polich jsem uz byl
+            bool[,] projitostPoli = new bool[VELIKOST_MAPY_X, VELIKOST_MAPY_Y];
+
+            Stack<(Point, int)> zasobnik = new Stack<(Point, int)>();
+            zasobnik.Push((pocatecniPozice, 1));
+            projitostPoli[pocatecniPozice.X, pocatecniPozice.Y] = true;
+
+            while (zasobnik.Count > 0)
+            {
+                (Point, int) stav = zasobnik.Pop();
+                Point aktualniPozice = stav.Item1;
+                int aktualniDelkaCesty = stav.Item2;
+                List<Point> mozneDalsiTahy = new List<Point>();
+
+                bool cestaDoObchodu = false;
+
+                foreach (Point smer in mozneSmery)
+                {
+                    Point novaPozice = aktualniPozice + smer;
+                    if (novaPozice.X <= 0 || novaPozice.Y <= 0 || novaPozice.X >= VELIKOST_MAPY_X - 1 ||
+                        novaPozice.Y >= VELIKOST_MAPY_Y - 1 || projitostPoli[novaPozice.X, novaPozice.Y])
+                        continue;
+
+                    if (mapa[novaPozice.X, novaPozice.Y].typPole == Pole.TypPole.Prazdne)
+                        mozneDalsiTahy.Add(smer);
+                    if (mapa[novaPozice.X, novaPozice.Y].typPole == Pole.TypPole.Obchod)
+                        cestaDoObchodu = true;
+                }
+
+                if (!cestaDoObchodu && mozneDalsiTahy.Count == 0 && minDelkaOdbocky > aktualniDelkaCesty)
+                {
+                    Point aktualniPoziceKeSmazani = aktualniPozice;
+
+                    do
+                    {
+                        mozneDalsiTahy = new List<Point>();
+                        foreach (Point smer in mozneSmery)
+                        {
+                            Point novaPozice = aktualniPoziceKeSmazani + smer;
+                            if (novaPozice.X <= 0 || novaPozice.Y <= 0 || novaPozice.X >= VELIKOST_MAPY_X - 1 ||
+                                novaPozice.Y >= VELIKOST_MAPY_Y - 1)
+                                continue;
+
+                            if (mapa[novaPozice.X, novaPozice.Y].typPole == Pole.TypPole.Prazdne)
+                                mozneDalsiTahy.Add(smer);
+                        }
+                        if (mozneDalsiTahy.Count == 1)
+                        {
+                            mapa[aktualniPoziceKeSmazani.X, aktualniPoziceKeSmazani.Y].typPole = Pole.TypPole.Zed;
+                            aktualniPoziceKeSmazani += mozneDalsiTahy[0];
+                        }
+                    } while (mozneDalsiTahy.Count == 1);
+                }
+                else if (mozneDalsiTahy.Count == 1)
+                {
+                    Point moznyDalsiTah = mozneDalsiTahy[0];
+                    zasobnik.Push((aktualniPozice + moznyDalsiTah, aktualniDelkaCesty + 1));
+                    projitostPoli[aktualniPozice.X + moznyDalsiTah.X, aktualniPozice.Y + moznyDalsiTah.Y] = true;
+                }
+                else if (mozneDalsiTahy.Count > 1)
+                {
+                    bool prvni = false;
+                    foreach (Point moznyDalsiTah in mozneDalsiTahy)
+                    {
+                        if (prvni)
+                            zasobnik.Push((aktualniPozice + moznyDalsiTah, aktualniDelkaCesty + 1));
+                        else
+                            zasobnik.Push((aktualniPozice + moznyDalsiTah, 1));
+                        projitostPoli[aktualniPozice.X + moznyDalsiTah.X, aktualniPozice.Y + moznyDalsiTah.Y] = true;
+                        prvni = false;
                     }
                 }
             }
