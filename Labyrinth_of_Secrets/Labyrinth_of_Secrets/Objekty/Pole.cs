@@ -13,9 +13,12 @@ namespace Labyrinth_of_Secrets
             Prazdne,
             Zed,
             Obchod,
-            Obchodnik
+            Obchodnik,
+            Start,
+            Vychod
         }
         public TypPole typPole = TypPole.Prazdne;
+        public bool naHlavniCeste = false;
 
         public Pole(TypPole typPole)
         {

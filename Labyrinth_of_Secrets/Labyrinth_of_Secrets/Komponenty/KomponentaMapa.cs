@@ -19,8 +19,8 @@ namespace Labyrinth_of_Secrets
 
         //Konstanty
         public const int VELIKOST_BLOKU = 8; //Velikost vykresleni bloku
-        public const int VELIKOST_MAPY_X = 101; //Urcuje sirku mapy - Musi by delitelne 6 po pricteni 1
-        public const int VELIKOST_MAPY_Y = 101; //Urcuje vysku mapy - Musi by delitelne 6 po pricteni 1
+        public const int VELIKOST_MAPY_X = 101; //Urcuje sirku mapy - Musi by delitelne 6 po pricteni 1 a melo by byt stejne jako X (minimum je 11)
+        public const int VELIKOST_MAPY_Y = 101; //Urcuje vysku mapy - Musi by delitelne 6 po pricteni 1 a melo by byt stejne jako Y (minimum je 11)
         public const int MAX_POCET_OBCHODU = 20; //Max pocet obchodu - Musi byt minimalne 2
         public const int MIN_DELKA_ODBOCKY = 5; //Urcuje kolik musi minimalne mit odbocka delku
 
@@ -36,6 +36,9 @@ namespace Labyrinth_of_Secrets
         //Promenne
         public Pole[,] mapa = new Pole[VELIKOST_MAPY_X, VELIKOST_MAPY_Y];
         public List<Point> obchody = new List<Point>();
+        public Point start = new Point(-1);
+        public Point vychod = new Point(-1);
+        public List<Point> cestaZeStartuDoCile = new List<Point>();
 
         public KomponentaMapa(Hra hra) : base(hra)
         {
@@ -83,6 +86,8 @@ namespace Labyrinth_of_Secrets
                         hra._spriteBatch.Draw(brick, new Rectangle(x * VELIKOST_BLOKU, y * VELIKOST_BLOKU, VELIKOST_BLOKU, VELIKOST_BLOKU), Color.White);
                     if (mapa[x, y].typPole == Pole.TypPole.Obchodnik)
                         hra._spriteBatch.Draw(brick, new Rectangle(x * VELIKOST_BLOKU, y * VELIKOST_BLOKU, VELIKOST_BLOKU, VELIKOST_BLOKU), new Color(180, 180, 180));
+                    if (mapa[x, y].naHlavniCeste)
+                        hra._spriteBatch.Draw(brick, new Rectangle(x * VELIKOST_BLOKU, y * VELIKOST_BLOKU, VELIKOST_BLOKU, VELIKOST_BLOKU), new Color(255, 64, 64));
                 }
             }
         }
@@ -90,15 +95,21 @@ namespace Labyrinth_of_Secrets
         //Vygeneruje uplne celou mapu a umisti na ni vsechny struktury co na ni maji byt
         void VygenerujMapu()
         {
-            if ((VELIKOST_MAPY_X + 1) % 6 != 0 || (VELIKOST_MAPY_Y + 1) % 6 != 0 || MAX_POCET_OBCHODU < 2)
+            if ((VELIKOST_MAPY_X + 1) % 6 != 0 || (VELIKOST_MAPY_Y + 1) % 6 != 0 || MAX_POCET_OBCHODU < 2 ||
+                VELIKOST_MAPY_X != VELIKOST_MAPY_Y || VELIKOST_MAPY_X < 11 || VELIKOST_MAPY_Y < 11)
                 throw new Exception("Neplatně nastevené argumenty pro generování mapy!");
 
             obchody = new List<Point>();
             VyplnCelouMapuZdmi();
             PridejObchody(MAX_POCET_OBCHODU);
-            VyplnMapuBludistem(NajdiVolneMisto());
+            VyplnMapuBludistem(NajdiMistoProVychod());
             PropojObchodyZBludistem();
-            OdstranPrilizKratkeOdbocky(NajdiVchodDoObchodu(), MIN_DELKA_ODBOCKY);
+            OdstranPrilizKratkeOdbocky(vychod, MIN_DELKA_ODBOCKY);
+            start = NajdiMistoProStart();
+            cestaZeStartuDoCile = NajdiCestuMeziBody(start, vychod);
+
+            foreach (Point bod in cestaZeStartuDoCile)
+                mapa[bod.X, bod.Y].naHlavniCeste = true;
         }
 
         //Umisti na kazdy blok na mape zed
@@ -152,13 +163,41 @@ namespace Labyrinth_of_Secrets
             }
         }
 
-        //Najde na mape volne misto na kterem lze zacit generovat bludiste
-        Point NajdiVolneMisto()
+        //Najde na mape volne misto na kterem hrac bude zacinat
+        Point NajdiMistoProStart()
         {
-            for (int y = 1; y < VELIKOST_MAPY_Y - 1; y++)
+            int ohnisko = 0;
+            Point stred = new Point(VELIKOST_MAPY_X / 2, VELIKOST_MAPY_Y / 2);
+            while (stred.X - ohnisko >= 0 && stred.Y - ohnisko >= 0 && stred.X + ohnisko < VELIKOST_MAPY_X && stred.Y + ohnisko < VELIKOST_MAPY_Y)
             {
-                for (int x = 1; x < VELIKOST_MAPY_X - 1; x++)
+                for (int x = -ohnisko; x <= ohnisko; x++)
                 {
+                    for (int y = -ohnisko; y <= ohnisko; y++)
+                    {
+                        if ((stred.X + x) % 2 == 1 && (stred.Y + y) % 2 == 1 && mapa[stred.X + x, stred.Y + y].typPole == Pole.TypPole.Prazdne)
+                        {
+                            mapa[stred.X + x, stred.Y + y].typPole = Pole.TypPole.Start;
+                            return new Point(stred.X + x, stred.Y + y);
+                        }
+                    }
+                }
+                ohnisko++;
+            }
+
+            throw new Exception("Neplatně nastevené argumenty pro generování mapy!");
+        }
+
+        //Najde na mape volne misto od ktereho lze zacit generovat bludiste
+        Point NajdiMistoProVychod()
+        {
+            List<Point> volneMista = new List<Point>();
+            for (int y = 1; y < VELIKOST_MAPY_Y - 1; y += 2)
+            {
+                for (int x = 1; x < VELIKOST_MAPY_X - 1; x += 2)
+                {
+                    if (x != 1 && y != 1 && x != VELIKOST_MAPY_X - 2 && y != VELIKOST_MAPY_Y - 2)
+                        continue;
+
                     bool vsechnyJsouZdi = true;
                     for (int y2 = -1; y2 <= 1 && vsechnyJsouZdi; y2++)
                     {
@@ -170,12 +209,14 @@ namespace Labyrinth_of_Secrets
                     }
                     if (vsechnyJsouZdi)
                     {
-                        return new Point(x, y);
+                        volneMista.Add(new Point(x, y));
                     }
                 }
             }
-
-            throw new Exception("Neplatně nastevené argumenty pro generování mapy!");
+            if (volneMista.Count != 0)
+                return volneMista[hra.rnd.Next(0, volneMista.Count)];
+            else
+                throw new Exception("Neplatně nastevené argumenty pro generování mapy!");
         }
 
         //Pouziva Randomized depth-first search algoritmus pro vygenerovani bludiste tak aby neprekrylo obchod
@@ -192,6 +233,26 @@ namespace Labyrinth_of_Secrets
             Stack<Point> zasobnik = new Stack<Point>();
             zasobnik.Push(pocatecniPozice);
             mapa[pocatecniPozice.X, pocatecniPozice.Y].typPole = Pole.TypPole.Prazdne;
+            if (pocatecniPozice.X == 1)
+            {
+                mapa[pocatecniPozice.X - 1, pocatecniPozice.Y].typPole = Pole.TypPole.Vychod;
+                vychod = new Point(pocatecniPozice.X - 1, pocatecniPozice.Y);
+            }
+            else if (pocatecniPozice.Y == 1)
+            {
+                mapa[pocatecniPozice.X, pocatecniPozice.Y - 1].typPole = Pole.TypPole.Vychod;
+                vychod = new Point(pocatecniPozice.X, pocatecniPozice.Y - 1);
+            }
+            else if (pocatecniPozice.X == VELIKOST_MAPY_X - 2)
+            {
+                mapa[pocatecniPozice.X + 1, pocatecniPozice.Y].typPole = Pole.TypPole.Vychod;
+                vychod = new Point(pocatecniPozice.X + 1, pocatecniPozice.Y);
+            }
+            else if (pocatecniPozice.Y == VELIKOST_MAPY_Y - 2)
+            {
+                mapa[pocatecniPozice.X, pocatecniPozice.Y + 1].typPole = Pole.TypPole.Vychod;
+                vychod = new Point(pocatecniPozice.X, pocatecniPozice.Y + 1);
+            }
 
             while (zasobnik.Count > 0)
             {
@@ -299,34 +360,6 @@ namespace Labyrinth_of_Secrets
             }
         }
 
-        //Najde na mape volne blok ktery je pruchod do obchodu
-        Point NajdiVchodDoObchodu()
-        {
-            List<Point> mozneSmery = new List<Point>()
-            {
-                new Point(-1, 0),
-                new Point(0, -1),
-                new Point(1, 0),
-                new Point(0, 1)
-            };
-
-            for (int y = 1; y < VELIKOST_MAPY_Y - 1; y++)
-            {
-                for (int x = 1; x < VELIKOST_MAPY_X - 1; x++)
-                {
-                    foreach (Point smer in mozneSmery)
-                    {
-                        Point novaPozice = new Point(x, y) + smer;
-
-                        if (mapa[x, y].typPole == Pole.TypPole.Prazdne && mapa[novaPozice.X, novaPozice.Y].typPole == Pole.TypPole.Obchod)
-                            return new Point(x, y);
-                    }
-                }
-            }
-
-            throw new Exception("Neplatně nastevené argumenty pro generování mapy!");
-        }
-
         //Odstrani vsechny pripojeni kratsi nez pozadovana hodnota
         void OdstranPrilizKratkeOdbocky(Point pocatecniPozice, int minDelkaOdbocky)
         {
@@ -357,8 +390,8 @@ namespace Labyrinth_of_Secrets
                 foreach (Point smer in mozneSmery)
                 {
                     Point novaPozice = aktualniPozice + smer;
-                    if (novaPozice.X <= 0 || novaPozice.Y <= 0 || novaPozice.X >= VELIKOST_MAPY_X - 1 ||
-                        novaPozice.Y >= VELIKOST_MAPY_Y - 1 || projitostPoli[novaPozice.X, novaPozice.Y])
+                    if (novaPozice.X < 0 || novaPozice.Y < 0 || novaPozice.X > VELIKOST_MAPY_X - 1 ||
+                        novaPozice.Y > VELIKOST_MAPY_Y - 1 || projitostPoli[novaPozice.X, novaPozice.Y])
                         continue;
 
                     if (mapa[novaPozice.X, novaPozice.Y].typPole == Pole.TypPole.Prazdne)
@@ -411,6 +444,48 @@ namespace Labyrinth_of_Secrets
                     }
                 }
             }
+        }
+
+        //Najde cestu mezi dvema body - pocita s tim ze cesta vzdy existuje
+        List<Point> NajdiCestuMeziBody(Point start, Point cil)
+        {
+            List<Point> mozneSmery = new List<Point>()
+            {
+                new Point(-1, 0),
+                new Point(0, -1),
+                new Point(1, 0),
+                new Point(0, 1)
+            };
+
+            Point[,] projite = new Point[VELIKOST_MAPY_X, VELIKOST_MAPY_Y];
+            Queue<Point> naProjiti = new Queue<Point>();
+            naProjiti.Enqueue(start);
+
+            while (naProjiti.Count > 0)
+            {
+                Point aktualniBod = naProjiti.Dequeue();
+                if (aktualniBod == cil)
+                    break;
+                foreach (Point smer in mozneSmery)
+                {
+                    Point novaPozice = aktualniBod + smer;
+                    if (mapa[novaPozice.X, novaPozice.Y].typPole != Pole.TypPole.Zed && projite[novaPozice.X, novaPozice.Y] == new Point())
+                    {
+                        projite[novaPozice.X, novaPozice.Y] = new Point(-smer.X, -smer.Y);
+                        naProjiti.Enqueue(novaPozice);
+                    }
+                }
+            }
+
+            List<Point> cesta = new List<Point>() { cil };
+            Point aktualni = cil;
+            while (aktualni != start)
+            {
+                aktualni += projite[aktualni.X, aktualni.Y];
+                cesta.Add(aktualni);
+            }
+            cesta.Reverse();
+            return cesta;
         }
     }
 }
