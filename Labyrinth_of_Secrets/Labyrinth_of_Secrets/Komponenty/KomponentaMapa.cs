@@ -18,7 +18,7 @@ namespace Labyrinth_of_Secrets
         private Texture2D brick; //Placeholder textura
 
         //Konstanty
-        public const int VELIKOST_BLOKU = 8; //Velikost vykresleni bloku
+        public const int VELIKOST_BLOKU = 32; //Velikost vykresleni bloku
         public const int VELIKOST_MAPY_X = 101; //Urcuje sirku mapy - Musi by delitelne 6 po pricteni 1 a melo by byt stejne jako X (minimum je 11)
         public const int VELIKOST_MAPY_Y = 101; //Urcuje vysku mapy - Musi by delitelne 6 po pricteni 1 a melo by byt stejne jako Y (minimum je 11)
         public const int MAX_POCET_OBCHODU = 20; //Max pocet obchodu - Musi byt minimalne 2
@@ -69,7 +69,7 @@ namespace Labyrinth_of_Secrets
 
         public override void Draw(GameTime gameTime)
         {
-            hra._spriteBatch.Begin();
+            hra._spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, transformMatrix: KomponentaKamera._kamera.GetViewMatrix());
             VykresliMapu();
             hra._spriteBatch.End();
             base.Draw(gameTime);

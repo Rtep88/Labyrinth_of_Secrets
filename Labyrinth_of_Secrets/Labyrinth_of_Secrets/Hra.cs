@@ -17,7 +17,7 @@ namespace Labyrinth_of_Secrets
         //Konstanty
 
         //Promenne
-        public Point velikostOkna = new Point(KomponentaMapa.VELIKOST_MAPY_X * KomponentaMapa.VELIKOST_BLOKU, KomponentaMapa.VELIKOST_MAPY_Y * KomponentaMapa.VELIKOST_BLOKU);
+        public Point velikostOkna = new Point(1280, 720);
         public bool fullscreen = false;
         public Random rnd = new Random();
         public KeyboardState klavesy, klavesyMinule;
@@ -33,7 +33,9 @@ namespace Labyrinth_of_Secrets
         protected override void Initialize()
         {
             KomponentaMapa komponentaMapa = new KomponentaMapa(this);
+            KomponentaKamera komponentaKamera = new KomponentaKamera(this);
             Components.Add(komponentaMapa);
+            Components.Add(komponentaKamera);
             _graphics.HardwareModeSwitch = false;
             NastavRozliseni();
 
