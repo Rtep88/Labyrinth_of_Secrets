@@ -34,7 +34,7 @@ namespace Labyrinth_of_Secrets
         }
 
         //Promenne
-        public Pole[,] mapa = new Pole[VELIKOST_MAPY_X, VELIKOST_MAPY_Y];
+        public static Pole[,] mapa = new Pole[VELIKOST_MAPY_X, VELIKOST_MAPY_Y];
         public List<Point> obchody = new List<Point>();
         public Point start = new Point(-1);
         public Point vychod = new Point(-1);
@@ -86,8 +86,6 @@ namespace Labyrinth_of_Secrets
                         hra._spriteBatch.Draw(brick, new Rectangle(x * VELIKOST_BLOKU, y * VELIKOST_BLOKU, VELIKOST_BLOKU, VELIKOST_BLOKU), Color.White);
                     if (mapa[x, y].typPole == Pole.TypPole.Obchodnik)
                         hra._spriteBatch.Draw(brick, new Rectangle(x * VELIKOST_BLOKU, y * VELIKOST_BLOKU, VELIKOST_BLOKU, VELIKOST_BLOKU), new Color(180, 180, 180));
-                    if (mapa[x, y].naHlavniCeste)
-                        hra._spriteBatch.Draw(brick, new Rectangle(x * VELIKOST_BLOKU, y * VELIKOST_BLOKU, VELIKOST_BLOKU, VELIKOST_BLOKU), new Color(255, 64, 64));
                 }
             }
         }
@@ -110,6 +108,8 @@ namespace Labyrinth_of_Secrets
 
             foreach (Point bod in cestaZeStartuDoCile)
                 mapa[bod.X, bod.Y].naHlavniCeste = true;
+
+            KomponentaSvetlo.PridejZdrojeSvetla();
         }
 
         //Umisti na kazdy blok na mape zed
@@ -146,7 +146,7 @@ namespace Labyrinth_of_Secrets
                 {
                     for (int x = pozice.X + 1; x < pozice.X + 4; x++)
                     {
-                        mapa[x, y].typPole = Pole.TypPole.Obchod;
+                        mapa[x, y] = new Pole(Pole.TypPole.Obchod);
                     }
                 }
                 obchody.Add(pozice);
@@ -176,7 +176,7 @@ namespace Labyrinth_of_Secrets
                     {
                         if ((stred.X + x) % 2 == 1 && (stred.Y + y) % 2 == 1 && mapa[stred.X + x, stred.Y + y].typPole == Pole.TypPole.Prazdne)
                         {
-                            mapa[stred.X + x, stred.Y + y].typPole = Pole.TypPole.Start;
+                            mapa[stred.X + x, stred.Y + y] = new Pole(Pole.TypPole.Start);
                             return new Point(stred.X + x, stred.Y + y);
                         }
                     }
@@ -232,25 +232,25 @@ namespace Labyrinth_of_Secrets
 
             Stack<Point> zasobnik = new Stack<Point>();
             zasobnik.Push(pocatecniPozice);
-            mapa[pocatecniPozice.X, pocatecniPozice.Y].typPole = Pole.TypPole.Prazdne;
+            mapa[pocatecniPozice.X, pocatecniPozice.Y] = new Pole(Pole.TypPole.Prazdne);
             if (pocatecniPozice.X == 1)
             {
-                mapa[pocatecniPozice.X - 1, pocatecniPozice.Y].typPole = Pole.TypPole.Vychod;
+                mapa[pocatecniPozice.X - 1, pocatecniPozice.Y] = new Pole(Pole.TypPole.Vychod);
                 vychod = new Point(pocatecniPozice.X - 1, pocatecniPozice.Y);
             }
             else if (pocatecniPozice.Y == 1)
             {
-                mapa[pocatecniPozice.X, pocatecniPozice.Y - 1].typPole = Pole.TypPole.Vychod;
+                mapa[pocatecniPozice.X, pocatecniPozice.Y - 1] = new Pole(Pole.TypPole.Vychod);
                 vychod = new Point(pocatecniPozice.X, pocatecniPozice.Y - 1);
             }
             else if (pocatecniPozice.X == VELIKOST_MAPY_X - 2)
             {
-                mapa[pocatecniPozice.X + 1, pocatecniPozice.Y].typPole = Pole.TypPole.Vychod;
+                mapa[pocatecniPozice.X + 1, pocatecniPozice.Y] = new Pole(Pole.TypPole.Vychod);
                 vychod = new Point(pocatecniPozice.X + 1, pocatecniPozice.Y);
             }
             else if (pocatecniPozice.Y == VELIKOST_MAPY_Y - 2)
             {
-                mapa[pocatecniPozice.X, pocatecniPozice.Y + 1].typPole = Pole.TypPole.Vychod;
+                mapa[pocatecniPozice.X, pocatecniPozice.Y + 1] = new Pole(Pole.TypPole.Vychod);
                 vychod = new Point(pocatecniPozice.X, pocatecniPozice.Y + 1);
             }
 
@@ -268,8 +268,8 @@ namespace Labyrinth_of_Secrets
                         novaPozice.Y >= VELIKOST_MAPY_Y - 1 || mapa[novaPozice.X, novaPozice.Y].typPole != Pole.TypPole.Zed)
                         continue;
 
-                    mapa[novaPozice.X, novaPozice.Y].typPole = Pole.TypPole.Prazdne;
-                    mapa[novaPozice.X - smer.X, novaPozice.Y - smer.Y].typPole = Pole.TypPole.Prazdne;
+                    mapa[novaPozice.X, novaPozice.Y] = new Pole(Pole.TypPole.Prazdne);
+                    mapa[novaPozice.X - smer.X, novaPozice.Y - smer.Y] = new Pole(Pole.TypPole.Prazdne);
                     zasobnik.Push(aktualniPozice);
                     zasobnik.Push(novaPozice);
                     break;
@@ -339,8 +339,8 @@ namespace Labyrinth_of_Secrets
                     if (poziceCestyPredObchodem.X >= 0 && poziceCestyPredObchodem.Y >= 0 && poziceCestyPredObchodem.X < VELIKOST_MAPY_X &&
                         poziceCestyPredObchodem.Y < VELIKOST_MAPY_Y && mapa[poziceCestyPredObchodem.X, poziceCestyPredObchodem.Y].typPole == Pole.TypPole.Prazdne)
                     {
-                        mapa[poziceBouraneSteny.X, poziceBouraneSteny.Y].typPole = Pole.TypPole.Prazdne;
-                        mapa[poziceObchodnika.X, poziceObchodnika.Y].typPole = Pole.TypPole.Obchodnik;
+                        mapa[poziceBouraneSteny.X, poziceBouraneSteny.Y] = new Pole(Pole.TypPole.Prazdne);
+                        mapa[poziceObchodnika.X, poziceObchodnika.Y] = new Pole(Pole.TypPole.Obchodnik);
                         obchodPropojen = true;
                         break;
                     }
@@ -354,7 +354,7 @@ namespace Labyrinth_of_Secrets
                 {
                     for (int x = poziceObchodu.X + 1; x < poziceObchodu.X + 4; x++)
                     {
-                        mapa[x, y].typPole = Pole.TypPole.Zed;
+                        mapa[x, y] = new Pole(Pole.TypPole.Zed);
                     }
                 }
             }
@@ -419,7 +419,7 @@ namespace Labyrinth_of_Secrets
                         }
                         if (mozneDalsiTahy.Count == 1)
                         {
-                            mapa[aktualniPoziceKeSmazani.X, aktualniPoziceKeSmazani.Y].typPole = Pole.TypPole.Zed;
+                            mapa[aktualniPoziceKeSmazani.X, aktualniPoziceKeSmazani.Y] = new Pole(Pole.TypPole.Zed);
                             aktualniPoziceKeSmazani += mozneDalsiTahy[0];
                         }
                     } while (mozneDalsiTahy.Count == 1);

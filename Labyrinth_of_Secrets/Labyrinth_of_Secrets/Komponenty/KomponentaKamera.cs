@@ -15,7 +15,7 @@ namespace Labyrinth_of_Secrets
         public static Kamera _kamera;
 
         //Konstanty
-        public const int RYCHLOST_KAMERY = 20;
+        public const int RYCHLOST_KAMERY = 5;
 
         public KomponentaKamera(Hra hra) : base(hra)
         {

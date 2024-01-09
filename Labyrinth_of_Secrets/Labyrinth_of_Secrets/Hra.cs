@@ -22,6 +22,7 @@ namespace Labyrinth_of_Secrets
         public Random rnd = new Random();
         public KeyboardState klavesy, klavesyMinule;
         public MouseState tlacitkaMysi, tlacitkaMysiMinule;
+        public bool ukonceno = false;
 
         public Hra()
         {
@@ -34,8 +35,10 @@ namespace Labyrinth_of_Secrets
         {
             KomponentaMapa komponentaMapa = new KomponentaMapa(this);
             KomponentaKamera komponentaKamera = new KomponentaKamera(this);
+            KomponentaSvetlo komponentaSvetlo = new KomponentaSvetlo(this);
             Components.Add(komponentaMapa);
             Components.Add(komponentaKamera);
+            Components.Add(komponentaSvetlo);
             _graphics.HardwareModeSwitch = false;
             NastavRozliseni();
 
@@ -50,10 +53,15 @@ namespace Labyrinth_of_Secrets
         protected override void Update(GameTime gameTime)
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+            {
+                ukonceno = true;
                 Exit();
+            }
 
             klavesyMinule = klavesy;
+            tlacitkaMysiMinule = tlacitkaMysi;
             klavesy = Keyboard.GetState();
+            tlacitkaMysi = Mouse.GetState();
 
             base.Update(gameTime);
         }
