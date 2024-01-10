@@ -17,7 +17,7 @@ namespace Labyrinth_of_Secrets
 
         //Textury
         private Texture2D svetlo;
-        
+
         //Struktury
         private struct ZdrojSvetla
         {
@@ -40,12 +40,11 @@ namespace Labyrinth_of_Secrets
         private const int SILA_SVETLA_CURSORU = 300;
 
         //Promene
-        private Color[] dataSvetlaProVypocet;
-        private Color[] dataSvetlaProVykresleni;
-        private static List<ZdrojSvetla> svetelneZdroje = new List<ZdrojSvetla>();
+        private Color[] docasnaDataSvetla;
+        private Color[][] dataSvetla = new Color[2][];
+        private bool[][] jeAktualni = new bool[2][];
         private List<Point>[] bodyNaSmazani = new List<Point>[2];
-        private bool vykreslovani = false;
-        private bool vymenovani = false;
+        private static List<ZdrojSvetla> svetelneZdroje = new List<ZdrojSvetla>();
 
         public KomponentaSvetlo(Hra hra) : base(hra)
         {
@@ -54,11 +53,15 @@ namespace Labyrinth_of_Secrets
 
         public override void Initialize()
         {
-            dataSvetlaProVypocet = new Color[KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK * KomponentaMapa.VELIKOST_MAPY_Y * POCET_SVETLA_NA_BLOK];
-            dataSvetlaProVykresleni = new Color[KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK * KomponentaMapa.VELIKOST_MAPY_Y * POCET_SVETLA_NA_BLOK];
-            svetlo = new Texture2D(GraphicsDevice, KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK, KomponentaMapa.VELIKOST_MAPY_Y * POCET_SVETLA_NA_BLOK, false, SurfaceFormat.Color);
-            bodyNaSmazani[0] = new List<Point>();
-            bodyNaSmazani[1] = new List<Point>();
+            docasnaDataSvetla = new Color[KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK * KomponentaMapa.VELIKOST_MAPY_Y * POCET_SVETLA_NA_BLOK];
+            for (int i = 0; i < 2; i++)
+            {
+                dataSvetla[i] = new Color[KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK * KomponentaMapa.VELIKOST_MAPY_Y * POCET_SVETLA_NA_BLOK];
+                jeAktualni[i] = new bool[KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK * KomponentaMapa.VELIKOST_MAPY_Y * POCET_SVETLA_NA_BLOK];
+                svetlo = new Texture2D(GraphicsDevice, KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK, KomponentaMapa.VELIKOST_MAPY_Y * POCET_SVETLA_NA_BLOK, false, SurfaceFormat.Color);
+                bodyNaSmazani[i] = new List<Point>();
+            }
+
             Thread pocitaniSvetla = new Thread(PocitejSvetlo);
             pocitaniSvetla.Start();
             base.Initialize();
@@ -87,14 +90,13 @@ namespace Labyrinth_of_Secrets
                 ColorBlendFunction = BlendFunction.Add
             };
 
-            while (vymenovani) { Thread.Sleep(10); }
-
-            vykreslovani = true;
-            svetlo.SetData(dataSvetlaProVykresleni);
-            hra._spriteBatch.Begin(SpriteSortMode.Deferred, Multiply, transformMatrix: KomponentaKamera._kamera.GetViewMatrix());
-            hra._spriteBatch.Draw(svetlo, new Rectangle(0, 0, KomponentaMapa.VELIKOST_MAPY_X * KomponentaMapa.VELIKOST_BLOKU, KomponentaMapa.VELIKOST_MAPY_Y * KomponentaMapa.VELIKOST_BLOKU), Color.White);
-            hra._spriteBatch.End();
-            vykreslovani = false;
+            lock (dataSvetla)
+            {
+                svetlo.SetData(dataSvetla[1]);
+                hra._spriteBatch.Begin(SpriteSortMode.Deferred, Multiply, transformMatrix: KomponentaKamera._kamera.GetViewMatrix());
+                hra._spriteBatch.Draw(svetlo, new Rectangle(0, 0, KomponentaMapa.VELIKOST_MAPY_X * KomponentaMapa.VELIKOST_BLOKU, KomponentaMapa.VELIKOST_MAPY_Y * KomponentaMapa.VELIKOST_BLOKU), Color.White);
+                hra._spriteBatch.End();
+            }
 
             base.Draw(gameTime);
         }
@@ -116,14 +118,14 @@ namespace Labyrinth_of_Secrets
         public void PocitejSvetlo()
         {
             while (!hra.ukonceno)
-            {                
+            {
                 Vector2 opravdovaPoziceKamery = new Vector2(-KomponentaKamera._kamera.GetViewMatrix().Translation.X / KomponentaKamera._kamera.zoom, -KomponentaKamera._kamera.GetViewMatrix().Translation.Y / KomponentaKamera._kamera.zoom);
                 Vector2 opravdovaVelikostOkna = new Vector2(hra.velikostOkna.X / KomponentaKamera._kamera.zoom, hra.velikostOkna.Y / KomponentaKamera._kamera.zoom);
                 Point poziceMysi = ((opravdovaPoziceKamery + Mouse.GetState().Position.ToVector2() * opravdovaVelikostOkna / hra.velikostOkna.ToVector2()) / KomponentaMapa.VELIKOST_BLOKU * new Vector2(POCET_SVETLA_NA_BLOK)).ToPoint();
 
                 foreach (Point odkudSmazat in bodyNaSmazani[0])
                 {
-                    SmazSvetloOdBodu(odkudSmazat);
+                    SmazNeboPresunSvetloOdBodu(odkudSmazat, dataSvetla[0], false, null);
                 }
                 bodyNaSmazani[0] = new List<Point>();
 
@@ -134,22 +136,24 @@ namespace Labyrinth_of_Secrets
                     PridejSvetloOdBodu(svetlo.odkud, svetlo.silaSvetla, svetlo.barvaSvetla, false);
                 }
 
-                while (vykreslovani) { Thread.Sleep(10); }
+                lock (dataSvetla)
+                {
+                    Color[] docasnePole = dataSvetla[1];
+                    dataSvetla[1] = dataSvetla[0];
+                    dataSvetla[0] = docasnePole;
+                    List<Point> docasnyList = bodyNaSmazani[0];
+                    bodyNaSmazani[0] = bodyNaSmazani[1];
+                    bodyNaSmazani[1] = docasnyList;
+                    bool[] docasnePoleBoolu = jeAktualni[1];
+                    jeAktualni[1] = jeAktualni[0];
+                    jeAktualni[0] = docasnePoleBoolu;
+                }
 
-                vymenovani = true;
-                Color[] docasnePole = dataSvetlaProVykresleni;
-                dataSvetlaProVykresleni = dataSvetlaProVypocet;
-                dataSvetlaProVypocet = docasnePole;
-                List<Point> docasnyList = bodyNaSmazani[0];
-                bodyNaSmazani[0] = bodyNaSmazani[1];
-                bodyNaSmazani[1] = docasnyList;
-                vymenovani = false;
-                
             }
         }
 
-        //Smaze svetlo co se dotyka zadaneho bodu
-        public void SmazSvetloOdBodu(Point odkud)
+        //Smaze svetlo(neho ho presune do jineho pole) co se dotyka zadaneho bodu
+        public void SmazNeboPresunSvetloOdBodu(Point odkud, Color[] zJakehoPole, bool presunoutJinam, Color[] kamPresunout)
         {
             if (odkud.X >= 0 && odkud.Y >= 0 && odkud.X < KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK && odkud.X < KomponentaMapa.VELIKOST_MAPY_Y * POCET_SVETLA_NA_BLOK)
             {
@@ -163,7 +167,6 @@ namespace Labyrinth_of_Secrets
 
                 Queue<Point> fronta = new Queue<Point>();
                 fronta.Enqueue(odkud);
-                dataSvetlaProVypocet[odkud.X + odkud.Y * KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK] = GLOBALNI_BARVA;
 
                 while (fronta.Count > 0)
                 {
@@ -173,22 +176,39 @@ namespace Labyrinth_of_Secrets
                     {
                         Point novyBod = aktualniBod + mozneSmery[i];
 
-                        if (novyBod.X > 0 && novyBod.Y > 0 && novyBod.X < KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK && novyBod.Y < KomponentaMapa.VELIKOST_MAPY_Y * POCET_SVETLA_NA_BLOK
-                            && dataSvetlaProVypocet[novyBod.X + novyBod.Y * KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK] != GLOBALNI_BARVA)
+                        if (novyBod.X > 0 && novyBod.Y > 0 && novyBod.X < KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK && novyBod.Y < KomponentaMapa.VELIKOST_MAPY_Y * POCET_SVETLA_NA_BLOK)
                         {
-                            dataSvetlaProVypocet[novyBod.X + novyBod.Y * KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK] = GLOBALNI_BARVA;
-                            fronta.Enqueue(novyBod);
+                            Color kopirovanaBarva = zJakehoPole[novyBod.X + novyBod.Y * KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK];
+
+                            if (kopirovanaBarva != GLOBALNI_BARVA)
+                            {
+                                if (presunoutJinam)
+                                {
+                                    Color aktBarva = kamPresunout[novyBod.X + novyBod.Y * KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK];
+                                    kamPresunout[novyBod.X + novyBod.Y * KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK] = NormalizujBarvu(aktBarva.R + kopirovanaBarva.R, aktBarva.G + kopirovanaBarva.G, aktBarva.B + kopirovanaBarva.B);
+                                }
+                                else
+                                    jeAktualni[0][novyBod.X + novyBod.Y * KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK] = false;
+
+                                zJakehoPole[novyBod.X + novyBod.Y * KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK] = GLOBALNI_BARVA;
+                                fronta.Enqueue(novyBod);
+                            }
                         }
                     }
                 }
             }
         }
 
-        //Vytvori svetlo od bodu se zadanou silou a barvou a take dostane zda ma svetlo pro pristi vypocet smazat
+        //Vytvori svetlo od bodu se zadanou silou, barvou a take dostane zda se ma svetlo pro pristi vypocet smazat
         public void PridejSvetloOdBodu(Point odkud, int pocatecniSila, Color barva, bool docasneSvetlo)
         {
             if (odkud.X >= 0 && odkud.Y >= 0 && odkud.X < KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK && odkud.Y < KomponentaMapa.VELIKOST_MAPY_Y * POCET_SVETLA_NA_BLOK)
             {
+                if (!docasneSvetlo && jeAktualni[0][odkud.X + odkud.Y * KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK] == true)
+                    return;
+
+                jeAktualni[0][odkud.X + odkud.Y * KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK] = true;
+
                 List<Point> mozneSmery = new List<Point>()
                 {
                     new Point(-1, 0),
@@ -203,7 +223,7 @@ namespace Labyrinth_of_Secrets
                 if (docasneSvetlo)
                     bodyNaSmazani[0].Add(odkud);
 
-                dataSvetlaProVypocet[odkud.X + odkud.Y * KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK] = barva;
+                docasnaDataSvetla[odkud.X + odkud.Y * KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK] = barva;
 
                 while (fronta.Count > 0)
                 {
@@ -222,19 +242,37 @@ namespace Labyrinth_of_Secrets
                                 novaVzdalenost += new Vector2(Math.Abs(mozneSmery[i].X), Math.Abs(mozneSmery[i].Y)) * new Vector2(KomponentaMapa.mapa[novyBod.X / POCET_SVETLA_NA_BLOK, novyBod.Y / POCET_SVETLA_NA_BLOK].neprusvitnost * Math.Max(pocatecniSila / 255f, 1));
 
                             int noveSvetlo = 255 - (int)(Math.Sqrt(novaVzdalenost.X * novaVzdalenost.X + novaVzdalenost.Y * novaVzdalenost.Y) * 8 / POCET_SVETLA_NA_BLOK / pocatecniSila * 255);
-                            Color aktBarva = dataSvetlaProVypocet[novyBod.X + novyBod.Y * KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK];
+                            Color aktBarva = docasnaDataSvetla[novyBod.X + novyBod.Y * KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK];
+                            if (aktBarva == GLOBALNI_BARVA)
+                                aktBarva = Color.Black;
 
                             if (aktBarva.R + aktBarva.G + aktBarva.B >= (int)(noveSvetlo * (barva.R / 255f)) + (int)(noveSvetlo * (barva.G / 255f)) + (int)(noveSvetlo * (barva.B / 255f)) || noveSvetlo < 0)
                                 continue;
 
                             Color novaBarva = new Color((int)(noveSvetlo * (barva.R / 255f)), (int)(noveSvetlo * (barva.G / 255f)), (int)(noveSvetlo * (barva.B / 255f)));
-                            dataSvetlaProVypocet[novyBod.X + novyBod.Y * KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK] = novaBarva;
+                            docasnaDataSvetla[novyBod.X + novyBod.Y * KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK] = novaBarva;
 
                             fronta.Enqueue((novyBod, novaVzdalenost));
                         }
                     }
                 }
+
+                SmazNeboPresunSvetloOdBodu(odkud, docasnaDataSvetla, true, dataSvetla[0]);
             }
+        }
+
+        //Nastavi barvu tak aby nepresahla 255 ale zachovala si svoji barvu
+        Color NormalizujBarvu(int R, int G, int B)
+        {
+            if (R > 255 || G > 255 || B > 255)
+            {
+                int max = Math.Max(Math.Max(R, G), B);
+                float delitel = max / 255f;
+                R = (int)(R / delitel);
+                G = (int)(G / delitel);
+                B = (int)(B / delitel);
+            }
+            return new Color(R, G, B);
         }
     }
 }
