@@ -8,11 +8,11 @@ using System.Threading.Tasks;
 
 namespace Labyrinth_of_Secrets
 {
-    class KomponentaKamera : GameComponent
+    public class KomponentaKamera : GameComponent
     {
         //Zaklad
         private Hra hra;
-        public static Kamera _kamera;
+        public Kamera _kamera;
 
         //Konstanty
         public const int RYCHLOST_KAMERY = 5;
@@ -24,8 +24,6 @@ namespace Labyrinth_of_Secrets
 
         public override void Initialize()
         {
-            _kamera = new Kamera(hra.GraphicsDevice.Viewport);
-
             base.Initialize();
         }
 
@@ -35,22 +33,29 @@ namespace Labyrinth_of_Secrets
             Vector2 velikostMapy = new Vector2(KomponentaMapa.VELIKOST_MAPY_X * KomponentaMapa.VELIKOST_BLOKU, KomponentaMapa.VELIKOST_MAPY_Y * KomponentaMapa.VELIKOST_BLOKU);
 
             //Docasne ovladani kamery
-            if (Keyboard.GetState().IsKeyDown(Keys.P))
-                _kamera.zoom *= 1.02f;
-            else if (Keyboard.GetState().IsKeyDown(Keys.M) && velikostMapy.X * _kamera.zoom / 1.02 > hra.velikostOkna.X &&
-                velikostMapy.Y * _kamera.zoom / 1.02 > hra.velikostOkna.Y)
-                _kamera.zoom /= 1.02f;
-            else if (Keyboard.GetState().IsKeyDown(Keys.M))
+            if (!hra.komponentaKonzole.jeOtevrena)
+            {
+                if (Keyboard.GetState().IsKeyDown(Keys.P))
+                    _kamera.zoom *= 1.02f;
+                else if (Keyboard.GetState().IsKeyDown(Keys.M) && velikostMapy.X * _kamera.zoom / 1.02 > hra.velikostOkna.X &&
+                    velikostMapy.Y * _kamera.zoom / 1.02 > hra.velikostOkna.Y)
+                    _kamera.zoom /= 1.02f;
+                else if (Keyboard.GetState().IsKeyDown(Keys.M))
+                    _kamera.zoom = Math.Max(hra.velikostOkna.X / velikostMapy.X, hra.velikostOkna.Y / velikostMapy.Y);
+                if (Keyboard.GetState().IsKeyDown(Keys.Up))
+                    _kamera.pozice -= new Vector2(0, RYCHLOST_KAMERY / _kamera.zoom);
+                if (Keyboard.GetState().IsKeyDown(Keys.Right))
+                    _kamera.pozice += new Vector2(RYCHLOST_KAMERY / _kamera.zoom, 0);
+                if (Keyboard.GetState().IsKeyDown(Keys.Down))
+                    _kamera.pozice += new Vector2(0, RYCHLOST_KAMERY / _kamera.zoom);
+                if (Keyboard.GetState().IsKeyDown(Keys.Left))
+                    _kamera.pozice -= new Vector2(RYCHLOST_KAMERY / _kamera.zoom, 0);
+            }
+
+            //Nastaveni zoomu tak aby kamera nebyla mimo vykreslovaci oblast
+            if (_kamera.zoom < Math.Max(hra.velikostOkna.X / velikostMapy.X, hra.velikostOkna.Y / velikostMapy.Y))
                 _kamera.zoom = Math.Max(hra.velikostOkna.X / velikostMapy.X, hra.velikostOkna.Y / velikostMapy.Y);
-            if (Keyboard.GetState().IsKeyDown(Keys.Up))
-                _kamera.pozice -= new Vector2(0, RYCHLOST_KAMERY / _kamera.zoom);
-            if (Keyboard.GetState().IsKeyDown(Keys.Right))
-                _kamera.pozice += new Vector2(RYCHLOST_KAMERY / _kamera.zoom, 0);
-            if (Keyboard.GetState().IsKeyDown(Keys.Down))
-                _kamera.pozice += new Vector2(0, RYCHLOST_KAMERY / _kamera.zoom);
-            if (Keyboard.GetState().IsKeyDown(Keys.Left))
-                _kamera.pozice -= new Vector2(RYCHLOST_KAMERY / _kamera.zoom, 0);
-            
+
             //Vypocet potrebnych hodnot pro praci s kamerou
             Vector2 nula = new Vector2(_kamera.pozice.X + _kamera.GetViewMatrix().Translation.X / _kamera.zoom, _kamera.pozice.Y + _kamera.GetViewMatrix().Translation.Y / _kamera.zoom);
             Vector2 opravdovaPoziceKamery = new Vector2(-_kamera.GetViewMatrix().Translation.X / _kamera.zoom, -_kamera.GetViewMatrix().Translation.Y / _kamera.zoom);

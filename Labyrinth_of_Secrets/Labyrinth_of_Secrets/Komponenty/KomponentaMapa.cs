@@ -9,7 +9,7 @@ using System.Threading;
 
 namespace Labyrinth_of_Secrets
 {
-    class KomponentaMapa : DrawableGameComponent
+    public class KomponentaMapa : DrawableGameComponent
     {
         //Zaklad
         private Hra hra;
@@ -34,11 +34,12 @@ namespace Labyrinth_of_Secrets
         }
 
         //Promenne
-        public static Pole[,] mapa = new Pole[VELIKOST_MAPY_X, VELIKOST_MAPY_Y];
+        public Pole[,] mapa = new Pole[VELIKOST_MAPY_X, VELIKOST_MAPY_Y];
         public List<Point> obchody = new List<Point>();
         public Point start = new Point(-1);
         public Point vychod = new Point(-1);
         public List<Point> cestaZeStartuDoCile = new List<Point>();
+        public bool ukazCestu = false;
 
         public KomponentaMapa(Hra hra) : base(hra)
         {
@@ -47,35 +48,42 @@ namespace Labyrinth_of_Secrets
 
         public override void Initialize()
         {
+            VygenerujMapu();
+
             base.Initialize();
         }
 
         protected override void LoadContent()
         {
             brick = hra.Content.Load<Texture2D>("Images\\Brick");
-            VygenerujMapu();
 
             base.LoadContent();
         }
 
         public override void Update(GameTime gameTime)
         {
-            if (hra.NoveZmacknutaKlavesa(Keys.Enter))
-            {
-                VygenerujMapu();
-            }
             base.Update(gameTime);
         }
 
         public override void Draw(GameTime gameTime)
         {
-            hra._spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, transformMatrix: KomponentaKamera._kamera.GetViewMatrix());
+            hra._spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, transformMatrix: hra.komponentaKamera._kamera.GetViewMatrix());
             VykresliMapu();
             hra._spriteBatch.End();
             base.Draw(gameTime);
         }
 
-        //Vykreslí všechny bloky na mapě
+        //Resetuje vsechny promenne mapy
+        void ResetujPromenne()
+        {
+            mapa = new Pole[VELIKOST_MAPY_X, VELIKOST_MAPY_Y];
+            obchody = new List<Point>();
+            start = new Point(-1);
+            vychod = new Point(-1);
+            cestaZeStartuDoCile = new List<Point>();
+        }
+
+        //Vykresli všechny bloky na mape
         void VykresliMapu()
         {
             for (int x = 0; x < VELIKOST_MAPY_X; x++)
@@ -86,18 +94,22 @@ namespace Labyrinth_of_Secrets
                         hra._spriteBatch.Draw(brick, new Rectangle(x * VELIKOST_BLOKU, y * VELIKOST_BLOKU, VELIKOST_BLOKU, VELIKOST_BLOKU), Color.White);
                     if (mapa[x, y].typPole == Pole.TypPole.Obchodnik)
                         hra._spriteBatch.Draw(brick, new Rectangle(x * VELIKOST_BLOKU, y * VELIKOST_BLOKU, VELIKOST_BLOKU, VELIKOST_BLOKU), new Color(180, 180, 180));
+                    if (ukazCestu && mapa[x, y].naHlavniCeste)
+                        hra._spriteBatch.Draw(hra.pixel, new Rectangle(x * VELIKOST_BLOKU, y * VELIKOST_BLOKU, VELIKOST_BLOKU, VELIKOST_BLOKU), new Color(255, 200, 200));
                 }
             }
         }
 
         //Vygeneruje uplne celou mapu a umisti na ni vsechny struktury co na ni maji byt
-        void VygenerujMapu()
+        public void VygenerujMapu()
         {
+            hra.komponentaSvetlo.ZastavPocitaniSvetla();
+
             if ((VELIKOST_MAPY_X + 1) % 6 != 0 || (VELIKOST_MAPY_Y + 1) % 6 != 0 || MAX_POCET_OBCHODU < 2 ||
                 VELIKOST_MAPY_X != VELIKOST_MAPY_Y || VELIKOST_MAPY_X < 11 || VELIKOST_MAPY_Y < 11)
                 throw new Exception("Neplatně nastevené argumenty pro generování mapy!");
 
-            obchody = new List<Point>();
+            ResetujPromenne();
             VyplnCelouMapuZdmi();
             PridejObchody(MAX_POCET_OBCHODU);
             VyplnMapuBludistem(NajdiMistoProVychod());
@@ -109,7 +121,10 @@ namespace Labyrinth_of_Secrets
             foreach (Point bod in cestaZeStartuDoCile)
                 mapa[bod.X, bod.Y].naHlavniCeste = true;
 
-            KomponentaSvetlo.PridejZdrojeSvetla();
+            hra.komponentaSvetlo.ResetujPromenne();
+            hra.komponentaSvetlo.PridejZdrojeSvetla();
+
+            hra.komponentaSvetlo.SpustPocitaniSvetla();
         }
 
         //Umisti na kazdy blok na mape zed

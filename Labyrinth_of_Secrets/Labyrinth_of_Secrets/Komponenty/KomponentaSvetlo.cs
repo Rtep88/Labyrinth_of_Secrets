@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Labyrinth_of_Secrets
 {
-    class KomponentaSvetlo : DrawableGameComponent
+    public class KomponentaSvetlo : DrawableGameComponent
     {
         //Zaklad
         private Hra hra;
@@ -35,8 +35,8 @@ namespace Labyrinth_of_Secrets
 
         //Konstanty
         private const int POCET_SVETLA_NA_BLOK = 16; //Udava jak moc dopodrobna se svetlo bude pocitat - Minimum je 1 a maximum je omezen pouze systemovymi prostredky ale doporucuji neprekracovat 32 :)
-        private static Color GLOBALNI_BARVA = new Color(0, 0, 0);
-        private static Color BARVA_SVETLA_CURSORU = new Color(255, 255, 255);
+        public Color GLOBALNI_BARVA = new Color(0, 0, 0); //Nenastavujte hodnoty na 255 jinak se svetlo bude nespravne mazat
+        private Color BARVA_SVETLA_CURSORU = new Color(255, 255, 255);
         private const int SILA_SVETLA_CURSORU = 300;
 
         //Promene
@@ -44,7 +44,11 @@ namespace Labyrinth_of_Secrets
         private Color[][] dataSvetla = new Color[2][];
         private bool[][] jeAktualni = new bool[2][];
         private List<Point>[] bodyNaSmazani = new List<Point>[2];
-        private static List<ZdrojSvetla> svetelneZdroje = new List<ZdrojSvetla>();
+        private List<ZdrojSvetla> svetelneZdroje = new List<ZdrojSvetla>();
+        public bool fullBright = false;
+
+        public Thread pocitaniSvetla;
+        public bool pocitaniSvetlaBezi = false;
 
         public KomponentaSvetlo(Hra hra) : base(hra)
         {
@@ -53,17 +57,8 @@ namespace Labyrinth_of_Secrets
 
         public override void Initialize()
         {
-            docasnaDataSvetla = new Color[KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK * KomponentaMapa.VELIKOST_MAPY_Y * POCET_SVETLA_NA_BLOK];
-            for (int i = 0; i < 2; i++)
-            {
-                dataSvetla[i] = new Color[KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK * KomponentaMapa.VELIKOST_MAPY_Y * POCET_SVETLA_NA_BLOK];
-                jeAktualni[i] = new bool[KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK * KomponentaMapa.VELIKOST_MAPY_Y * POCET_SVETLA_NA_BLOK];
-                svetlo = new Texture2D(GraphicsDevice, KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK, KomponentaMapa.VELIKOST_MAPY_Y * POCET_SVETLA_NA_BLOK, false, SurfaceFormat.Color);
-                bodyNaSmazani[i] = new List<Point>();
-            }
+            SpustPocitaniSvetla();
 
-            Thread pocitaniSvetla = new Thread(PocitejSvetlo);
-            pocitaniSvetla.Start();
             base.Initialize();
         }
 
@@ -90,26 +85,66 @@ namespace Labyrinth_of_Secrets
                 ColorBlendFunction = BlendFunction.Add
             };
 
-            lock (dataSvetla)
+            if (!fullBright)
             {
-                svetlo.SetData(dataSvetla[1]);
-                hra._spriteBatch.Begin(SpriteSortMode.Deferred, Multiply, transformMatrix: KomponentaKamera._kamera.GetViewMatrix());
-                hra._spriteBatch.Draw(svetlo, new Rectangle(0, 0, KomponentaMapa.VELIKOST_MAPY_X * KomponentaMapa.VELIKOST_BLOKU, KomponentaMapa.VELIKOST_MAPY_Y * KomponentaMapa.VELIKOST_BLOKU), Color.White);
-                hra._spriteBatch.End();
+                lock (dataSvetla)
+                {
+                    svetlo.SetData(dataSvetla[1]);
+                    hra._spriteBatch.Begin(SpriteSortMode.Deferred, Multiply, transformMatrix: hra.komponentaKamera._kamera.GetViewMatrix());
+                    hra._spriteBatch.Draw(svetlo, new Rectangle(0, 0, KomponentaMapa.VELIKOST_MAPY_X * KomponentaMapa.VELIKOST_BLOKU, KomponentaMapa.VELIKOST_MAPY_Y * KomponentaMapa.VELIKOST_BLOKU), Color.White);
+                    hra._spriteBatch.End();
+                }
             }
 
             base.Draw(gameTime);
         }
 
+        public void ZastavPocitaniSvetla()
+        {
+            if (pocitaniSvetla == null || !pocitaniSvetlaBezi)
+                return;
+
+            pocitaniSvetlaBezi = false;
+            pocitaniSvetla.Join();
+        }
+
+        public void SpustPocitaniSvetla()
+        {
+            if (pocitaniSvetlaBezi)
+                return;
+
+            pocitaniSvetla = new Thread(PocitejSvetlo);
+
+            pocitaniSvetlaBezi = true;
+            pocitaniSvetla.Start();
+        }
+
+        //Resetuje vsechny promenne pocitani svetla
+        public void ResetujPromenne()
+        {
+            dataSvetla = new Color[2][];
+            jeAktualni = new bool[2][];
+            bodyNaSmazani = new List<Point>[2];
+            svetelneZdroje = new List<ZdrojSvetla>();
+            docasnaDataSvetla = new Color[KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK * KomponentaMapa.VELIKOST_MAPY_Y * POCET_SVETLA_NA_BLOK];
+            for (int i = 0; i < 2; i++)
+            {
+                dataSvetla[i] = new Color[KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK * KomponentaMapa.VELIKOST_MAPY_Y * POCET_SVETLA_NA_BLOK];
+                jeAktualni[i] = new bool[KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK * KomponentaMapa.VELIKOST_MAPY_Y * POCET_SVETLA_NA_BLOK];
+                svetlo = new Texture2D(GraphicsDevice, KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK, KomponentaMapa.VELIKOST_MAPY_Y * POCET_SVETLA_NA_BLOK, false, SurfaceFormat.Color);
+                bodyNaSmazani[i] = new List<Point>();
+            }
+        }
+
         //Nastavi blokum na mape aby svitily
-        static public void PridejZdrojeSvetla()
+        public void PridejZdrojeSvetla()
         {
             for (int y = 0; y < KomponentaMapa.VELIKOST_MAPY_Y; y++)
             {
                 for (int x = 0; x < KomponentaMapa.VELIKOST_MAPY_X; x++)
                 {
-                    if (KomponentaMapa.mapa[x, y].zdrojSvetla > 0)
-                        svetelneZdroje.Add(new ZdrojSvetla(new Point(x, y) * new Point(POCET_SVETLA_NA_BLOK) + new Point(POCET_SVETLA_NA_BLOK / 2), KomponentaMapa.mapa[x, y].zdrojSvetla, KomponentaMapa.mapa[x, y].barvaSvetla));
+                    if (hra.komponentaMapa.mapa[x, y].zdrojSvetla > 0)
+                        svetelneZdroje.Add(new ZdrojSvetla(new Point(x, y) * new Point(POCET_SVETLA_NA_BLOK) + new Point(POCET_SVETLA_NA_BLOK / 2), hra.komponentaMapa.mapa[x, y].zdrojSvetla, hra.komponentaMapa.mapa[x, y].barvaSvetla));
                 }
             }
         }
@@ -117,10 +152,10 @@ namespace Labyrinth_of_Secrets
         //Nekonecna smycka co pocita svetlo v novem vlakne
         public void PocitejSvetlo()
         {
-            while (!hra.ukonceno)
+            while (!hra.ukonceno && pocitaniSvetlaBezi)
             {
-                Vector2 opravdovaPoziceKamery = new Vector2(-KomponentaKamera._kamera.GetViewMatrix().Translation.X / KomponentaKamera._kamera.zoom, -KomponentaKamera._kamera.GetViewMatrix().Translation.Y / KomponentaKamera._kamera.zoom);
-                Vector2 opravdovaVelikostOkna = new Vector2(hra.velikostOkna.X / KomponentaKamera._kamera.zoom, hra.velikostOkna.Y / KomponentaKamera._kamera.zoom);
+                Vector2 opravdovaPoziceKamery = new Vector2(-hra.komponentaKamera._kamera.GetViewMatrix().Translation.X / hra.komponentaKamera._kamera.zoom, -hra.komponentaKamera._kamera.GetViewMatrix().Translation.Y / hra.komponentaKamera._kamera.zoom);
+                Vector2 opravdovaVelikostOkna = new Vector2(hra.velikostOkna.X / hra.komponentaKamera._kamera.zoom, hra.velikostOkna.Y / hra.komponentaKamera._kamera.zoom);
                 Point poziceMysi = ((opravdovaPoziceKamery + Mouse.GetState().Position.ToVector2() * opravdovaVelikostOkna / hra.velikostOkna.ToVector2()) / KomponentaMapa.VELIKOST_BLOKU * new Vector2(POCET_SVETLA_NA_BLOK)).ToPoint();
 
                 foreach (Point odkudSmazat in bodyNaSmazani[0])
@@ -148,7 +183,6 @@ namespace Labyrinth_of_Secrets
                     jeAktualni[1] = jeAktualni[0];
                     jeAktualni[0] = docasnePoleBoolu;
                 }
-
             }
         }
 
@@ -236,10 +270,10 @@ namespace Labyrinth_of_Secrets
 
                         if (novyBod.X > 0 && novyBod.Y > 0 && novyBod.X < KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK && novyBod.Y < KomponentaMapa.VELIKOST_MAPY_Y * POCET_SVETLA_NA_BLOK)
                         {
-                            if (!KomponentaMapa.mapa[novyBod.X / POCET_SVETLA_NA_BLOK, novyBod.Y / POCET_SVETLA_NA_BLOK].statickaNeprusvitnost)
-                                novaVzdalenost += new Vector2(Math.Abs(mozneSmery[i].X), Math.Abs(mozneSmery[i].Y)) * new Vector2(KomponentaMapa.mapa[novyBod.X / POCET_SVETLA_NA_BLOK, novyBod.Y / POCET_SVETLA_NA_BLOK].neprusvitnost);
+                            if (!hra.komponentaMapa.mapa[novyBod.X / POCET_SVETLA_NA_BLOK, novyBod.Y / POCET_SVETLA_NA_BLOK].statickaNeprusvitnost)
+                                novaVzdalenost += new Vector2(Math.Abs(mozneSmery[i].X), Math.Abs(mozneSmery[i].Y)) * new Vector2(hra.komponentaMapa.mapa[novyBod.X / POCET_SVETLA_NA_BLOK, novyBod.Y / POCET_SVETLA_NA_BLOK].neprusvitnost);
                             else
-                                novaVzdalenost += new Vector2(Math.Abs(mozneSmery[i].X), Math.Abs(mozneSmery[i].Y)) * new Vector2(KomponentaMapa.mapa[novyBod.X / POCET_SVETLA_NA_BLOK, novyBod.Y / POCET_SVETLA_NA_BLOK].neprusvitnost * Math.Max(pocatecniSila / 255f, 1));
+                                novaVzdalenost += new Vector2(Math.Abs(mozneSmery[i].X), Math.Abs(mozneSmery[i].Y)) * new Vector2(hra.komponentaMapa.mapa[novyBod.X / POCET_SVETLA_NA_BLOK, novyBod.Y / POCET_SVETLA_NA_BLOK].neprusvitnost * Math.Max(pocatecniSila / 255f, 1));
 
                             int noveSvetlo = 255 - (int)(Math.Sqrt(novaVzdalenost.X * novaVzdalenost.X + novaVzdalenost.Y * novaVzdalenost.Y) * 8 / POCET_SVETLA_NA_BLOK / pocatecniSila * 255);
                             Color aktBarva = docasnaDataSvetla[novyBod.X + novyBod.Y * KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK];

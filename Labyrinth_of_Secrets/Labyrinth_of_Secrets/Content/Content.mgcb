@@ -13,6 +13,13 @@
 
 #---------------------------------- Content ---------------------------------#
 
+#begin Fonts/ComicSansMS.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:Fonts/ComicSansMS.spritefont
+
 #begin Images/Brick.png
 /importer:TextureImporter
 /processor:TextureProcessor

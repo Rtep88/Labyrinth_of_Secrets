@@ -12,11 +12,10 @@ namespace Labyrinth_of_Secrets
     {
         private readonly Viewport _viewport;
 
-        public Kamera(Viewport viewport)
+        public Kamera(Viewport viewport, float zoom)
         {
             _viewport = viewport;
-
-            zoom = 1f;
+            this.zoom = zoom;
             origin = new Vector2(viewport.Width / 2f, viewport.Height / 2f);
         }
 

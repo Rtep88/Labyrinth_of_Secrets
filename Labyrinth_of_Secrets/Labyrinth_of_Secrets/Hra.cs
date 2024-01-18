@@ -13,16 +13,23 @@ namespace Labyrinth_of_Secrets
         public SpriteBatch _spriteBatch;
 
         //Textury a fonty
+        public SpriteFont comicSans;
+        public Texture2D pixel;
 
         //Konstanty
 
         //Promenne
         public Point velikostOkna = new Point(1280, 720);
+        public Point minulaVelikostOkna = new Point(1280, 720);
         public bool fullscreen = false;
         public Random rnd = new Random();
         public KeyboardState klavesy, klavesyMinule;
         public MouseState tlacitkaMysi, tlacitkaMysiMinule;
         public bool ukonceno = false;
+        public KomponentaMapa komponentaMapa;
+        public KomponentaKamera komponentaKamera;
+        public KomponentaSvetlo komponentaSvetlo;
+        public KomponentaKonzole komponentaKonzole;
 
         public Hra()
         {
@@ -33,12 +40,14 @@ namespace Labyrinth_of_Secrets
 
         protected override void Initialize()
         {
-            KomponentaMapa komponentaMapa = new KomponentaMapa(this);
-            KomponentaKamera komponentaKamera = new KomponentaKamera(this);
-            KomponentaSvetlo komponentaSvetlo = new KomponentaSvetlo(this);
+            komponentaMapa = new KomponentaMapa(this);
+            komponentaKamera = new KomponentaKamera(this);
+            komponentaSvetlo = new KomponentaSvetlo(this);
+            komponentaKonzole = new KomponentaKonzole(this);
             Components.Add(komponentaMapa);
             Components.Add(komponentaKamera);
             Components.Add(komponentaSvetlo);
+            Components.Add(komponentaKonzole);
             _graphics.HardwareModeSwitch = false;
             NastavRozliseni();
 
@@ -47,6 +56,10 @@ namespace Labyrinth_of_Secrets
 
         protected override void LoadContent()
         {
+            comicSans = Content.Load<SpriteFont>("Fonts/ComicSansMS");
+            pixel = new Texture2D(GraphicsDevice, 1, 1);
+            pixel.SetData(new Color[] { Color.White });
+
             _spriteBatch = new SpriteBatch(GraphicsDevice);
         }
 
@@ -54,7 +67,6 @@ namespace Labyrinth_of_Secrets
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
             {
-                ukonceno = true;
                 Exit();
             }
 
@@ -73,16 +85,40 @@ namespace Labyrinth_of_Secrets
             base.Draw(gameTime);
         }
 
+        //Ukonci bezici vlakna pri vypnuti hry
+        protected override void OnExiting(object sender, EventArgs args)
+        {
+            ukonceno = true;
+
+            base.OnExiting(sender, args);
+        }
+
         //Nastavi rozliseni okna
         public void NastavRozliseni()
         {
-            if (_graphics.PreferredBackBufferHeight != velikostOkna.Y || _graphics.PreferredBackBufferWidth != velikostOkna.X || _graphics.IsFullScreen != fullscreen)
+            if (!fullscreen)
             {
-                _graphics.PreferredBackBufferHeight = velikostOkna.Y;
-                _graphics.PreferredBackBufferWidth = velikostOkna.X;
-                _graphics.IsFullScreen = fullscreen;
-                _graphics.ApplyChanges();
+                if (_graphics.IsFullScreen)
+                    velikostOkna = minulaVelikostOkna;
+                _graphics.PreferredBackBufferWidth = (int)velikostOkna.X;
+                _graphics.PreferredBackBufferHeight = (int)velikostOkna.Y;
             }
+            else
+            {
+                _graphics.PreferredBackBufferWidth = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;
+                _graphics.PreferredBackBufferHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
+                if (!_graphics.IsFullScreen)
+                    minulaVelikostOkna = velikostOkna;
+                velikostOkna.X = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;
+                velikostOkna.Y = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
+            }
+            _graphics.IsFullScreen = fullscreen;
+            _graphics.ApplyChanges();
+
+            if (komponentaKamera._kamera == null)
+                komponentaKamera._kamera = new Kamera(GraphicsDevice.Viewport, 1);
+            else
+                komponentaKamera._kamera = new Kamera(GraphicsDevice.Viewport, komponentaKamera._kamera.zoom);
         }
 
         //Vrati zda je funkce zmacknuta poprve
@@ -108,6 +144,54 @@ namespace Labyrinth_of_Secrets
                 T value = list[k];
                 list[k] = list[n];
                 list[n] = value;
+            }
+        }
+
+        //Vrati novou texturu obdelniku s okrajem se zadanymi parametry
+        public Texture2D VytvorTexturuObdelnikuSOkrejem(int sirka, int vyska, int tloustkaOkraje, Color barvaObdelniku)
+        {
+            Texture2D obdelnik = new Texture2D(GraphicsDevice, sirka, vyska);
+            Color[] barvyObdelniku = new Color[sirka * vyska];
+            for (int y = 0; y < vyska; y++)
+            {
+                for (int x = 0; x < sirka; x++)
+                {
+                    if (x < tloustkaOkraje || x >= sirka - tloustkaOkraje ||
+                        y < tloustkaOkraje || y >= vyska - tloustkaOkraje)
+                    {
+                        barvyObdelniku[y * sirka + x] = new Color(0, 0, 0, 255);
+                    }
+                    else
+                    {
+                        barvyObdelniku[y * sirka + x] = barvaObdelniku;
+                    }
+                }
+            }
+            obdelnik.SetData(barvyObdelniku);
+            return obdelnik;
+        }
+
+        //Vykresli text s okrajem
+        public void VykresliTextSOkrajem(SpriteFont font, Vector2 pozice, string text, float scale, Color barva, Color barvaObrysu, float tloustkaOkraje, int presnost)
+        {
+            Vector2 pozice2 = pozice;
+
+            for (int j = 0; j < text.Length; j++)
+            {
+                //Okraj
+                for (int i = 0; i < presnost; i++)
+                {
+                    _spriteBatch.DrawString(font, text[j].ToString(), pozice2 + new Vector2(font.MeasureString(text[j].ToString()).Y) * scale * tloustkaOkraje * new Vector2((float)Math.Sin(i * Math.PI * 2 / presnost), (float)Math.Cos(i * Math.PI * 2 / presnost)), barvaObrysu, 0, Vector2.Zero, scale, SpriteEffects.None, 0);
+                }
+                pozice2 += new Vector2(font.MeasureString(text[j].ToString()).X * scale, 0);
+            }
+            pozice2 = pozice;
+            for (int j = 0; j < text.Length; j++)
+            {
+                //Text
+                _spriteBatch.DrawString(font, text[j].ToString(), pozice2, barva, 0, Vector2.Zero, scale, SpriteEffects.None, 0);
+                pozice2 += new Vector2(font.MeasureString(text[j].ToString()).X * scale, 0);
+
             }
         }
     }
