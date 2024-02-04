@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -80,6 +81,10 @@ namespace Labyrinth_of_Secrets
                         radky.Insert(0, new Radek("lightupdate/lu [\"true\"/\"false\"] - Aktivuje/Deaktivuje aktualizaci svetla", Color.White));
                         radky.Insert(0, new Radek("fullbright/fb [\"true\"/\"false\"] - Aktivuje/Deaktivuje fullbright", Color.White));
                         radky.Insert(0, new Radek("showpath/sp [\"true\"/\"false\"] - Aktivuje/Deaktivuje viditelnost spravne cesty", Color.White));
+                        radky.Insert(0, new Radek("hostserver/hs - Spustí hostování serveru", Color.White));
+                        radky.Insert(0, new Radek("joinserver/js [IP adresa] - Připojí se na server", Color.White));
+                        radky.Insert(0, new Radek("echoname/en - Vypíše jméno hráče", Color.White));
+                        radky.Insert(0, new Radek("setname/sn [jméno] - Nastaví jméno hráče", Color.White));
                     }
                     else if (rozebranaMessage[0] == "clear" || rozebranaMessage[0] == "cl")
                     {
@@ -115,6 +120,7 @@ namespace Labyrinth_of_Secrets
                     else if (rozebranaMessage[0] == "generatemap" || rozebranaMessage[0] == "gm")
                     {
                         hra.komponentaMapa.VygenerujMapu();
+                        radky.Insert(0, new Radek("Mapa přegenerována.", Color.LimeGreen));
                     }
                     else if (rozebranaMessage[0] == "lightupdate" || rozebranaMessage[0] == "lu")
                     {
@@ -168,6 +174,23 @@ namespace Labyrinth_of_Secrets
                         {
                             radky.Insert(0, new Radek("Chyba! - Zkuste příkaz help", Color.Red));
                         }
+                    }
+                    else if (rozebranaMessage[0] == "hostserver" || rozebranaMessage[0] == "hs")
+                    {
+                        hra.komponentaMultiplayer.SpustServer();
+                    }
+                    else if (rozebranaMessage[0] == "joinserver" || rozebranaMessage[0] == "js")
+                    {
+                        hra.komponentaMultiplayer.PripojSeNaServer(IPAddress.Parse(rozebranaMessage[1]));
+                    }
+                    else if (rozebranaMessage[0] == "echoname" || rozebranaMessage[0] == "en")
+                    {
+                        radky.Insert(0, new Radek("Jméno hráče je " + hra.komponentaMultiplayer.jmeno, Color.White));
+                    }
+                    else if (rozebranaMessage[0] == "setname" || rozebranaMessage[0] == "sn")
+                    {
+                        hra.komponentaMultiplayer.jmeno = rozebranaMessage[1];
+                        radky.Insert(0, new Radek("Jméno úspěšně změněno.", Color.LimeGreen));
                     }
                     else
                     {

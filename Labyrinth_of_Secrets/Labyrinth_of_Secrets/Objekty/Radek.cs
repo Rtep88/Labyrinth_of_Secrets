@@ -10,6 +10,12 @@ namespace Labyrinth_of_Secrets
         public string text = "";
         public Color barva;
 
+        public Radek(string Text)
+        {
+            text = Text;
+            barva = Color.White;
+        }
+
         public Radek(string Text, Color Barva)
         {
             text = Text;

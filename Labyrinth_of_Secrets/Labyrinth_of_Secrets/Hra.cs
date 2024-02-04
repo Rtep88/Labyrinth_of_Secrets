@@ -30,6 +30,7 @@ namespace Labyrinth_of_Secrets
         public KomponentaKamera komponentaKamera;
         public KomponentaSvetlo komponentaSvetlo;
         public KomponentaKonzole komponentaKonzole;
+        public KomponentaMultiplayer komponentaMultiplayer;
 
         public Hra()
         {
@@ -43,10 +44,12 @@ namespace Labyrinth_of_Secrets
             komponentaMapa = new KomponentaMapa(this);
             komponentaKamera = new KomponentaKamera(this);
             komponentaSvetlo = new KomponentaSvetlo(this);
+            komponentaMultiplayer = new KomponentaMultiplayer(this);
             komponentaKonzole = new KomponentaKonzole(this);
             Components.Add(komponentaMapa);
             Components.Add(komponentaKamera);
             Components.Add(komponentaSvetlo);
+            Components.Add(komponentaMultiplayer);
             Components.Add(komponentaKonzole);
             _graphics.HardwareModeSwitch = false;
             NastavRozliseni();
