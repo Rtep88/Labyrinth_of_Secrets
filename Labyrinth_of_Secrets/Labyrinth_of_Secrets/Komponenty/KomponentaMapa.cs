@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 
 namespace Labyrinth_of_Secrets
@@ -19,10 +20,10 @@ namespace Labyrinth_of_Secrets
 
         //Konstanty
         public const int VELIKOST_BLOKU = 32; //Velikost vykresleni bloku
-        public const int VELIKOST_MAPY_X = 101; //Urcuje sirku mapy - Musi by delitelne 6 po pricteni 1 a melo by byt stejne jako X (minimum je 11)
-        public const int VELIKOST_MAPY_Y = 101; //Urcuje vysku mapy - Musi by delitelne 6 po pricteni 1 a melo by byt stejne jako Y (minimum je 11)
-        public const int MAX_POCET_OBCHODU = 20; //Max pocet obchodu - Musi byt minimalne 2
-        public const int MIN_DELKA_ODBOCKY = 5; //Urcuje kolik musi minimalne mit odbocka delku
+        public static int VELIKOST_MAPY_X = 101; //Urcuje sirku mapy - Musi by delitelne 6 po pricteni 1 a melo by byt stejne jako X (minimum je 11)
+        public static int VELIKOST_MAPY_Y = 101; //Urcuje vysku mapy - Musi by delitelne 6 po pricteni 1 a melo by byt stejne jako Y (minimum je 11)
+        public static int MAX_POCET_OBCHODU = 20; //Max pocet obchodu - Musi byt minimalne 2
+        public static int MIN_DELKA_ODBOCKY = 5; //Urcuje kolik musi minimalne mit odbocka delku
 
         //Enumy
         public enum Smer
@@ -34,7 +35,7 @@ namespace Labyrinth_of_Secrets
         }
 
         //Promenne
-        public Pole[,] mapa = new Pole[VELIKOST_MAPY_X, VELIKOST_MAPY_Y];
+        public Pole[,] mapa;
         public List<Point> obchody = new List<Point>();
         public Point start = new Point(-1);
         public Point vychod = new Point(-1);
@@ -104,6 +105,7 @@ namespace Labyrinth_of_Secrets
         public void VygenerujMapu()
         {
             hra.komponentaSvetlo.ZastavPocitaniSvetla();
+            mapa = new Pole[VELIKOST_MAPY_X, VELIKOST_MAPY_Y];
 
             if ((VELIKOST_MAPY_X + 1) % 6 != 0 || (VELIKOST_MAPY_Y + 1) % 6 != 0 || MAX_POCET_OBCHODU < 2 ||
                 VELIKOST_MAPY_X != VELIKOST_MAPY_Y || VELIKOST_MAPY_X < 11 || VELIKOST_MAPY_Y < 11)
@@ -501,6 +503,39 @@ namespace Labyrinth_of_Secrets
             }
             cesta.Reverse();
             return cesta;
+        }
+    
+        public byte[] PrevedMapuNaBytovePole()
+        {
+            byte[] mapaVBytech = new byte[4 + VELIKOST_MAPY_X * VELIKOST_MAPY_Y];
+            mapaVBytech[0] = (byte)(VELIKOST_MAPY_X / 255);
+            mapaVBytech[1] = (byte)(VELIKOST_MAPY_X % 255);
+            mapaVBytech[2] = (byte)(VELIKOST_MAPY_Y / 255);
+            mapaVBytech[3] = (byte)(VELIKOST_MAPY_Y % 255);
+            for (int x = 0; x < VELIKOST_MAPY_X; x++)
+            {
+                for (int y = 0; y < VELIKOST_MAPY_Y; y++)
+                {
+                    mapaVBytech[4 + x + y * VELIKOST_MAPY_X] = (byte)mapa[x, y].typPole;
+                }
+            }
+            return mapaVBytech;
+        }
+
+        public void PrevedBytyNaMapu(byte[] mapaVBytech)
+        {
+            hra.komponentaSvetlo.ZastavPocitaniSvetla();
+            VELIKOST_MAPY_X = mapaVBytech[0] * 255 + mapaVBytech[1];
+            VELIKOST_MAPY_Y = mapaVBytech[2] * 255 + mapaVBytech[3];
+            mapa = new Pole[VELIKOST_MAPY_X, VELIKOST_MAPY_Y];
+            for (int x = 0; x < VELIKOST_MAPY_X; x++)
+            {
+                for (int y = 0; y < VELIKOST_MAPY_Y; y++)
+                {
+                    mapa[x, y] = new Pole((Pole.TypPole)mapaVBytech[4 + x + y * VELIKOST_MAPY_X]);
+                }
+            }
+            hra.komponentaSvetlo.ResetujPromenne();
         }
     }
 }
