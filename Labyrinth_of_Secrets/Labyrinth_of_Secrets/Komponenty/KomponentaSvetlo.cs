@@ -19,7 +19,7 @@ namespace Labyrinth_of_Secrets
         private Texture2D svetlo;
 
         //Struktury
-        private struct ZdrojSvetla
+        public struct ZdrojSvetla
         {
             public Point odkud;
             public int silaSvetla;
@@ -44,7 +44,7 @@ namespace Labyrinth_of_Secrets
         private Color[][] dataSvetla = new Color[2][];
         private bool[][] jeAktualni = new bool[2][];
         private List<Point>[] bodyNaSmazani = new List<Point>[2];
-        private List<ZdrojSvetla> svetelneZdroje = new List<ZdrojSvetla>();
+        public List<ZdrojSvetla> svetelneZdroje = new List<ZdrojSvetla>();
         public bool fullBright = false;
 
         public Thread pocitaniSvetla;

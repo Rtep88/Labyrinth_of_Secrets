@@ -507,19 +507,39 @@ namespace Labyrinth_of_Secrets
     
         public byte[] PrevedMapuNaBytovePole()
         {
-            byte[] mapaVBytech = new byte[4 + VELIKOST_MAPY_X * VELIKOST_MAPY_Y];
-            mapaVBytech[0] = (byte)(VELIKOST_MAPY_X / 255);
-            mapaVBytech[1] = (byte)(VELIKOST_MAPY_X % 255);
-            mapaVBytech[2] = (byte)(VELIKOST_MAPY_Y / 255);
-            mapaVBytech[3] = (byte)(VELIKOST_MAPY_Y % 255);
-            for (int x = 0; x < VELIKOST_MAPY_X; x++)
+            List<byte> mapaVBytech = new List<byte>
             {
-                for (int y = 0; y < VELIKOST_MAPY_Y; y++)
+                (byte)(VELIKOST_MAPY_X / 255),
+                (byte)(VELIKOST_MAPY_X % 255),
+                (byte)(VELIKOST_MAPY_Y / 255),
+                (byte)(VELIKOST_MAPY_Y % 255)
+            };
+
+            for (int y = 0; y < VELIKOST_MAPY_Y; y++)
+            {
+                for (int x = 0; x < VELIKOST_MAPY_X; x++)
                 {
-                    mapaVBytech[4 + x + y * VELIKOST_MAPY_X] = (byte)mapa[x, y].typPole;
+                    mapaVBytech.Add((byte)mapa[x, y].typPole);
                 }
             }
-            return mapaVBytech;
+
+            List<KomponentaSvetlo.ZdrojSvetla> odkazNaZdrojeSvetla = hra.komponentaSvetlo.svetelneZdroje;
+
+            mapaVBytech.Add((byte)(odkazNaZdrojeSvetla.Count / 255 / 255));
+            mapaVBytech.Add((byte)(odkazNaZdrojeSvetla.Count % (255 * 255) / 255));
+            mapaVBytech.Add((byte)(odkazNaZdrojeSvetla.Count % 255));
+
+            for (int i = 0; i < odkazNaZdrojeSvetla.Count; i++)
+            {
+                mapaVBytech.AddRange(BitConverter.GetBytes(odkazNaZdrojeSvetla[i].silaSvetla));
+                mapaVBytech.AddRange(BitConverter.GetBytes(odkazNaZdrojeSvetla[i].odkud.X));
+                mapaVBytech.AddRange(BitConverter.GetBytes(odkazNaZdrojeSvetla[i].odkud.Y));
+                mapaVBytech.Add(odkazNaZdrojeSvetla[i].barvaSvetla.R);
+                mapaVBytech.Add(odkazNaZdrojeSvetla[i].barvaSvetla.G);
+                mapaVBytech.Add(odkazNaZdrojeSvetla[i].barvaSvetla.B);
+                mapaVBytech.Add(odkazNaZdrojeSvetla[i].barvaSvetla.A);
+            }
+            return mapaVBytech.ToArray();
         }
 
         public void PrevedBytyNaMapu(byte[] mapaVBytech)
@@ -527,15 +547,38 @@ namespace Labyrinth_of_Secrets
             hra.komponentaSvetlo.ZastavPocitaniSvetla();
             VELIKOST_MAPY_X = mapaVBytech[0] * 255 + mapaVBytech[1];
             VELIKOST_MAPY_Y = mapaVBytech[2] * 255 + mapaVBytech[3];
+
+            int pozice = 4;
+
             mapa = new Pole[VELIKOST_MAPY_X, VELIKOST_MAPY_Y];
-            for (int x = 0; x < VELIKOST_MAPY_X; x++)
+            for (int y = 0; y < VELIKOST_MAPY_Y; y++)
             {
-                for (int y = 0; y < VELIKOST_MAPY_Y; y++)
+                for (int x = 0; x < VELIKOST_MAPY_X; x++)
                 {
-                    mapa[x, y] = new Pole((Pole.TypPole)mapaVBytech[4 + x + y * VELIKOST_MAPY_X]);
+                    mapa[x, y] = new Pole((Pole.TypPole)mapaVBytech[pozice]);
+                    pozice++;
                 }
             }
             hra.komponentaSvetlo.ResetujPromenne();
+
+            int pocetSvetel = mapaVBytech[pozice] * 255 * 255;
+            pocetSvetel += mapaVBytech[pozice + 1] * 255;
+            pocetSvetel += mapaVBytech[pozice + 2];
+            pozice += 3;
+
+            List<KomponentaSvetlo.ZdrojSvetla> odkazNaZdrojeSvetla = hra.komponentaSvetlo.svetelneZdroje;
+
+            for (int i = 0; i < pocetSvetel; i++)
+            {
+                KomponentaSvetlo.ZdrojSvetla noveSvetlo = new KomponentaSvetlo.ZdrojSvetla();
+                noveSvetlo.silaSvetla = BitConverter.ToInt32(mapaVBytech, pozice);
+                noveSvetlo.odkud = new Point(BitConverter.ToInt32(mapaVBytech, pozice + 4), BitConverter.ToInt32(mapaVBytech, pozice + 8));
+                noveSvetlo.barvaSvetla = new Color(mapaVBytech[pozice + 12], mapaVBytech[pozice + 13], mapaVBytech[pozice + 14], mapaVBytech[pozice + 15]);
+                pozice += 16;
+                odkazNaZdrojeSvetla.Add(noveSvetlo);
+            }
+
+            hra.komponentaSvetlo.SpustPocitaniSvetla();
         }
     }
 }

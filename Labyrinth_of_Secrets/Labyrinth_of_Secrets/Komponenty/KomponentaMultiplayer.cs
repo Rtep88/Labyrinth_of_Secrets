@@ -91,7 +91,7 @@ namespace Labyrinth_of_Secrets
                 hra._spriteBatch.DrawString(hra.comicSans, hrac.Key, new Vector2(hrac.Value.X, hrac.Value.Y - hra.comicSans.MeasureString(jmeno).Y * 0.05f / hra.komponentaKamera._kamera.zoom), Color.Red,
                     0, Vector2.Zero, 0.05f / hra.komponentaKamera._kamera.zoom, SpriteEffects.None, 0);
 
-                int tloustkaOkraje = Math.Max(2, (int)(2 / hra.komponentaKamera._kamera.zoom));
+                int tloustkaOkraje = Math.Max(1, (int)(2 / hra.komponentaKamera._kamera.zoom));
                 hra._spriteBatch.Draw(hra.pixel, new Rectangle(hrac.Value.X, hrac.Value.Y, hrac.Value.Width, tloustkaOkraje), Color.Red);
                 hra._spriteBatch.Draw(hra.pixel, new Rectangle(hrac.Value.X, hrac.Value.Y, tloustkaOkraje, hrac.Value.Height), Color.Red);
                 hra._spriteBatch.Draw(hra.pixel, new Rectangle(hrac.Value.X, hrac.Value.Y + hrac.Value.Height, hrac.Value.Width + tloustkaOkraje, tloustkaOkraje), Color.Red);
@@ -104,20 +104,31 @@ namespace Labyrinth_of_Secrets
         public void ZiskejDataMapy()
         {
             velikostMapyVBytech = -1;
+            int kolikratVyzkouseno = 0;
 
             while(velikostMapyVBytech == -1)
             {
-                PosliData(Encoding.UTF8.GetBytes($"{(short)TypPacketu.ZiskatVelikostMapy}"));
-                Thread.Sleep(100);
+                if (kolikratVyzkouseno % 100 == 0)
+                    PosliData(Encoding.UTF8.GetBytes($"{(short)TypPacketu.ZiskatVelikostMapy}"));
+                Thread.Sleep(10);
+                kolikratVyzkouseno++;
             }
 
+            kolikratVyzkouseno = 0;
+            int minulyPocetZiskanychCastiMapy = 0;
             pocetZiskanychCastiMapy = 0;
             mapaVBytech = new byte[velikostMapyVBytech];
 
             while(pocetZiskanychCastiMapy * MAX_VELIKOST_PACKETU < velikostMapyVBytech)
             {
-                PosliData(Encoding.UTF8.GetBytes($"{(short)TypPacketu.ZiskatCastMapy};{pocetZiskanychCastiMapy}"));
-                Thread.Sleep(100);
+                if (kolikratVyzkouseno % 100 == 0)
+                    PosliData(Encoding.UTF8.GetBytes($"{(short)TypPacketu.ZiskatCastMapy};{pocetZiskanychCastiMapy}"));
+                Thread.Sleep(10);
+                if (minulyPocetZiskanychCastiMapy != pocetZiskanychCastiMapy)
+                {
+                    kolikratVyzkouseno = 0;
+                    minulyPocetZiskanychCastiMapy = pocetZiskanychCastiMapy;
+                }
             }
 
             hra.komponentaMapa.PrevedBytyNaMapu(mapaVBytech);
