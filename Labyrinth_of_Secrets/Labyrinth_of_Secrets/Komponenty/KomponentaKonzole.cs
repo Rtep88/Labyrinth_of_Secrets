@@ -119,8 +119,13 @@ namespace Labyrinth_of_Secrets
                     }
                     else if (rozebranaMessage[0] == "generatemap" || rozebranaMessage[0] == "gm")
                     {
-                        hra.komponentaMapa.VygenerujMapu();
-                        radky.Insert(0, new Radek("Mapa přegenerována.", Color.LimeGreen));
+                        if (hra.komponentaMultiplayer.typZarizeni == KomponentaMultiplayer.TypZarizeni.SinglePlayer)
+                        {
+                            hra.komponentaMapa.VygenerujMapu();
+                            radky.Insert(0, new Radek("Mapa přegenerována.", Color.LimeGreen));
+                        }
+                        else
+                            radky.Insert(0, new Radek("Nelze měnit mapu v průběhu multiplayeru.", Color.Red));
                     }
                     else if (rozebranaMessage[0] == "lightupdate" || rozebranaMessage[0] == "lu")
                     {
@@ -189,8 +194,13 @@ namespace Labyrinth_of_Secrets
                     }
                     else if (rozebranaMessage[0] == "setname" || rozebranaMessage[0] == "sn")
                     {
-                        hra.komponentaMultiplayer.jmeno = rozebranaMessage[1];
-                        radky.Insert(0, new Radek("Jméno úspěšně změněno.", Color.LimeGreen));
+                        if (hra.komponentaMultiplayer.typZarizeni == KomponentaMultiplayer.TypZarizeni.SinglePlayer)
+                        {
+                            hra.komponentaMultiplayer.jmeno = rozebranaMessage[1];
+                            radky.Insert(0, new Radek("Jméno úspěšně změněno.", Color.LimeGreen));
+                        }
+                        else
+                            radky.Insert(0, new Radek("Nelze měnit jméno v průběhu multiplayeru.", Color.Red));
                     }
                     else
                     {

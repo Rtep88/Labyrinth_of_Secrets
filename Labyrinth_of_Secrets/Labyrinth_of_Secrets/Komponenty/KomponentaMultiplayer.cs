@@ -24,7 +24,7 @@ namespace Labyrinth_of_Secrets
         const int MAX_VELIKOST_PACKETU = 4096;
 
         //Enumy
-        enum TypZarizeni
+        public enum TypZarizeni
         {
             SinglePlayer,
             Server,
@@ -37,23 +37,25 @@ namespace Labyrinth_of_Secrets
             ZiskatVelikostMapy,
             VraceniVelikostiMapy,
             ZiskatCastMapy,
-            VraceniCastiMapy
+            VraceniCastiMapy,
+            ZadostOPripojeni,
+            PotvrzujiPripojeni
         }
 
         //Promenne
         public string jmeno = "";
-        private TypZarizeni typZarizeni = TypZarizeni.SinglePlayer;
+        public TypZarizeni typZarizeni = TypZarizeni.SinglePlayer;
         private Dictionary<string, Rectangle> hraci = new Dictionary<string, Rectangle>();
         private byte[] mapaVBytech;
+        private IPEndPoint odesilatel = new IPEndPoint(IPAddress.Any, PORT);
 
         private List<IPEndPoint> klienti = new List<IPEndPoint>(); //Pro server
         private UdpClient udpServer; //Pro server
-        private IPEndPoint odesilatel = new IPEndPoint(IPAddress.Any, PORT); //Pro server
 
         private UdpClient udpKlient; //Pro klienta
-        private IPEndPoint adresaServeru = new IPEndPoint(IPAddress.Any, PORT); //Pro klient
-        private int velikostMapyVBytech; //Pro klient
-        private int pocetZiskanychCastiMapy;
+        private IPEndPoint adresaServeru = new IPEndPoint(IPAddress.Any, PORT); //Pro klienta
+        private int velikostMapyVBytech; //Pro klienta
+        private int pocetZiskanychCastiMapy; //Pro klienta
 
         public KomponentaMultiplayer(Hra hra) : base(hra)
         {
@@ -75,10 +77,13 @@ namespace Labyrinth_of_Secrets
         public override void Update(GameTime gameTime)
         {
             //Poslani pozice
-            Kamera _kamera = hra.komponentaKamera._kamera;
-            Point opravdovaPoziceKamery = new Vector2(-_kamera.GetViewMatrix().Translation.X / _kamera.zoom, -_kamera.GetViewMatrix().Translation.Y / _kamera.zoom).ToPoint();
-            Point opravdovaVelikostOkna = new Vector2(hra.velikostOkna.X / _kamera.zoom, hra.velikostOkna.Y / _kamera.zoom).ToPoint();
-            PosliData(Encoding.UTF8.GetBytes($"{(short)TypPacketu.PohybHrace};{jmeno};{opravdovaPoziceKamery.X};{opravdovaPoziceKamery.Y};{opravdovaVelikostOkna.X};{opravdovaVelikostOkna.Y}"));
+            if (typZarizeni != TypZarizeni.SinglePlayer)
+            {
+                Kamera _kamera = hra.komponentaKamera._kamera;
+                Point opravdovaPoziceKamery = new Vector2(-_kamera.GetViewMatrix().Translation.X / _kamera.zoom, -_kamera.GetViewMatrix().Translation.Y / _kamera.zoom).ToPoint();
+                Point opravdovaVelikostOkna = new Vector2(hra.velikostOkna.X / _kamera.zoom, hra.velikostOkna.Y / _kamera.zoom).ToPoint();
+                PosliData(Encoding.UTF8.GetBytes($"{(short)TypPacketu.PohybHrace};{jmeno};{opravdovaPoziceKamery.X};{opravdovaPoziceKamery.Y};{opravdovaVelikostOkna.X};{opravdovaVelikostOkna.Y}"));
+            }
 
             base.Update(gameTime);
         }
@@ -106,7 +111,7 @@ namespace Labyrinth_of_Secrets
             velikostMapyVBytech = -1;
             int kolikratVyzkouseno = 0;
 
-            while(velikostMapyVBytech == -1)
+            while (velikostMapyVBytech == -1)
             {
                 if (kolikratVyzkouseno % 100 == 0)
                     PosliData(Encoding.UTF8.GetBytes($"{(short)TypPacketu.ZiskatVelikostMapy}"));
@@ -119,7 +124,7 @@ namespace Labyrinth_of_Secrets
             pocetZiskanychCastiMapy = 0;
             mapaVBytech = new byte[velikostMapyVBytech];
 
-            while(pocetZiskanychCastiMapy * MAX_VELIKOST_PACKETU < velikostMapyVBytech)
+            while (pocetZiskanychCastiMapy * MAX_VELIKOST_PACKETU < velikostMapyVBytech)
             {
                 if (kolikratVyzkouseno % 100 == 0)
                     PosliData(Encoding.UTF8.GetBytes($"{(short)TypPacketu.ZiskatCastMapy};{pocetZiskanychCastiMapy}"));
@@ -137,9 +142,17 @@ namespace Labyrinth_of_Secrets
         public void PosliData(byte[] data)
         {
             if (typZarizeni == TypZarizeni.Klient)
-                udpKlient.Send(data, data.Length);
+                udpKlient.Send(data, data.Length, adresaServeru);
             else if (typZarizeni == TypZarizeni.Server)
                 PosliVsemKlientum(data);
+        }
+
+        public void PosliDataKonkretniAdrese(byte[] data, IPEndPoint adresa)
+        {
+            if (typZarizeni == TypZarizeni.Klient)
+                udpKlient.Send(data, data.Length, adresa);
+            else if (typZarizeni == TypZarizeni.Server)
+                udpServer.Send(data, data.Length, adresa);
         }
 
         public void ZpracujData(byte[] data)
@@ -161,10 +174,7 @@ namespace Labyrinth_of_Secrets
                     PosliVsemKlientum(data);
                     break;
                 case TypPacketu.ZiskatVelikostMapy:
-                    if (TypZarizeni.Klient == typZarizeni)
-                        hra.komponentaKonzole.radky.Insert(0, new Radek("Error", Color.Red));
-                    else
-                        PosliData(Encoding.UTF8.GetBytes($"{(short)TypPacketu.VraceniVelikostiMapy};{mapaVBytech.Length}"));
+                    PosliData(Encoding.UTF8.GetBytes($"{(short)TypPacketu.VraceniVelikostiMapy};{mapaVBytech.Length}"));
                     break;
                 case TypPacketu.VraceniVelikostiMapy:
                     velikostMapyVBytech = int.Parse(dataVStringu[1]);
@@ -194,22 +204,52 @@ namespace Labyrinth_of_Secrets
             if (typZarizeni != TypZarizeni.SinglePlayer)
                 return;
 
-            adresaServeru = new IPEndPoint(adresa, PORT);
-            udpKlient = new UdpClient();
-            udpKlient.Connect(adresaServeru);
-            udpKlient.Send(new byte[0], 0);
-            udpKlient.BeginReceive(new AsyncCallback(ReceiveCallbackClient), null);
-            hra.komponentaKonzole.radky.Insert(0, new Radek("Úspěšně připojeno na server", Color.LimeGreen));
             typZarizeni = TypZarizeni.Klient;
+            adresaServeru = new IPEndPoint(adresa, PORT);
+            udpKlient = new UdpClient(0);
 
-            ZiskejDataMapy();
+            udpKlient.Client.ReceiveTimeout = 200;
+            bool navazanoSpojeni = false;
+            for (int i = 0; i < 10; i++)
+            {
+                byte[] data = Encoding.UTF8.GetBytes((short)TypPacketu.ZadostOPripojeni + ";" + jmeno);
+                PosliData(data);
+
+                try
+                {
+                    data = udpKlient.Receive(ref odesilatel);
+                    if (Encoding.UTF8.GetString(data) == (short)TypPacketu.PotvrzujiPripojeni + ";" + jmeno && PorovnejIPAdresy(odesilatel, adresaServeru))
+                    {
+                        navazanoSpojeni = true;
+                        break;
+                    }
+                }
+                catch { }
+            }
+            udpKlient.Client.ReceiveTimeout = -1;
+
+            if (navazanoSpojeni)
+            {
+                udpKlient.BeginReceive(new AsyncCallback(ReceiveCallbackClient), null);
+                hra.komponentaKonzole.radky.Insert(0, new Radek("Úspěšně připojeno na server", Color.LimeGreen));
+
+                ZiskejDataMapy();
+            }
+            else
+            {
+                hra.komponentaKonzole.radky.Insert(0, new Radek("Na tuto adresu se nelze připojit!", Color.Red));
+                typZarizeni = TypZarizeni.SinglePlayer;
+            }
         }
 
         //Zpracovani dotazu serveru
         void ReceiveCallbackClient(IAsyncResult ar)
         {
-            byte[] data = udpKlient.EndReceive(ar, ref adresaServeru);
-            ZpracujData(data);
+            byte[] data = udpKlient.EndReceive(ar, ref odesilatel);
+
+            if (PorovnejIPAdresy(odesilatel, adresaServeru))
+                ZpracujData(data);
+
             udpKlient.BeginReceive(new AsyncCallback(ReceiveCallbackClient), null);
         }
         #endregion Klient
@@ -220,9 +260,9 @@ namespace Labyrinth_of_Secrets
             if (typZarizeni != TypZarizeni.SinglePlayer)
                 return;
 
-            udpServer = new UdpClient(PORT);
+            udpServer = new UdpClient(new IPEndPoint(IPAddress.Any, PORT));
             udpServer.BeginReceive(new AsyncCallback(ReceiveCallback), null);
-            hra.komponentaKonzole.radky.Insert(0, new Radek("Server spuštěn na 127.0.0.1:" + PORT));
+            hra.komponentaKonzole.radky.Insert(0, new Radek("Server spuštěn na 0.0.0.0:" + PORT));
             typZarizeni = TypZarizeni.Server;
 
             mapaVBytech = hra.komponentaMapa.PrevedMapuNaBytovePole();
@@ -233,13 +273,24 @@ namespace Labyrinth_of_Secrets
         {
             byte[] data = udpServer.EndReceive(ar, ref odesilatel);
 
-            //Pokud je toto prvni dotaz tak si ho pridam do listu
-            if (!klienti.Contains(odesilatel))
-                klienti.Add(odesilatel);
-
             if (data.Length > 0)
             {
-                ZpracujData(data);
+                //Pokud je toto prvni dotaz tak si ho pridam do listu
+                if (!klienti.Contains(odesilatel))
+                {
+                    string[] dataVStringu = Encoding.UTF8.GetString(data).Split(';');
+                    if (int.Parse(dataVStringu[0]) == (int)TypPacketu.ZadostOPripojeni)
+                    {
+                        klienti.Add(odesilatel);
+                        for (int i = 0; i < 5; i++)
+                        {
+                            PosliDataKonkretniAdrese(Encoding.UTF8.GetBytes((short)TypPacketu.PotvrzujiPripojeni + ";" + dataVStringu[1]), odesilatel);
+                            Thread.Sleep(10);
+                        }
+                    }
+                }
+                else
+                    ZpracujData(data);
             }
             udpServer.BeginReceive(new AsyncCallback(ReceiveCallback), null);
         }
@@ -253,5 +304,10 @@ namespace Labyrinth_of_Secrets
             }
         }
         #endregion Server
+
+        bool PorovnejIPAdresy (IPEndPoint ipAdresa1, IPEndPoint ipAdresa2)
+        {
+            return ipAdresa1.Address.Equals(ipAdresa2.Address) && ipAdresa1.Port == ipAdresa2.Port;
+        }
     }
 }

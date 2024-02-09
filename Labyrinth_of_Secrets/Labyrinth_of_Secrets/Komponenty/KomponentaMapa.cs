@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading;
 
 namespace Labyrinth_of_Secrets
@@ -539,11 +539,13 @@ namespace Labyrinth_of_Secrets
                 mapaVBytech.Add(odkazNaZdrojeSvetla[i].barvaSvetla.B);
                 mapaVBytech.Add(odkazNaZdrojeSvetla[i].barvaSvetla.A);
             }
-            return mapaVBytech.ToArray();
+            return Encoding.UTF8.GetBytes(Convert.ToBase64String(mapaVBytech.ToArray()));
         }
 
-        public void PrevedBytyNaMapu(byte[] mapaVBytech)
+        public void PrevedBytyNaMapu(byte[] prichoziMapaVBytech)
         {
+            byte[] mapaVBytech = Convert.FromBase64String(Encoding.UTF8.GetString(prichoziMapaVBytech));
+
             hra.komponentaSvetlo.ZastavPocitaniSvetla();
             VELIKOST_MAPY_X = mapaVBytech[0] * 255 + mapaVBytech[1];
             VELIKOST_MAPY_Y = mapaVBytech[2] * 255 + mapaVBytech[3];
