@@ -85,6 +85,7 @@ namespace Labyrinth_of_Secrets
                         radky.Insert(0, new Radek("joinserver/js [IP adresa] - Připojí se na server", Color.White));
                         radky.Insert(0, new Radek("echoname/en - Vypíše jméno hráče", Color.White));
                         radky.Insert(0, new Radek("setname/sn [jméno] - Nastaví jméno hráče", Color.White));
+                        radky.Insert(0, new Radek("disconnect/dc - Odpojí se od serveru", Color.White));
                     }
                     else if (rozebranaMessage[0] == "clear" || rozebranaMessage[0] == "cl")
                     {
@@ -201,6 +202,19 @@ namespace Labyrinth_of_Secrets
                         }
                         else
                             radky.Insert(0, new Radek("Nelze měnit jméno v průběhu multiplayeru.", Color.Red));
+                    }
+                    else if (rozebranaMessage[0] == "disconnect" || rozebranaMessage[0] == "dc")
+                    {
+                        if (hra.komponentaMultiplayer.typZarizeni == KomponentaMultiplayer.TypZarizeni.Klient)
+                        {
+                            for (int j = 0; j < 10; j++)
+                                hra.komponentaMultiplayer.PosliData(Encoding.UTF8.GetBytes($"{(short)KomponentaMultiplayer.TypPacketu.OdpojilSeKlient};{hra.komponentaMultiplayer.jmeno}"));
+
+                            radky.Insert(0, new Radek("Odpojeno od serveru"));
+                            hra.komponentaMultiplayer.OdpojSeOdServer();
+                        }
+                        else
+                            radky.Insert(0, new Radek("Nelze se odpojit od serveru kdy na něm nejsem připojený!", Color.Yellow));
                     }
                     else
                     {
