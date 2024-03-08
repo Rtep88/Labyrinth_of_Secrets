@@ -27,6 +27,7 @@ namespace Labyrinth_of_Secrets
         public MouseState tlacitkaMysi, tlacitkaMysiMinule;
         public bool ukonceno = false;
         public KomponentaMapa komponentaMapa;
+        public KomponentaHrac komponentaHrac;
         public KomponentaKamera komponentaKamera;
         public KomponentaSvetlo komponentaSvetlo;
         public KomponentaKonzole komponentaKonzole;
@@ -42,11 +43,13 @@ namespace Labyrinth_of_Secrets
         protected override void Initialize()
         {
             komponentaMapa = new KomponentaMapa(this);
+            komponentaHrac = new KomponentaHrac(this);
             komponentaKamera = new KomponentaKamera(this);
             komponentaSvetlo = new KomponentaSvetlo(this);
             komponentaMultiplayer = new KomponentaMultiplayer(this);
             komponentaKonzole = new KomponentaKonzole(this);
             Components.Add(komponentaMapa);
+            Components.Add(komponentaHrac);
             Components.Add(komponentaKamera);
             Components.Add(komponentaSvetlo);
             Components.Add(komponentaMultiplayer);
@@ -86,6 +89,15 @@ namespace Labyrinth_of_Secrets
             GraphicsDevice.Clear(Color.White);
 
             base.Draw(gameTime);
+        }
+
+        //Kolize obdelniku
+        public static bool KolizeObdelniku(float x1, float y1, float width1, float height1, float x2, float y2, float width2, float height2)
+        {
+            return x1 < x2 + width2 &&
+                   x1 + width1 > x2 &&
+                   y1 < y2 + height2 &&
+                   y1 + height1 > y2;
         }
 
         //Ukonci bezici vlakna pri vypnuti hry

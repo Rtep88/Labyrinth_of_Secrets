@@ -31,5 +31,14 @@ namespace Labyrinth_of_Secrets
                 Matrix.CreateScale(zoom, zoom, 1) *
                 Matrix.CreateTranslation(new Vector3(origin, 0.0f));
         }
+
+        public static Matrix GetViewMatrix(Vector2 pozice, Vector2 origin, float zoom)
+        {
+            return
+                Matrix.CreateTranslation(new Vector3(-pozice, 0.0f)) *
+                Matrix.CreateTranslation(new Vector3(-origin, 0.0f)) *
+                Matrix.CreateScale(zoom, zoom, 1) *
+                Matrix.CreateTranslation(new Vector3(origin, 0.0f));
+        }
     }
 }

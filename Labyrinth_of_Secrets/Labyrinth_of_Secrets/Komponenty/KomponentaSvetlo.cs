@@ -36,8 +36,8 @@ namespace Labyrinth_of_Secrets
         //Konstanty
         private const int POCET_SVETLA_NA_BLOK = 16; //Udava jak moc dopodrobna se svetlo bude pocitat - Minimum je 1 a maximum je omezen pouze systemovymi prostredky ale doporucuji neprekracovat 32 :)
         public Color GLOBALNI_BARVA = new Color(0, 0, 0); //Nenastavujte hodnoty na 255 jinak se svetlo bude nespravne mazat
-        private Color BARVA_SVETLA_CURSORU = new Color(255, 255, 255);
-        private const int SILA_SVETLA_CURSORU = 300;
+        private Color BARVA_SVETLA_HRACE = new Color(255, 255, 255);
+        private const int SILA_SVETLA_HRACE = 200;
 
         //Promene
         private Color[] docasnaDataSvetla;
@@ -154,9 +154,7 @@ namespace Labyrinth_of_Secrets
         {
             while (!hra.ukonceno && pocitaniSvetlaBezi)
             {
-                Vector2 opravdovaPoziceKamery = new Vector2(-hra.komponentaKamera._kamera.GetViewMatrix().Translation.X / hra.komponentaKamera._kamera.zoom, -hra.komponentaKamera._kamera.GetViewMatrix().Translation.Y / hra.komponentaKamera._kamera.zoom);
-                Vector2 opravdovaVelikostOkna = new Vector2(hra.velikostOkna.X / hra.komponentaKamera._kamera.zoom, hra.velikostOkna.Y / hra.komponentaKamera._kamera.zoom);
-                Point poziceMysi = ((opravdovaPoziceKamery + Mouse.GetState().Position.ToVector2() * opravdovaVelikostOkna / hra.velikostOkna.ToVector2()) / KomponentaMapa.VELIKOST_BLOKU * new Vector2(POCET_SVETLA_NA_BLOK)).ToPoint();
+                Point poziceHrace = ((hra.komponentaHrac.poziceHrace + new Vector2(KomponentaHrac.VELIKOST_HRACE_X, KomponentaHrac.VELIKOST_HRACE_Y) / 2f) / KomponentaMapa.VELIKOST_BLOKU * new Vector2(POCET_SVETLA_NA_BLOK)).ToPoint();
 
                 foreach (Point odkudSmazat in bodyNaSmazani[0])
                 {
@@ -164,7 +162,7 @@ namespace Labyrinth_of_Secrets
                 }
                 bodyNaSmazani[0] = new List<Point>();
 
-                PridejSvetloOdBodu(poziceMysi, SILA_SVETLA_CURSORU, BARVA_SVETLA_CURSORU, true);
+                PridejSvetloOdBodu(poziceHrace, SILA_SVETLA_HRACE, BARVA_SVETLA_HRACE, true);
 
                 foreach (ZdrojSvetla svetlo in svetelneZdroje)
                 {

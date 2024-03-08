@@ -81,6 +81,7 @@ namespace Labyrinth_of_Secrets
                         radky.Insert(0, new Radek("lightupdate/lu [\"true\"/\"false\"] - Aktivuje/Deaktivuje aktualizaci svetla", Color.White));
                         radky.Insert(0, new Radek("fullbright/fb [\"true\"/\"false\"] - Aktivuje/Deaktivuje fullbright", Color.White));
                         radky.Insert(0, new Radek("showpath/sp [\"true\"/\"false\"] - Aktivuje/Deaktivuje viditelnost spravne cesty", Color.White));
+                        radky.Insert(0, new Radek("freecam/fc [\"true\"/\"false\"] - Aktivuje/Deaktivuje volnou kameru", Color.White));
                         radky.Insert(0, new Radek("hostserver/hs - Spustí hostování serveru", Color.White));
                         radky.Insert(0, new Radek("joinserver/js [IP adresa] - Připojí se na server", Color.White));
                         radky.Insert(0, new Radek("echoname/en - Vypíše jméno hráče", Color.White));
@@ -175,6 +176,23 @@ namespace Labyrinth_of_Secrets
                         {
                             hra.komponentaMapa.ukazCestu = false;
                             radky.Insert(0, new Radek("Zobrazení cestu vypnuto.", Color.LimeGreen));
+                        }
+                        else
+                        {
+                            radky.Insert(0, new Radek("Chyba! - Zkuste příkaz help", Color.Red));
+                        }
+                    }
+                    else if (rozebranaMessage[0] == "freecam" || rozebranaMessage[0] == "fc")
+                    {
+                        if (rozebranaMessage[1] == "true")
+                        {
+                            hra.komponentaKamera.volnaKamera = true;
+                            radky.Insert(0, new Radek("Volná kamera zapnuta.", Color.LimeGreen));
+                        }
+                        else if (rozebranaMessage[1] == "false")
+                        {
+                            hra.komponentaKamera.volnaKamera = false;
+                            radky.Insert(0, new Radek("Volná kamera vypnuta.", Color.LimeGreen));
                         }
                         else
                         {
