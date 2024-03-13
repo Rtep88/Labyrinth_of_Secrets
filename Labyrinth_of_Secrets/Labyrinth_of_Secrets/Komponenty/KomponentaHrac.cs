@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,7 +18,7 @@ namespace Labyrinth_of_Secrets
         private Hra hra;
 
         //Textury
-        private Texture2D hrac;
+        private Texture2D texturaHrace;
 
         //Struktury
 
@@ -43,7 +44,7 @@ namespace Labyrinth_of_Secrets
 
         protected override void LoadContent()
         {
-            hrac = hra.Content.Load<Texture2D>("Images\\Player");
+            texturaHrace = hra.Content.Load<Texture2D>("Images\\Player");
             base.LoadContent();
         }
 
@@ -127,11 +128,25 @@ namespace Labyrinth_of_Secrets
         public override void Draw(GameTime gameTime)
         {
             hra._spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, transformMatrix: hra.komponentaKamera._kamera.GetViewMatrix());
-            hra._spriteBatch.Draw(hrac, poziceHrace, null, Color.White, 0, Vector2.Zero,
-                new Vector2((float)VELIKOST_HRACE_X / hrac.Width, (float)VELIKOST_HRACE_Y / hrac.Height), SpriteEffects.None, 0);
+
+            VykresliHraceSJmenovkou(poziceHrace, hra.komponentaMultiplayer.jmeno);
+
             hra._spriteBatch.End();
 
             base.Draw(gameTime);
+        }
+
+        public void VykresliHraceSJmenovkou(Vector2 poziceHrace, string jmenoHrace)
+        {
+            float zvetseniTextu = 0.008f;
+            Vector2 velikostTextu = hra.comicSans.MeasureString(jmenoHrace) * zvetseniTextu;
+            Vector2 poziceTextu = new Vector2(poziceHrace.X - velikostTextu.X / 2f + VELIKOST_HRACE_X / 2f, poziceHrace.Y - velikostTextu.Y);
+
+            hra._spriteBatch.Draw(hra.pixel, poziceTextu - velikostTextu * 0.05f - new Vector2(0, velikostTextu.Y / 4), null, new Color(32, 32, 32, 128), 0, Vector2.Zero, velikostTextu * 1.1f, SpriteEffects.None, 0);
+            hra._spriteBatch.DrawString(hra.comicSans, jmenoHrace, poziceTextu - new Vector2(0, velikostTextu.Y / 4), Color.White, 0, Vector2.Zero, zvetseniTextu, SpriteEffects.None, 0);
+
+            hra._spriteBatch.Draw(texturaHrace, poziceHrace, null, Color.White, 0, Vector2.Zero,
+                new Vector2((float)VELIKOST_HRACE_X / texturaHrace.Width, (float)VELIKOST_HRACE_Y / texturaHrace.Height), SpriteEffects.None, 0);
         }
     }
 }

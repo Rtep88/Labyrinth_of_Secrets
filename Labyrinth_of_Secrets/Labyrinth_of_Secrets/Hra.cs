@@ -43,16 +43,16 @@ namespace Labyrinth_of_Secrets
         protected override void Initialize()
         {
             komponentaMapa = new KomponentaMapa(this);
+            komponentaMultiplayer = new KomponentaMultiplayer(this);
             komponentaHrac = new KomponentaHrac(this);
             komponentaKamera = new KomponentaKamera(this);
             komponentaSvetlo = new KomponentaSvetlo(this);
-            komponentaMultiplayer = new KomponentaMultiplayer(this);
             komponentaKonzole = new KomponentaKonzole(this);
             Components.Add(komponentaMapa);
+            Components.Add(komponentaMultiplayer);
             Components.Add(komponentaHrac);
             Components.Add(komponentaKamera);
             Components.Add(komponentaSvetlo);
-            Components.Add(komponentaMultiplayer);
             Components.Add(komponentaKonzole);
             _graphics.HardwareModeSwitch = false;
             NastavRozliseni();

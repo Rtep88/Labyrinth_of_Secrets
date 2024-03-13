@@ -48,7 +48,7 @@ namespace Labyrinth_of_Secrets
         //Promenne
         public string jmeno = "";
         public TypZarizeni typZarizeni = TypZarizeni.SinglePlayer;
-        private Dictionary<string, Rectangle> hraci = new Dictionary<string, Rectangle>();
+        private Dictionary<string, Point> hraci = new Dictionary<string, Point>();
         private byte[] mapaVBytech;
         private IPEndPoint odesilatel = new IPEndPoint(IPAddress.Any, PORT);
 
@@ -109,10 +109,7 @@ namespace Labyrinth_of_Secrets
             //Poslani pozice
             if (typZarizeni != TypZarizeni.SinglePlayer)
             {
-                Kamera _kamera = hra.komponentaKamera._kamera;
-                Point opravdovaPoziceKamery = new Vector2(-_kamera.GetViewMatrix().Translation.X / _kamera.zoom, -_kamera.GetViewMatrix().Translation.Y / _kamera.zoom).ToPoint();
-                Point opravdovaVelikostOkna = new Vector2(hra.velikostOkna.X / _kamera.zoom, hra.velikostOkna.Y / _kamera.zoom).ToPoint();
-                PosliData(Encoding.UTF8.GetBytes($"{(short)TypPacketu.PohybHrace};{jmeno};{opravdovaPoziceKamery.X};{opravdovaPoziceKamery.Y};{opravdovaVelikostOkna.X};{opravdovaVelikostOkna.Y}"));
+                PosliData(Encoding.UTF8.GetBytes($"{(short)TypPacketu.PohybHrace};{jmeno};{(int)hra.komponentaHrac.poziceHrace.X};{(int)hra.komponentaHrac.poziceHrace.Y}"));
             }
 
             base.Update(gameTime);
@@ -121,17 +118,12 @@ namespace Labyrinth_of_Secrets
         public override void Draw(GameTime gameTime)
         {
             hra._spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, transformMatrix: hra.komponentaKamera._kamera.GetViewMatrix());
+
             foreach (var hrac in hraci)
             {
-                hra._spriteBatch.DrawString(hra.comicSans, hrac.Key, new Vector2(hrac.Value.X, hrac.Value.Y - hra.comicSans.MeasureString(jmeno).Y * 0.05f / hra.komponentaKamera._kamera.zoom), Color.Red,
-                    0, Vector2.Zero, 0.05f / hra.komponentaKamera._kamera.zoom, SpriteEffects.None, 0);
-
-                int tloustkaOkraje = Math.Max(1, (int)(2 / hra.komponentaKamera._kamera.zoom));
-                hra._spriteBatch.Draw(hra.pixel, new Rectangle(hrac.Value.X, hrac.Value.Y, hrac.Value.Width, tloustkaOkraje), Color.Red);
-                hra._spriteBatch.Draw(hra.pixel, new Rectangle(hrac.Value.X, hrac.Value.Y, tloustkaOkraje, hrac.Value.Height), Color.Red);
-                hra._spriteBatch.Draw(hra.pixel, new Rectangle(hrac.Value.X, hrac.Value.Y + hrac.Value.Height, hrac.Value.Width + tloustkaOkraje, tloustkaOkraje), Color.Red);
-                hra._spriteBatch.Draw(hra.pixel, new Rectangle(hrac.Value.X + hrac.Value.Width, hrac.Value.Y, tloustkaOkraje, hrac.Value.Height + tloustkaOkraje), Color.Red);
+                hra.komponentaHrac.VykresliHraceSJmenovkou(hrac.Value.ToVector2(), hrac.Key);
             }
+
             hra._spriteBatch.End();
             base.Draw(gameTime);
         }
@@ -193,7 +185,7 @@ namespace Labyrinth_of_Secrets
             switch (typPacketu)
             {
                 case TypPacketu.PohybHrace:
-                    Rectangle poziceHrace = new Rectangle(int.Parse(dataVStringu[2]), int.Parse(dataVStringu[3]), int.Parse(dataVStringu[4]), int.Parse(dataVStringu[5]));
+                    Point poziceHrace = new Point(int.Parse(dataVStringu[2]), int.Parse(dataVStringu[3]));
                     if (dataVStringu[1] != jmeno)
                     {
                         if (!hraci.ContainsKey(dataVStringu[1]))
