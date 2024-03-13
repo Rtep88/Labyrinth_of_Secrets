@@ -16,7 +16,7 @@ namespace Labyrinth_of_Secrets
         private Hra hra;
 
         //Textury a fonty
-        private Texture2D brick; //Placeholder textura
+        private static Texture2D brick; //Placeholder textura
 
         //Konstanty
         public const int VELIKOST_BLOKU = 32; //Velikost vykresleni bloku
@@ -96,7 +96,7 @@ namespace Labyrinth_of_Secrets
                     if (mapa[x, y].typPole == Pole.TypPole.Obchodnik)
                         hra._spriteBatch.Draw(brick, new Rectangle(x * VELIKOST_BLOKU, y * VELIKOST_BLOKU, VELIKOST_BLOKU, VELIKOST_BLOKU), new Color(180, 180, 180));
                     if (ukazCestu && mapa[x, y].naHlavniCeste)
-                        hra._spriteBatch.Draw(hra.pixel, new Rectangle(x * VELIKOST_BLOKU, y * VELIKOST_BLOKU, VELIKOST_BLOKU, VELIKOST_BLOKU), new Color(255, 200, 200));
+                        hra._spriteBatch.Draw(Hra.pixel, new Rectangle(x * VELIKOST_BLOKU, y * VELIKOST_BLOKU, VELIKOST_BLOKU, VELIKOST_BLOKU), new Color(255, 200, 200));
                 }
             }
         }

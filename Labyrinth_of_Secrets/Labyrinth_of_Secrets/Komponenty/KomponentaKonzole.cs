@@ -266,7 +266,7 @@ namespace Labyrinth_of_Secrets
                     foreach (Keys klavesa in zmackleKlavesy)
                     {
                         char znak = KeyToChar(klavesa, (Keyboard.GetState().CapsLock ^ Keyboard.GetState().IsKeyDown(Keys.LeftShift)));
-                        if (!Contains(naposledyZmackleKlavesy, klavesa) && ((znak >= 32 && 12 + hra.comicSans.MeasureString("> " + zprava + znak + " ").X * 0.05f < 550) || klavesa == Keys.Left || klavesa == Keys.Right || klavesa == Keys.Back || klavesa == Keys.Delete))
+                        if (!Contains(naposledyZmackleKlavesy, klavesa) && ((znak >= 32 && 12 + Hra.comicSans.MeasureString("> " + zprava + znak + " ").X * 0.05f < 550) || klavesa == Keys.Left || klavesa == Keys.Right || klavesa == Keys.Back || klavesa == Keys.Delete))
                         {
                             if (klavesa != Keys.Left && klavesa != Keys.Right && klavesa != Keys.Back && klavesa != Keys.Delete)
                             {
@@ -292,7 +292,7 @@ namespace Labyrinth_of_Secrets
                 }
                 naposledyZmackleKlavesy = zmackleKlavesy;
             }
-            while (radky.Count * hra.comicSans.MeasureString("abcde").Y * 0.05f > 595 - 18 && radky.Count > 0)
+            while (radky.Count * Hra.comicSans.MeasureString("abcde").Y * 0.05f > 595 - 18 && radky.Count > 0)
             {
                 radky.RemoveAt(radky.Count - 1);
             }
@@ -308,15 +308,15 @@ namespace Labyrinth_of_Secrets
                 hra._spriteBatch.Draw(texturaKonzole1, new Rectangle(0, (int)(hra.velikostOkna.Y - 595), 550, 578), Color.White);
                 hra._spriteBatch.Draw(texturaKonzole2, new Rectangle(0, (int)(hra.velikostOkna.Y - 17), 550, 17), Color.White);
                 if (casKurzoru < 0.5f)
-                    hra.VykresliTextSOkrajem(hra.comicSans, new Vector2(8, (int)(hra.velikostOkna.Y - 18)), "> " + zprava.Substring(0, poziceKurzoru) + "l" + zprava.Substring(poziceKurzoru), 0.05f, Color.White, Color.Black, 0.08f, 8);
+                    hra.VykresliTextSOkrajem(Hra.comicSans, new Vector2(8, (int)(hra.velikostOkna.Y - 18)), "> " + zprava.Substring(0, poziceKurzoru) + "l" + zprava.Substring(poziceKurzoru), 0.05f, Color.White, Color.Black, 0.08f, 8);
                 else
-                    hra.VykresliTextSOkrajem(hra.comicSans, new Vector2(8, (int)(hra.velikostOkna.Y - 18)), "> " + zprava.Substring(0, poziceKurzoru) + " " + zprava.Substring(poziceKurzoru), 0.05f, Color.White, Color.Black, 0.08f, 8);
+                    hra.VykresliTextSOkrajem(Hra.comicSans, new Vector2(8, (int)(hra.velikostOkna.Y - 18)), "> " + zprava.Substring(0, poziceKurzoru) + " " + zprava.Substring(poziceKurzoru), 0.05f, Color.White, Color.Black, 0.08f, 8);
             }
             int i = 1;
             foreach (Radek radek in radky)
             {
                 if (jeOtevrena)
-                    hra.VykresliTextSOkrajem(hra.comicSans, new Vector2(2, (int)(hra.velikostOkna.Y - 18 - (i * hra.comicSans.MeasureString("abcde").Y * 0.05f))), radek.text, 0.05f, radek.barva, Color.Black, 0.08f, 8);
+                    hra.VykresliTextSOkrajem(Hra.comicSans, new Vector2(2, (int)(hra.velikostOkna.Y - 18 - (i * Hra.comicSans.MeasureString("abcde").Y * 0.05f))), radek.text, 0.05f, radek.barva, Color.Black, 0.08f, 8);
                 i++;
             }
             hra._spriteBatch.End();

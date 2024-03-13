@@ -18,14 +18,14 @@ namespace Labyrinth_of_Secrets
         private Hra hra;
 
         //Textury
-        private Texture2D texturaHrace;
+        private static Texture2D texturaHrace;
 
         //Struktury
 
         //Konstanty
         public const int VELIKOST_HRACE_X = 6; //Velikost vykresleni hrace
         public const int VELIKOST_HRACE_Y = 12; //Velikost vykresleni hrace
-        public const int RYCHLOST_HRACE = 50;
+        public const int RYCHLOST_HRACE = 15;
 
         //Promene
         public Vector2 poziceHrace = new Vector2();
@@ -50,21 +50,28 @@ namespace Labyrinth_of_Secrets
 
         public override void Update(GameTime gameTime)
         {
-            int pocetUpdatu = RYCHLOST_HRACE / 20;
+            int pocetUpdatu = RYCHLOST_HRACE / 20 + 1;
 
             for (int i = 0; i < pocetUpdatu; i++)
             {
                 //Pohyb hrace
                 if (!hra.komponentaKonzole.jeOtevrena)
                 {
+                    Vector2 pohnuti = Vector2.Zero;
                     if (Keyboard.GetState().IsKeyDown(Keys.W))
-                        poziceHrace -= new Vector2(0, RYCHLOST_HRACE * (float)gameTime.ElapsedGameTime.TotalSeconds / pocetUpdatu);
+                        pohnuti -= new Vector2(0, 1);
                     if (Keyboard.GetState().IsKeyDown(Keys.D))
-                        poziceHrace += new Vector2(RYCHLOST_HRACE * (float)gameTime.ElapsedGameTime.TotalSeconds / pocetUpdatu, 0);
+                        pohnuti += new Vector2(1, 0);
                     if (Keyboard.GetState().IsKeyDown(Keys.S))
-                        poziceHrace += new Vector2(0, RYCHLOST_HRACE * (float)gameTime.ElapsedGameTime.TotalSeconds / pocetUpdatu);
+                        pohnuti += new Vector2(0, 1);
                     if (Keyboard.GetState().IsKeyDown(Keys.A))
-                        poziceHrace -= new Vector2(RYCHLOST_HRACE * (float)gameTime.ElapsedGameTime.TotalSeconds / pocetUpdatu, 0);
+                        pohnuti -= new Vector2(1, 0);
+
+                    if (pohnuti.X != 0 || pohnuti.Y != 0)
+                    {
+                        pohnuti = Vector2.Normalize(pohnuti * RYCHLOST_HRACE * (float)gameTime.ElapsedGameTime.TotalSeconds / pocetUpdatu);
+                        poziceHrace += pohnuti;
+                    }
                 }
 
                 //Kolize
@@ -139,11 +146,11 @@ namespace Labyrinth_of_Secrets
         public void VykresliHraceSJmenovkou(Vector2 poziceHrace, string jmenoHrace)
         {
             float zvetseniTextu = 0.008f;
-            Vector2 velikostTextu = hra.comicSans.MeasureString(jmenoHrace) * zvetseniTextu;
+            Vector2 velikostTextu = Hra.comicSans.MeasureString(jmenoHrace) * zvetseniTextu;
             Vector2 poziceTextu = new Vector2(poziceHrace.X - velikostTextu.X / 2f + VELIKOST_HRACE_X / 2f, poziceHrace.Y - velikostTextu.Y);
 
-            hra._spriteBatch.Draw(hra.pixel, poziceTextu - velikostTextu * 0.05f - new Vector2(0, velikostTextu.Y / 4), null, new Color(32, 32, 32, 128), 0, Vector2.Zero, velikostTextu * 1.1f, SpriteEffects.None, 0);
-            hra._spriteBatch.DrawString(hra.comicSans, jmenoHrace, poziceTextu - new Vector2(0, velikostTextu.Y / 4), Color.White, 0, Vector2.Zero, zvetseniTextu, SpriteEffects.None, 0);
+            hra._spriteBatch.Draw(Hra.pixel, poziceTextu - velikostTextu * 0.05f - new Vector2(0, velikostTextu.Y / 4), null, new Color(32, 32, 32, 128), 0, Vector2.Zero, velikostTextu * 1.1f, SpriteEffects.None, 0);
+            hra._spriteBatch.DrawString(Hra.comicSans, jmenoHrace, poziceTextu - new Vector2(0, velikostTextu.Y / 4), Color.White, 0, Vector2.Zero, zvetseniTextu, SpriteEffects.None, 0);
 
             hra._spriteBatch.Draw(texturaHrace, poziceHrace, null, Color.White, 0, Vector2.Zero,
                 new Vector2((float)VELIKOST_HRACE_X / texturaHrace.Width, (float)VELIKOST_HRACE_Y / texturaHrace.Height), SpriteEffects.None, 0);

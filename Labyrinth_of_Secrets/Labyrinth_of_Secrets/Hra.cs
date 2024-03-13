@@ -13,8 +13,8 @@ namespace Labyrinth_of_Secrets
         public SpriteBatch _spriteBatch;
 
         //Textury a fonty
-        public SpriteFont comicSans;
-        public Texture2D pixel;
+        public static SpriteFont comicSans;
+        public static Texture2D pixel;
 
         //Konstanty
 
@@ -27,6 +27,7 @@ namespace Labyrinth_of_Secrets
         public MouseState tlacitkaMysi, tlacitkaMysiMinule;
         public bool ukonceno = false;
         public KomponentaMapa komponentaMapa;
+        public KomponentaMonstra komponentaMonstra;
         public KomponentaHrac komponentaHrac;
         public KomponentaKamera komponentaKamera;
         public KomponentaSvetlo komponentaSvetlo;
@@ -43,12 +44,14 @@ namespace Labyrinth_of_Secrets
         protected override void Initialize()
         {
             komponentaMapa = new KomponentaMapa(this);
+            komponentaMonstra = new KomponentaMonstra(this);
             komponentaMultiplayer = new KomponentaMultiplayer(this);
             komponentaHrac = new KomponentaHrac(this);
             komponentaKamera = new KomponentaKamera(this);
             komponentaSvetlo = new KomponentaSvetlo(this);
             komponentaKonzole = new KomponentaKonzole(this);
             Components.Add(komponentaMapa);
+            Components.Add(komponentaMonstra);
             Components.Add(komponentaMultiplayer);
             Components.Add(komponentaHrac);
             Components.Add(komponentaKamera);
