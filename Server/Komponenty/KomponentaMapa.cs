@@ -1,7 +1,4 @@
-﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,13 +7,10 @@ using System.Threading;
 
 namespace Labyrinth_of_Secrets
 {
-    public class KomponentaMapa : DrawableGameComponent
+    public class KomponentaMapa
     {
         //Zaklad
         private Hra hra;
-
-        //Textury a fonty
-        private static Texture2D brick; //Placeholder textura
 
         //Konstanty
         public const int VELIKOST_BLOKU = 32; //Velikost vykresleni bloku
@@ -42,36 +36,9 @@ namespace Labyrinth_of_Secrets
         public List<Point> cestaZeStartuDoCile = new List<Point>();
         public bool ukazCestu = false;
 
-        public KomponentaMapa(Hra hra) : base(hra)
+        public KomponentaMapa(Hra hra)
         {
             this.hra = hra;
-        }
-
-        public override void Initialize()
-        {
-            VygenerujMapu();
-
-            base.Initialize();
-        }
-
-        protected override void LoadContent()
-        {
-            brick = hra.Content.Load<Texture2D>("Images\\Brick");
-
-            base.LoadContent();
-        }
-
-        public override void Update(GameTime gameTime)
-        {
-            base.Update(gameTime);
-        }
-
-        public override void Draw(GameTime gameTime)
-        {
-            hra._spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, transformMatrix: hra.komponentaKamera._kamera.GetViewMatrix());
-            VykresliMapu();
-            hra._spriteBatch.End();
-            base.Draw(gameTime);
         }
 
         //Resetuje vsechny promenne mapy
@@ -84,27 +51,9 @@ namespace Labyrinth_of_Secrets
             cestaZeStartuDoCile = new List<Point>();
         }
 
-        //Vykresli všechny bloky na mape
-        void VykresliMapu()
-        {
-            for (int x = 0; x < VELIKOST_MAPY_X; x++)
-            {
-                for (int y = 0; y < VELIKOST_MAPY_Y; y++)
-                {
-                    if (mapa[x, y].typPole == Pole.TypPole.Zed)
-                        hra._spriteBatch.Draw(brick, new Rectangle(x * VELIKOST_BLOKU, y * VELIKOST_BLOKU, VELIKOST_BLOKU, VELIKOST_BLOKU), Color.White);
-                    if (mapa[x, y].typPole == Pole.TypPole.Obchodnik)
-                        hra._spriteBatch.Draw(brick, new Rectangle(x * VELIKOST_BLOKU, y * VELIKOST_BLOKU, VELIKOST_BLOKU, VELIKOST_BLOKU), new Color(180, 180, 180));
-                    if (ukazCestu && mapa[x, y].naHlavniCeste)
-                        hra._spriteBatch.Draw(Hra.pixel, new Rectangle(x * VELIKOST_BLOKU, y * VELIKOST_BLOKU, VELIKOST_BLOKU, VELIKOST_BLOKU), new Color(255, 200, 200));
-                }
-            }
-        }
-
         //Vygeneruje uplne celou mapu a umisti na ni vsechny struktury co na ni maji byt
         public void VygenerujMapu()
         {
-            hra.komponentaSvetlo.ZastavPocitaniSvetla();
             mapa = new Pole[VELIKOST_MAPY_X, VELIKOST_MAPY_Y];
 
             if ((VELIKOST_MAPY_X + 1) % 6 != 0 || (VELIKOST_MAPY_Y + 1) % 6 != 0 || MAX_POCET_OBCHODU < 2 ||
@@ -122,11 +71,6 @@ namespace Labyrinth_of_Secrets
 
             foreach (Point bod in cestaZeStartuDoCile)
                 mapa[bod.X, bod.Y].naHlavniCeste = true;
-
-            hra.komponentaSvetlo.ResetujPromenne();
-            hra.komponentaSvetlo.PridejZdrojeSvetla();
-
-            hra.komponentaSvetlo.SpustPocitaniSvetla();
         }
 
         //Umisti na kazdy blok na mape zed
@@ -505,45 +449,41 @@ namespace Labyrinth_of_Secrets
             return cesta;
         }
 
-        public void PrevedBytyNaMapu(byte[] prichoziMapaVBytech)
+        public byte[] PrevedMapuNaBytovePole()
         {
-            byte[] mapaVBytech = Convert.FromBase64String(Encoding.UTF8.GetString(prichoziMapaVBytech));
+            List<byte> mapaVBytech = new List<byte>
+            {
+                (byte)(VELIKOST_MAPY_X / 255),
+                (byte)(VELIKOST_MAPY_X % 255),
+                (byte)(VELIKOST_MAPY_Y / 255),
+                (byte)(VELIKOST_MAPY_Y % 255)
+            };
 
-            hra.komponentaSvetlo.ZastavPocitaniSvetla();
-            VELIKOST_MAPY_X = mapaVBytech[0] * 255 + mapaVBytech[1];
-            VELIKOST_MAPY_Y = mapaVBytech[2] * 255 + mapaVBytech[3];
-
-            int pozice = 4;
-
-            mapa = new Pole[VELIKOST_MAPY_X, VELIKOST_MAPY_Y];
             for (int y = 0; y < VELIKOST_MAPY_Y; y++)
             {
                 for (int x = 0; x < VELIKOST_MAPY_X; x++)
                 {
-                    mapa[x, y] = new Pole((Pole.TypPole)mapaVBytech[pozice]);
-                    pozice++;
+                    mapaVBytech.Add((byte)mapa[x, y].typPole);
                 }
             }
-            hra.komponentaSvetlo.ResetujPromenne();
-
-            int pocetSvetel = mapaVBytech[pozice] * 255 * 255;
-            pocetSvetel += mapaVBytech[pozice + 1] * 255;
-            pocetSvetel += mapaVBytech[pozice + 2];
-            pozice += 3;
 
             List<KomponentaSvetlo.ZdrojSvetla> odkazNaZdrojeSvetla = hra.komponentaSvetlo.svetelneZdroje;
 
-            for (int i = 0; i < pocetSvetel; i++)
-            {
-                KomponentaSvetlo.ZdrojSvetla noveSvetlo = new KomponentaSvetlo.ZdrojSvetla();
-                noveSvetlo.silaSvetla = BitConverter.ToInt32(mapaVBytech, pozice);
-                noveSvetlo.odkud = new Point(BitConverter.ToInt32(mapaVBytech, pozice + 4), BitConverter.ToInt32(mapaVBytech, pozice + 8));
-                noveSvetlo.barvaSvetla = new Color(mapaVBytech[pozice + 12], mapaVBytech[pozice + 13], mapaVBytech[pozice + 14], mapaVBytech[pozice + 15]);
-                pozice += 16;
-                odkazNaZdrojeSvetla.Add(noveSvetlo);
-            }
+            mapaVBytech.Add((byte)(odkazNaZdrojeSvetla.Count / 255 / 255));
+            mapaVBytech.Add((byte)(odkazNaZdrojeSvetla.Count % (255 * 255) / 255));
+            mapaVBytech.Add((byte)(odkazNaZdrojeSvetla.Count % 255));
 
-            hra.komponentaSvetlo.SpustPocitaniSvetla();
+            for (int i = 0; i < odkazNaZdrojeSvetla.Count; i++)
+            {
+                mapaVBytech.AddRange(BitConverter.GetBytes(odkazNaZdrojeSvetla[i].silaSvetla));
+                mapaVBytech.AddRange(BitConverter.GetBytes(odkazNaZdrojeSvetla[i].odkud.X));
+                mapaVBytech.AddRange(BitConverter.GetBytes(odkazNaZdrojeSvetla[i].odkud.Y));
+                mapaVBytech.Add(odkazNaZdrojeSvetla[i].barvaSvetla.R);
+                mapaVBytech.Add(odkazNaZdrojeSvetla[i].barvaSvetla.G);
+                mapaVBytech.Add(odkazNaZdrojeSvetla[i].barvaSvetla.B);
+                mapaVBytech.Add(odkazNaZdrojeSvetla[i].barvaSvetla.A);
+            }
+            return Encoding.UTF8.GetBytes(Convert.ToBase64String(mapaVBytech.ToArray()));
         }
     }
 }

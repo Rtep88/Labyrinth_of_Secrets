@@ -49,7 +49,7 @@ namespace Labyrinth_of_Secrets
                 casKurzoru = 0;
             }
 
-            if (hra.NoveZmacknutaKlavesa(Keys.OemTilde))
+            if (hra.NoveZmacknutaKlavesa(Keys.OemTilde) || hra.NoveZmacknutaKlavesa(Keys.OemSemicolon))
             {
                 naposledyZmackleKlavesy = Keyboard.GetState().GetPressedKeys();
                 if (jeOtevrena)
@@ -87,6 +87,7 @@ namespace Labyrinth_of_Secrets
                         radky.Insert(0, new Radek("echoname/en - Vypíše jméno hráče", Color.White));
                         radky.Insert(0, new Radek("setname/sn [jméno] - Nastaví jméno hráče", Color.White));
                         radky.Insert(0, new Radek("disconnect/dc - Odpojí se od serveru", Color.White));
+                        radky.Insert(0, new Radek("server/sv [příkaz) - Pokud hostuji server, předám mu příkaz", Color.White));
                     }
                     else if (rozebranaMessage[0] == "clear" || rozebranaMessage[0] == "cl")
                     {
@@ -230,9 +231,25 @@ namespace Labyrinth_of_Secrets
 
                             radky.Insert(0, new Radek("Odpojeno od serveru"));
                             hra.komponentaMultiplayer.OdpojSeOdServer();
+
                         }
                         else
                             radky.Insert(0, new Radek("Nelze se odpojit od serveru kdy na něm nejsem připojený!", Color.Yellow));
+                    }
+                    else if (rozebranaMessage[0] == "server" || rozebranaMessage[0] == "sv")
+                    {
+                        if (hra.komponentaMultiplayer.procesServeru != null && !hra.komponentaMultiplayer.procesServeru.HasExited)
+                        {
+                            hra.komponentaMultiplayer.procesServeru.StandardInput.WriteLine(zprava.Substring(rozebranaMessage[0].Length + 1).TrimEnd());
+
+                            if (zprava.Substring(rozebranaMessage[0].Length + 1).TrimEnd() == "exit")
+                            {
+                                radky.Insert(0, new Radek("Odpojeno od serveru"));
+                                hra.komponentaMultiplayer.OdpojSeOdServer();
+                            }
+                        }
+                        else
+                            radky.Insert(0, new Radek("Nelze předat příkaz serveru, když ho nehostuji!", Color.Yellow));
                     }
                     else
                     {
