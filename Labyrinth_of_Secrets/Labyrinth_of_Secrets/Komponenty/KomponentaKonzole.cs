@@ -234,7 +234,7 @@ namespace Labyrinth_of_Secrets
 
                         }
                         else
-                            radky.Insert(0, new Radek("Nelze se odpojit od serveru kdy na něm nejsem připojený!", Color.Yellow));
+                            radky.Insert(0, new Radek("Nelze se odpojit od serveru když na něm nejsem připojený!", Color.Yellow));
                     }
                     else if (rozebranaMessage[0] == "server" || rozebranaMessage[0] == "sv")
                     {
@@ -329,12 +329,10 @@ namespace Labyrinth_of_Secrets
                 else
                     hra.VykresliTextSOkrajem(Hra.comicSans, new Vector2(8, (int)(hra.velikostOkna.Y - 18)), "> " + zprava.Substring(0, poziceKurzoru) + " " + zprava.Substring(poziceKurzoru), 0.05f, Color.White, Color.Black, 0.08f, 8);
             }
-            int i = 1;
-            foreach (Radek radek in radky)
+            for (int i = 0; i < radky.Count; i++)
             {
                 if (jeOtevrena)
-                    hra.VykresliTextSOkrajem(Hra.comicSans, new Vector2(2, (int)(hra.velikostOkna.Y - 18 - (i * Hra.comicSans.MeasureString("abcde").Y * 0.05f))), radek.text, 0.05f, radek.barva, Color.Black, 0.08f, 8);
-                i++;
+                    hra.VykresliTextSOkrajem(Hra.comicSans, new Vector2(2, (int)(hra.velikostOkna.Y - 18 - ((i + 1) * Hra.comicSans.MeasureString("abcde").Y * 0.05f))), radky[i].text, 0.05f, radky[i].barva, Color.Black, 0.08f, 8);
             }
             hra._spriteBatch.End();
             base.Draw(gameTime);

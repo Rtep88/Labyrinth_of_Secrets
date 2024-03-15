@@ -33,22 +33,25 @@ namespace Labyrinth_of_Secrets
             ZadostOPripojeni,
             PotvrzujiPripojeni,
             DobrePripojujiSe,
-            OdpojilSeKlient
+            OdpojilSeKlient,
+            UpdateMonster
         }
 
         //Promenne
-        private Dictionary<string, Point> hraci = new Dictionary<string, Point>();
+        public Dictionary<string, Vector2> hraci = new Dictionary<string, Vector2>();
         private byte[] mapaVBytech;
         private IPEndPoint odesilatel = new IPEndPoint(IPAddress.Any, PORT);
         private List<Klient> klienti = new List<Klient>(); //Pro server
         private UdpClient udpServer; //Pro server
+
+        private float casUpdatuMonster = 0.5f;
 
         public KomponentaMultiplayer(Hra hra)
         {
             this.hra = hra;
         }
 
-        public void Update()
+        public void Update(float deltaTime)
         {
             //Kontroluje jestli klient odpovida
             for (int i = 0; i < klienti.Count; i++)
@@ -67,13 +70,22 @@ namespace Labyrinth_of_Secrets
                     i--;
                 }
             }
+
+            casUpdatuMonster -= deltaTime;
+            if (casUpdatuMonster <= 0)
+            {
+                byte[] monstraVBytech = hra.komponentaMonstra.PrevedMonstraNaByty();
+                string monstraJakoString = Encoding.UTF8.GetString(monstraVBytech);
+                PosliVsemKlientum(Encoding.UTF8.GetBytes($"{(short)TypPacketu.UpdateMonster};{monstraJakoString}"));
+                casUpdatuMonster = 0.1f;
+            }
         }
 
         public void SpustServer()
         {
             udpServer = new UdpClient(new IPEndPoint(IPAddress.Any, PORT));
             udpServer.BeginReceive(new AsyncCallback(ReceiveCallback), null);
-            Console.WriteLine("Server spuštěn na 0.0.0.0:" + PORT);
+            Console.WriteLine("Server zapnut na 0.0.0.0:" + PORT);
             mapaVBytech = hra.komponentaMapa.PrevedMapuNaBytovePole();
         }
 
@@ -98,7 +110,7 @@ namespace Labyrinth_of_Secrets
             switch (typPacketu)
             {
                 case TypPacketu.PohybHrace:
-                    Point poziceHrace = new Point(int.Parse(dataVStringu[2]), int.Parse(dataVStringu[3]));
+                    Vector2 poziceHrace = new Vector2(PrevedStringNaFloat(dataVStringu[2]), PrevedStringNaFloat(dataVStringu[3]));
                     if (!hraci.ContainsKey(dataVStringu[1]))
                         hraci.Add(dataVStringu[1], poziceHrace);
                     else
@@ -137,50 +149,66 @@ namespace Labyrinth_of_Secrets
         //Zpracovani dotazu clienta
         void ReceiveCallback(IAsyncResult ar)
         {
-            byte[] data = udpServer.EndReceive(ar, ref odesilatel);
-
-            if (data.Length > 0)
+            try
             {
-                try
-                {
-                    if (klienti.Count(x => PorovnejIPAdresy(x.ipAdresa, odesilatel)) == 1)
-                        klienti.Single(x => PorovnejIPAdresy(x.ipAdresa, odesilatel)).casPosledniOdpovedi = (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                byte[] data = udpServer.EndReceive(ar, ref odesilatel);
 
-                    string[] dataVStringu = Encoding.UTF8.GetString(data).Split(';');
-                    //Pokud je toto prvni dotaz tak si ho pridam do listu
-                    if ((int.Parse(dataVStringu[0]) == (int)TypPacketu.ZadostOPripojeni || int.Parse(dataVStringu[0]) == (int)TypPacketu.DobrePripojujiSe) &&
-                        klienti.Count(x => PorovnejIPAdresy(x.ipAdresa, odesilatel) && x.jmeno == dataVStringu[1]) == 0)
+                if (data.Length > 0)
+                {
+                    try
                     {
-                        if (int.Parse(dataVStringu[0]) == (int)TypPacketu.ZadostOPripojeni)
+                        if (klienti.Count(x => PorovnejIPAdresy(x.ipAdresa, odesilatel)) == 1)
+                            klienti.Single(x => PorovnejIPAdresy(x.ipAdresa, odesilatel)).casPosledniOdpovedi = (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+                        string[] dataVStringu = Encoding.UTF8.GetString(data).Split(';');
+                        //Pokud je toto prvni dotaz tak si ho pridam do listu
+                        if ((int.Parse(dataVStringu[0]) == (int)TypPacketu.ZadostOPripojeni || int.Parse(dataVStringu[0]) == (int)TypPacketu.DobrePripojujiSe) &&
+                            klienti.Count(x => PorovnejIPAdresy(x.ipAdresa, odesilatel) && x.jmeno == dataVStringu[1]) == 0)
                         {
-                            for (int i = 0; i < 10; i++)
+                            if (int.Parse(dataVStringu[0]) == (int)TypPacketu.ZadostOPripojeni)
                             {
-                                PosliDataKonkretniAdrese(Encoding.UTF8.GetBytes((short)TypPacketu.PotvrzujiPripojeni + ";" + dataVStringu[1]), odesilatel);
-                                Thread.Sleep(10);
+                                for (int i = 0; i < 10; i++)
+                                {
+                                    PosliDataKonkretniAdrese(Encoding.UTF8.GetBytes((short)TypPacketu.PotvrzujiPripojeni + ";" + dataVStringu[1]), odesilatel);
+                                    Thread.Sleep(10);
+                                }
+                            }
+                            if (int.Parse(dataVStringu[0]) == (int)TypPacketu.DobrePripojujiSe)
+                            {
+                                klienti.Add(new Klient(odesilatel, dataVStringu[1], (ulong)DateTimeOffset.UtcNow.ToUnixTimeSeconds()));
+                                Console.WriteLine("Připojil se klient " + dataVStringu[1]);
                             }
                         }
-                        if (int.Parse(dataVStringu[0]) == (int)TypPacketu.DobrePripojujiSe)
-                        {
-                            klienti.Add(new Klient(odesilatel, dataVStringu[1], (ulong)DateTimeOffset.UtcNow.ToUnixTimeSeconds()));
-                            Console.WriteLine("Připojil se klient " + dataVStringu[1]);
-                        }
+                        else
+                            ZpracujData(data);
                     }
-                    else
-                        ZpracujData(data);
+                    catch
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("Neočekávaná chyba při provadění dotazu od klienta!");
+                        Console.ForegroundColor = ConsoleColor.White;
+                    }
                 }
-                catch
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("Neočekávaná chyba při provadění dotazu od klienta!");
-                    Console.ForegroundColor = ConsoleColor.White;
-                }
+                udpServer.BeginReceive(new AsyncCallback(ReceiveCallback), null);
             }
-            udpServer.BeginReceive(new AsyncCallback(ReceiveCallback), null);
+            catch { }
         }
 
         bool PorovnejIPAdresy(IPEndPoint ipAdresa1, IPEndPoint ipAdresa2)
         {
             return ipAdresa1.Address.Equals(ipAdresa2.Address) && ipAdresa1.Port == ipAdresa2.Port;
+        }
+
+        string PrevedFloatNaString(float cislo)
+        {
+            byte[] floatVBytech = new byte[] { (byte)(cislo / 255), (byte)(cislo % 255), (byte)(cislo % 1 * 255) };
+            return Convert.ToBase64String(floatVBytech);
+        }
+
+        float PrevedStringNaFloat(string cislo)
+        {
+            byte[] floatVBytech = Convert.FromBase64String(cislo);
+            return floatVBytech[0] * 255 + floatVBytech[1] + floatVBytech[2] / 255f;
         }
     }
 }

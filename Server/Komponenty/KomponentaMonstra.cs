@@ -25,78 +25,135 @@ namespace Labyrinth_of_Secrets
             this.hra = hra;
         }
 
-        public void Update()
+        public void Update(float deltaTime)
         {
-            /*while (monstra.Count < MAX_POCET_MONSTER)
+            NaspawnujMonstra();
+
+            PohniMonstra(deltaTime);
+        }
+
+        public void NaspawnujMonstra()
+        {
+            while (monstra.Count < MAX_POCET_MONSTER)
             {
                 monstra.Add(new Monstrum(new Vector2(hra.rnd.Next(0, KomponentaMapa.VELIKOST_MAPY_X * KomponentaMapa.VELIKOST_BLOKU), hra.rnd.Next(0, KomponentaMapa.VELIKOST_MAPY_Y * KomponentaMapa.VELIKOST_BLOKU))));
             }
+        }
 
+        public void PohniMonstra(float deltaTime)
+        {
             foreach (Monstrum monstrum in monstra)
             {
                 int pocetUpdatu = (int)(monstrum.rychlost / 20) + 1;
-                Vector2 cil = hra.komponentaHrac.poziceHrace;
+                Vector2 cil = new Vector2(float.MaxValue);
+
+                foreach (var hrac in hra.komponentaMultiplayer.hraci)
+                {
+                    if (Vector2.Distance(cil, monstrum.pozice) > Vector2.Distance(hrac.Value, monstrum.pozice))
+                        cil = hrac.Value;
+                }
+
+                if (cil == new Vector2(float.MaxValue))
+                    return;
 
                 for (int i = 0; i < pocetUpdatu; i++)
                 {
                     if (monstrum.pozice != cil)
-                        monstrum.pozice += Vector2.Normalize(cil - monstrum.pozice) * monstrum.rychlost * (float)gameTime.ElapsedGameTime.TotalSeconds / pocetUpdatu;
-                }
-
-                //Kolize
-                Point aktualniBlok = new Point((int)((monstrum.pozice.X + monstrum.velikost.X / 2f) / KomponentaMapa.VELIKOST_BLOKU),
-                    (int)((monstrum.pozice.Y + monstrum.velikost.Y / 2f) / KomponentaMapa.VELIKOST_BLOKU));
-
-                Point odkudKontrolovat = new Point(Math.Max(0, aktualniBlok.X - 2), Math.Max(0, aktualniBlok.Y - 2));
-                Point kamKontrolovat = new Point(Math.Min(KomponentaMapa.VELIKOST_MAPY_X - 1, aktualniBlok.X + 2),
-                    Math.Min(KomponentaMapa.VELIKOST_MAPY_Y - 1, aktualniBlok.Y + 2));
-
-                List<Point> poziceNaKontrolu = new List<Point>();
-                for (int x = odkudKontrolovat.X; x <= kamKontrolovat.X; x++)
-                    for (int y = odkudKontrolovat.Y; y <= kamKontrolovat.Y; y++)
-                        poziceNaKontrolu.Add(new Point(x, y));
-
-                poziceNaKontrolu = poziceNaKontrolu.OrderBy(x => Vector2.Distance(new Vector2((x.X + 0.5f) * KomponentaMapa.VELIKOST_BLOKU,
-                    (x.Y + 0.5f) * KomponentaMapa.VELIKOST_BLOKU), monstrum.pozice + new Vector2(monstrum.velikost.X / 2f, monstrum.velikost.Y / 2f))).ToList();
-
-                for (int j = 0; j < poziceNaKontrolu.Count; j++)
-                {
-                    int x = poziceNaKontrolu[j].X;
-                    int y = poziceNaKontrolu[j].Y;
-
-                    if (hra.komponentaMapa.mapa[x, y].typPole != Pole.TypPole.Zed)
-                        continue;
-
-                    Rectangle obdelnikBloku = new Rectangle(x * KomponentaMapa.VELIKOST_BLOKU, y * KomponentaMapa.VELIKOST_BLOKU,
-                        KomponentaMapa.VELIKOST_BLOKU, KomponentaMapa.VELIKOST_BLOKU);
-
-                    if (Hra.KolizeObdelniku(monstrum.pozice.X, monstrum.pozice.Y, monstrum.velikost.X, monstrum.velikost.Y,
-                        obdelnikBloku.X, obdelnikBloku.Y, obdelnikBloku.Width, obdelnikBloku.Height))
                     {
-                        float x1 = Math.Max(monstrum.pozice.X, obdelnikBloku.Left);
-                        float y1 = Math.Max(monstrum.pozice.Y, obdelnikBloku.Top);
-                        float x2 = Math.Min(monstrum.pozice.X + monstrum.velikost.X, obdelnikBloku.Right);
-                        float y2 = Math.Min(monstrum.pozice.Y + monstrum.velikost.Y, obdelnikBloku.Bottom);
+                        Vector2 pohyb = Vector2.Normalize(cil - monstrum.pozice) * monstrum.rychlost * deltaTime / pocetUpdatu;
 
-                        Vector2 bodDotyku = new Vector2((x1 + x2) / 2, (y1 + y2) / 2);
+                        if (Math.Abs(monstrum.pozice.X - cil.X) > pohyb.X)
+                            monstrum.pozice.X += pohyb.X;
+                        else
+                            monstrum.pozice.X = cil.X;
 
-                        float vzdalenostKeStene = Math.Min(Math.Min(Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Left, obdelnikBloku.Center.Y)),
-                        Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Right, obdelnikBloku.Center.Y))), Math.Min(
-                            Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Center.X, obdelnikBloku.Top)),
-                            Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Center.X, obdelnikBloku.Bottom))
-                        ));
+                        if (Math.Abs(monstrum.pozice.Y - cil.Y) > pohyb.Y)
+                            monstrum.pozice.Y += pohyb.Y;
+                        else
+                            monstrum.pozice.Y = cil.Y;
+                    }
 
-                        if (vzdalenostKeStene == Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Left, obdelnikBloku.Center.Y))) //Leva
-                            monstrum.pozice.X = obdelnikBloku.Left - monstrum.velikost.X;
-                        if (vzdalenostKeStene == Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Right, obdelnikBloku.Center.Y))) //Prava
-                            monstrum.pozice.X = obdelnikBloku.Right;
-                        if (vzdalenostKeStene == Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Center.X, obdelnikBloku.Bottom))) //Dolni
-                            monstrum.pozice.Y = obdelnikBloku.Bottom;
-                        if (vzdalenostKeStene == Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Center.X, obdelnikBloku.Top))) //Horni
-                            monstrum.pozice.Y = obdelnikBloku.Top - monstrum.velikost.Y;
+                    //Kolize
+                    Point aktualniBlok = new Point((int)((monstrum.pozice.X + monstrum.velikost.X / 2f) / KomponentaMapa.VELIKOST_BLOKU),
+                        (int)((monstrum.pozice.Y + monstrum.velikost.Y / 2f) / KomponentaMapa.VELIKOST_BLOKU));
+
+                    Point odkudKontrolovat = new Point(Math.Max(0, aktualniBlok.X - 2), Math.Max(0, aktualniBlok.Y - 2));
+                    Point kamKontrolovat = new Point(Math.Min(KomponentaMapa.VELIKOST_MAPY_X - 1, aktualniBlok.X + 2),
+                        Math.Min(KomponentaMapa.VELIKOST_MAPY_Y - 1, aktualniBlok.Y + 2));
+
+                    List<Point> poziceNaKontrolu = new List<Point>();
+                    for (int x = odkudKontrolovat.X; x <= kamKontrolovat.X; x++)
+                        for (int y = odkudKontrolovat.Y; y <= kamKontrolovat.Y; y++)
+                            poziceNaKontrolu.Add(new Point(x, y));
+
+                    poziceNaKontrolu = poziceNaKontrolu.OrderBy(x => Vector2.Distance(new Vector2((x.X + 0.5f) * KomponentaMapa.VELIKOST_BLOKU,
+                        (x.Y + 0.5f) * KomponentaMapa.VELIKOST_BLOKU), monstrum.pozice + new Vector2(monstrum.velikost.X / 2f, monstrum.velikost.Y / 2f))).ToList();
+
+                    for (int j = 0; j < poziceNaKontrolu.Count; j++)
+                    {
+                        int x = poziceNaKontrolu[j].X;
+                        int y = poziceNaKontrolu[j].Y;
+
+                        if (hra.komponentaMapa.mapa[x, y].typPole != Pole.TypPole.Zed)
+                            continue;
+
+                        Rectangle obdelnikBloku = new Rectangle(x * KomponentaMapa.VELIKOST_BLOKU, y * KomponentaMapa.VELIKOST_BLOKU,
+                            KomponentaMapa.VELIKOST_BLOKU, KomponentaMapa.VELIKOST_BLOKU);
+
+                        if (hra.KolizeObdelniku(monstrum.pozice.X, monstrum.pozice.Y, monstrum.velikost.X, monstrum.velikost.Y,
+                            obdelnikBloku.X, obdelnikBloku.Y, obdelnikBloku.Width, obdelnikBloku.Height))
+                        {
+                            float x1 = Math.Max(monstrum.pozice.X, obdelnikBloku.Left);
+                            float y1 = Math.Max(monstrum.pozice.Y, obdelnikBloku.Top);
+                            float x2 = Math.Min(monstrum.pozice.X + monstrum.velikost.X, obdelnikBloku.Right);
+                            float y2 = Math.Min(monstrum.pozice.Y + monstrum.velikost.Y, obdelnikBloku.Bottom);
+
+                            Vector2 bodDotyku = new Vector2((x1 + x2) / 2, (y1 + y2) / 2);
+
+                            float vzdalenostKeStene = Math.Min(Math.Min(Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Left, obdelnikBloku.Center.Y)),
+                            Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Right, obdelnikBloku.Center.Y))), Math.Min(
+                                Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Center.X, obdelnikBloku.Top)),
+                                Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Center.X, obdelnikBloku.Bottom))
+                            ));
+
+                            if (vzdalenostKeStene == Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Left, obdelnikBloku.Center.Y))) //Leva
+                                monstrum.pozice.X = obdelnikBloku.Left - monstrum.velikost.X;
+                            if (vzdalenostKeStene == Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Right, obdelnikBloku.Center.Y))) //Prava
+                                monstrum.pozice.X = obdelnikBloku.Right;
+                            if (vzdalenostKeStene == Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Center.X, obdelnikBloku.Bottom))) //Dolni
+                                monstrum.pozice.Y = obdelnikBloku.Bottom;
+                            if (vzdalenostKeStene == Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Center.X, obdelnikBloku.Top))) //Horni
+                                monstrum.pozice.Y = obdelnikBloku.Top - monstrum.velikost.Y;
+                        }
+
                     }
                 }
-            }*/
+            }
+        }
+
+        public byte[] PrevedMonstraNaByty()
+        {
+            List<byte> monstrumVBytech = new List<byte>
+            {
+                (byte)(monstra.Count / 255),
+                (byte)(monstra.Count % 255)
+            };
+
+            for (int i = 0; i < monstra.Count; i++)
+            {
+                monstrumVBytech.Add((byte)monstra[i].velikost.X);
+                monstrumVBytech.Add((byte)monstra[i].velikost.Y);
+                monstrumVBytech.Add((byte)(monstra[i].pozice.X / 255));
+                monstrumVBytech.Add((byte)(monstra[i].pozice.X % 255));
+                monstrumVBytech.Add((byte)(monstra[i].pozice.X % 1 * 255));
+                monstrumVBytech.Add((byte)(monstra[i].pozice.Y / 255));
+                monstrumVBytech.Add((byte)(monstra[i].pozice.Y % 255));
+                monstrumVBytech.Add((byte)(monstra[i].pozice.Y % 1 * 255));
+                monstrumVBytech.Add((byte)monstra[i].rychlost);
+                monstrumVBytech.Add((byte)monstra[i].typMonstra);
+            }
+
+            return Encoding.UTF8.GetBytes(Convert.ToBase64String(monstrumVBytech.ToArray()));
         }
     }
 }

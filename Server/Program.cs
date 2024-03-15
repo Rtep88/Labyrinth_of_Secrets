@@ -103,7 +103,8 @@ namespace Server
                 }
             }
 
-            Console.Clear();
+            if (idParenta == -1)
+                Console.Clear();
 
             Hra hra = new Hra();
             hra.komponentaMapa.VygenerujMapu();
@@ -111,15 +112,20 @@ namespace Server
 
             Thread kontrolaPrikazu = new Thread(KontrolujPrikazy);
             kontrolaPrikazu.Start();
-
+            Stopwatch stopky = new Stopwatch();
+            float deltaTime = 1f / FPS;
             while (true)
             {
-                hra.komponentaMultiplayer.Update();
+                stopky.Restart();
+                hra.komponentaMonstra.Update(deltaTime);
+                hra.komponentaMultiplayer.Update(deltaTime);
 
                 if (idParenta != -1 && !Process.GetProcesses().Any(x => x.Id == idParenta))
                     Environment.Exit(0);
 
-                Thread.Sleep(1000 / FPS);
+                while (stopky.ElapsedMilliseconds / 1000f < 1f / FPS) { Thread.Sleep(1); }
+
+                deltaTime = stopky.ElapsedMilliseconds / 1000f;
             }
         }
 

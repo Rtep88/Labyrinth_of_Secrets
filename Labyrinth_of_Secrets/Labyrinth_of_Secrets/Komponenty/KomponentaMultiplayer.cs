@@ -42,13 +42,14 @@ namespace Labyrinth_of_Secrets
             ZadostOPripojeni,
             PotvrzujiPripojeni,
             DobrePripojujiSe,
-            OdpojilSeKlient
+            OdpojilSeKlient,
+            UpdateMonster
         }
 
         //Promenne
         public string jmeno = "";
         public TypZarizeni typZarizeni = TypZarizeni.SinglePlayer;
-        private Dictionary<string, Point> hraci = new Dictionary<string, Point>();
+        public Dictionary<string, Vector2> hraci = new Dictionary<string, Vector2>();
         private UdpClient udpKlient;
         private byte[] mapaVBytech;
         private IPEndPoint odesilatel = new IPEndPoint(IPAddress.Any, PORT);
@@ -87,7 +88,7 @@ namespace Labyrinth_of_Secrets
             //Poslani pozice
             if (typZarizeni == TypZarizeni.Klient)
             {
-                PosliData(Encoding.UTF8.GetBytes($"{(short)TypPacketu.PohybHrace};{jmeno};{(int)hra.komponentaHrac.poziceHrace.X};{(int)hra.komponentaHrac.poziceHrace.Y}"));
+                PosliData(Encoding.UTF8.GetBytes($"{(short)TypPacketu.PohybHrace};{jmeno};{PrevedFloatNaString(hra.komponentaHrac.poziceHrace.X)};{PrevedFloatNaString(hra.komponentaHrac.poziceHrace.Y)}"));
             }
 
             base.Update(gameTime);
@@ -99,7 +100,7 @@ namespace Labyrinth_of_Secrets
 
             foreach (var hrac in hraci)
             {
-                hra.komponentaHrac.VykresliHraceSJmenovkou(hrac.Value.ToVector2(), hrac.Key);
+                hra.komponentaHrac.VykresliHraceSJmenovkou(hrac.Value, hrac.Key);
             }
 
             hra._spriteBatch.End();
@@ -151,13 +152,16 @@ namespace Labyrinth_of_Secrets
 
         public void ZpracujData(byte[] data)
         {
+            if (typZarizeni == TypZarizeni.SinglePlayer)
+                return;
+
             string[] dataVStringu = Encoding.UTF8.GetString(data).Split(';');
             TypPacketu typPacketu = (TypPacketu)int.Parse(dataVStringu[0]);
 
             switch (typPacketu)
             {
                 case TypPacketu.PohybHrace:
-                    Point poziceHrace = new Point(int.Parse(dataVStringu[2]), int.Parse(dataVStringu[3]));
+                    Vector2 poziceHrace = new Vector2(PrevedStringNaFloat(dataVStringu[2]), PrevedStringNaFloat(dataVStringu[3]));
                     if (dataVStringu[1] != jmeno)
                     {
                         if (!hraci.ContainsKey(dataVStringu[1]))
@@ -183,11 +187,14 @@ namespace Labyrinth_of_Secrets
                     pocetZiskanychCastiMapy++;
                     break;
                 case TypPacketu.OdpojilSeKlient:
-                    if (typZarizeni == TypZarizeni.Klient && PorovnejIPAdresy(adresaServeru, odesilatel) && hraci.ContainsKey(dataVStringu[1]))
+                    if (hraci.ContainsKey(dataVStringu[1]))
                     {
                         hraci.Remove(dataVStringu[1]);
                         hra.komponentaKonzole.radky.Insert(0, new Radek("Odpojil se hráč " + dataVStringu[1], Color.White));
                     }
+                    break;
+                case TypPacketu.UpdateMonster:
+                    hra.komponentaMonstra.PrevedBytyNaMonstra(Encoding.UTF8.GetBytes(dataVStringu[1]));
                     break;
             }
         }
@@ -195,7 +202,12 @@ namespace Labyrinth_of_Secrets
         public void PripojSeNaServer(IPAddress adresa)
         {
             if (typZarizeni != TypZarizeni.SinglePlayer)
+            {
+                hra.komponentaKonzole.radky.Insert(0, new Radek("Už jsi připojený k serveru!", Color.Yellow));
                 return;
+            }
+
+            hra.komponentaMonstra.monstra.Clear();
 
             typZarizeni = TypZarizeni.Klient;
             adresaServeru = new IPEndPoint(adresa, PORT);
@@ -246,7 +258,7 @@ namespace Labyrinth_of_Secrets
             if (hra.komponentaMultiplayer.procesServeru != null && !hra.komponentaMultiplayer.procesServeru.HasExited)
                 hra.komponentaMultiplayer.procesServeru.StandardInput.WriteLine("exit");
 
-            udpKlient.Dispose();
+            udpKlient.Close();
             hraci.Clear();
             typZarizeni = TypZarizeni.SinglePlayer;
         }
@@ -257,16 +269,20 @@ namespace Labyrinth_of_Secrets
             if (typZarizeni == TypZarizeni.SinglePlayer)
                 return;
 
-            byte[] data = udpKlient.EndReceive(ar, ref odesilatel);
-
-            if (PorovnejIPAdresy(odesilatel, adresaServeru))
+            try
             {
-                posledniCasOdpovediServer = (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                byte[] data = udpKlient.EndReceive(ar, ref odesilatel);
 
-                ZpracujData(data);
+                if (PorovnejIPAdresy(odesilatel, adresaServeru))
+                {
+                    posledniCasOdpovediServer = (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+                    ZpracujData(data);
+                }
+
+                udpKlient.BeginReceive(new AsyncCallback(ReceiveCallbackClient), null);
             }
-
-            udpKlient.BeginReceive(new AsyncCallback(ReceiveCallbackClient), null);
+            catch { };
         }
 
         public void SpustServer()
@@ -291,6 +307,7 @@ namespace Labyrinth_of_Secrets
                 throw new PlatformNotSupportedException();
             procesServeru.StartInfo.Arguments = $"-parentpid {Process.GetCurrentProcess().Id} -port {PORT}";
             procesServeru.StartInfo.UseShellExecute = false;
+            procesServeru.StartInfo.CreateNoWindow = true;
             procesServeru.StartInfo.RedirectStandardError = true;
             procesServeru.StartInfo.RedirectStandardOutput = true;
             procesServeru.StartInfo.RedirectStandardInput = true;
@@ -300,7 +317,7 @@ namespace Labyrinth_of_Secrets
             procesServeru.BeginErrorReadLine();
             procesServeru.BeginOutputReadLine();
 
-            for (int i = 0; i < 300 && !procesServeru.HasExited; i++)
+            for (int i = 0; i < 300 && procesServeru != null && !procesServeru.HasExited; i++)
             {
                 if (serverSpusten)
                 {
@@ -328,7 +345,7 @@ namespace Labyrinth_of_Secrets
         {
             if (e.Data != null)
             {
-                if (e.Data.StartsWith("Server spuštěn"))
+                if (e.Data.StartsWith("Server zapnut"))
                     serverSpusten = true;
                 hra.komponentaKonzole.radky.Insert(0, new Radek("[SERVER] " + e.Data));
             }
@@ -338,6 +355,17 @@ namespace Labyrinth_of_Secrets
         {
             return ipAdresa1.Address.Equals(ipAdresa2.Address) && ipAdresa1.Port == ipAdresa2.Port;
         }
-    }
 
+        string PrevedFloatNaString(float cislo)
+        {
+            byte[] floatVBytech = new byte[] { (byte)(cislo / 255), (byte)(cislo % 255), (byte)(cislo % 1 * 255) };
+            return Convert.ToBase64String(floatVBytech);
+        }
+
+        float PrevedStringNaFloat(string cislo)
+        {
+            byte[] floatVBytech = Convert.FromBase64String(cislo);
+            return floatVBytech[0] * 255 + floatVBytech[1] + floatVBytech[2] / 255f;
+        }
+    }
 }

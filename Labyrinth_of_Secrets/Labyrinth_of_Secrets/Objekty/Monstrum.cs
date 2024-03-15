@@ -21,5 +21,10 @@ namespace Labyrinth_of_Secrets
             this.pozice = pozice;
             rychlost *= new Random().Next(700, 1300) / 1000f;
         }
+
+        public Monstrum()
+        {
+            
+        }
     }
 }
