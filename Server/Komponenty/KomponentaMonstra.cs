@@ -42,93 +42,81 @@ namespace Labyrinth_of_Secrets
 
         public void PohniMonstra(float deltaTime)
         {
+            List<Monstrum> monstra2 = new List<Monstrum>();
             foreach (Monstrum monstrum in monstra)
             {
-                int pocetUpdatu = (int)(monstrum.rychlost / 20) + 1;
                 Vector2 cil = new Vector2(float.MaxValue);
 
                 foreach (var hrac in hra.komponentaMultiplayer.hraci)
                 {
                     if (Vector2.Distance(cil, monstrum.pozice) > Vector2.Distance(hrac.Value, monstrum.pozice))
+                    {
                         cil = hrac.Value;
+                        if (monstrum.sledovanyHrac != hrac.Key)
+                        {
+                            monstrum.sledovanyHrac = hrac.Key;
+                            monstrum.cesta = new LinkedList<Point>();
+                            monstrum.cesta.AddFirst((monstrum.pozice + monstrum.velikost.ToVector2() / 2).ToPoint() / new Point(KomponentaMapa.VELIKOST_BLOKU));
+                        }
+                    }
                 }
 
                 if (cil == new Vector2(float.MaxValue))
                     return;
 
-                for (int i = 0; i < pocetUpdatu; i++)
+                Point startovniKostka = (monstrum.pozice + monstrum.velikost.ToVector2() / 2).ToPoint() / new Point(KomponentaMapa.VELIKOST_BLOKU);
+
+                LinkedListNode<Point> aktualni = monstrum.cesta.First;
+                while (aktualni != null && aktualni.Next != null && aktualni.Value != startovniKostka)
+                    aktualni = aktualni.Next;
+                while (aktualni != null && aktualni.Previous != null)
+                    monstrum.cesta.Remove(aktualni.Previous);
+
+                Point cilovaKostka = (cil + monstrum.velikost.ToVector2() / 2).ToPoint() / new Point(KomponentaMapa.VELIKOST_BLOKU);
+                if (monstrum.cesta.Last() != cilovaKostka)
                 {
-                    if (monstrum.pozice != cil)
+                    LinkedListNode<Point> current = monstrum.cesta.Last;
+                    bool obsahuje = false;
+                    for (int i = 0; i < 10 && current.Previous != null; i++)
                     {
-                        Vector2 pohyb = Vector2.Normalize(cil - monstrum.pozice) * monstrum.rychlost * deltaTime / pocetUpdatu;
-
-                        if (Math.Abs(monstrum.pozice.X - cil.X) > pohyb.X)
-                            monstrum.pozice.X += pohyb.X;
-                        else
-                            monstrum.pozice.X = cil.X;
-
-                        if (Math.Abs(monstrum.pozice.Y - cil.Y) > pohyb.Y)
-                            monstrum.pozice.Y += pohyb.Y;
-                        else
-                            monstrum.pozice.Y = cil.Y;
-                    }
-
-                    //Kolize
-                    Point aktualniBlok = new Point((int)((monstrum.pozice.X + monstrum.velikost.X / 2f) / KomponentaMapa.VELIKOST_BLOKU),
-                        (int)((monstrum.pozice.Y + monstrum.velikost.Y / 2f) / KomponentaMapa.VELIKOST_BLOKU));
-
-                    Point odkudKontrolovat = new Point(Math.Max(0, aktualniBlok.X - 2), Math.Max(0, aktualniBlok.Y - 2));
-                    Point kamKontrolovat = new Point(Math.Min(KomponentaMapa.VELIKOST_MAPY_X - 1, aktualniBlok.X + 2),
-                        Math.Min(KomponentaMapa.VELIKOST_MAPY_Y - 1, aktualniBlok.Y + 2));
-
-                    List<Point> poziceNaKontrolu = new List<Point>();
-                    for (int x = odkudKontrolovat.X; x <= kamKontrolovat.X; x++)
-                        for (int y = odkudKontrolovat.Y; y <= kamKontrolovat.Y; y++)
-                            poziceNaKontrolu.Add(new Point(x, y));
-
-                    poziceNaKontrolu = poziceNaKontrolu.OrderBy(x => Vector2.Distance(new Vector2((x.X + 0.5f) * KomponentaMapa.VELIKOST_BLOKU,
-                        (x.Y + 0.5f) * KomponentaMapa.VELIKOST_BLOKU), monstrum.pozice + new Vector2(monstrum.velikost.X / 2f, monstrum.velikost.Y / 2f))).ToList();
-
-                    for (int j = 0; j < poziceNaKontrolu.Count; j++)
-                    {
-                        int x = poziceNaKontrolu[j].X;
-                        int y = poziceNaKontrolu[j].Y;
-
-                        if (hra.komponentaMapa.mapa[x, y].typPole != Pole.TypPole.Zed)
-                            continue;
-
-                        Rectangle obdelnikBloku = new Rectangle(x * KomponentaMapa.VELIKOST_BLOKU, y * KomponentaMapa.VELIKOST_BLOKU,
-                            KomponentaMapa.VELIKOST_BLOKU, KomponentaMapa.VELIKOST_BLOKU);
-
-                        if (hra.KolizeObdelniku(monstrum.pozice.X, monstrum.pozice.Y, monstrum.velikost.X, monstrum.velikost.Y,
-                            obdelnikBloku.X, obdelnikBloku.Y, obdelnikBloku.Width, obdelnikBloku.Height))
+                        current = current.Previous;
+                        if (current.Value == cilovaKostka)
                         {
-                            float x1 = Math.Max(monstrum.pozice.X, obdelnikBloku.Left);
-                            float y1 = Math.Max(monstrum.pozice.Y, obdelnikBloku.Top);
-                            float x2 = Math.Min(monstrum.pozice.X + monstrum.velikost.X, obdelnikBloku.Right);
-                            float y2 = Math.Min(monstrum.pozice.Y + monstrum.velikost.Y, obdelnikBloku.Bottom);
-
-                            Vector2 bodDotyku = new Vector2((x1 + x2) / 2, (y1 + y2) / 2);
-
-                            float vzdalenostKeStene = Math.Min(Math.Min(Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Left, obdelnikBloku.Center.Y)),
-                            Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Right, obdelnikBloku.Center.Y))), Math.Min(
-                                Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Center.X, obdelnikBloku.Top)),
-                                Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Center.X, obdelnikBloku.Bottom))
-                            ));
-
-                            if (vzdalenostKeStene == Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Left, obdelnikBloku.Center.Y))) //Leva
-                                monstrum.pozice.X = obdelnikBloku.Left - monstrum.velikost.X;
-                            if (vzdalenostKeStene == Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Right, obdelnikBloku.Center.Y))) //Prava
-                                monstrum.pozice.X = obdelnikBloku.Right;
-                            if (vzdalenostKeStene == Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Center.X, obdelnikBloku.Bottom))) //Dolni
-                                monstrum.pozice.Y = obdelnikBloku.Bottom;
-                            if (vzdalenostKeStene == Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Center.X, obdelnikBloku.Top))) //Horni
-                                monstrum.pozice.Y = obdelnikBloku.Top - monstrum.velikost.Y;
+                            obsahuje = true;
+                            while (current.Next != null)
+                                monstrum.cesta.Remove(current.Next);
+                            break;
                         }
-
                     }
+                    if (!obsahuje)
+                    {
+                        List<Point> cesta = hra.komponentaMapa.NajdiCestuMeziBody(monstrum.cesta.Last(), cilovaKostka);
+                        if (cesta.Count == 0)
+                            continue;
+                        for (int i = 1; i < cesta.Count; i++)
+                            monstrum.cesta.AddLast(cesta[i]);
+                    }
+
                 }
+
+                if (monstrum.cesta.Count >= 2)
+                    cil = (monstrum.cesta.First.Next.Value.ToVector2() + new Vector2(0.5f)) * new Vector2(KomponentaMapa.VELIKOST_BLOKU) - monstrum.velikost.ToVector2() / 2;
+
+                Vector2 pohyb = Vector2.Normalize(cil - monstrum.pozice) * monstrum.rychlost * deltaTime;
+
+                if (Math.Abs(monstrum.pozice.X - cil.X) > pohyb.X)
+                    monstrum.pozice.X += pohyb.X;
+                else
+                    monstrum.pozice.X = cil.X;
+
+                if (Math.Abs(monstrum.pozice.Y - cil.Y) > pohyb.Y)
+                    monstrum.pozice.Y += pohyb.Y;
+                else
+                    monstrum.pozice.Y = cil.Y;
+                monstra2.Add(monstrum);
             }
+
+            monstra = monstra2;
         }
 
         public byte[] PrevedMonstraNaByty()

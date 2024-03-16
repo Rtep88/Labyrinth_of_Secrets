@@ -408,7 +408,7 @@ namespace Labyrinth_of_Secrets
         }
 
         //Najde cestu mezi dvema body - pocita s tim ze cesta vzdy existuje
-        List<Point> NajdiCestuMeziBody(Point start, Point cil)
+        public List<Point> NajdiCestuMeziBody(Point start, Point cil)
         {
             List<Point> mozneSmery = new List<Point>()
             {
@@ -422,6 +422,9 @@ namespace Labyrinth_of_Secrets
             Queue<Point> naProjiti = new Queue<Point>();
             naProjiti.Enqueue(start);
 
+            if (!(start.X >= 0 && start.X < VELIKOST_MAPY_X && start.Y >= 0 && start.Y < VELIKOST_MAPY_Y) || mapa[start.X, start.Y].typPole == Pole.TypPole.Zed)
+                return new List<Point>();
+
             while (naProjiti.Count > 0)
             {
                 Point aktualniBod = naProjiti.Dequeue();
@@ -430,7 +433,7 @@ namespace Labyrinth_of_Secrets
                 foreach (Point smer in mozneSmery)
                 {
                     Point novaPozice = aktualniBod + smer;
-                    if (mapa[novaPozice.X, novaPozice.Y].typPole != Pole.TypPole.Zed && projite[novaPozice.X, novaPozice.Y] == new Point())
+                    if (novaPozice.X >= 0 && novaPozice.X < VELIKOST_MAPY_X && novaPozice.Y >= 0 && novaPozice.Y < VELIKOST_MAPY_Y && mapa[novaPozice.X, novaPozice.Y].typPole != Pole.TypPole.Zed && projite[novaPozice.X, novaPozice.Y] == new Point())
                     {
                         projite[novaPozice.X, novaPozice.Y] = new Point(-smer.X, -smer.Y);
                         naProjiti.Enqueue(novaPozice);
