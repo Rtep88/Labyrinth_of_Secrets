@@ -207,7 +207,7 @@ namespace Labyrinth_of_Secrets
                 return;
             }
 
-            hra.komponentaMonstra.monstra.Clear();
+            hra.komponentaMonstra.ResetujPromenne();
 
             typZarizeni = TypZarizeni.Klient;
             adresaServeru = new IPEndPoint(adresa, PORT);

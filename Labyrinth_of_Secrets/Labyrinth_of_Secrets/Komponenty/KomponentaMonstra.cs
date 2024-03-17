@@ -25,7 +25,7 @@ namespace Labyrinth_of_Secrets
 
         //Promenne
         public List<Monstrum> monstra = new List<Monstrum>();
-        public List<Monstrum> novaMonstra = null;
+        private List<Monstrum> novaMonstra = null;
 
         public KomponentaMonstra(Hra hra) : base(hra)
         {
@@ -78,6 +78,11 @@ namespace Labyrinth_of_Secrets
             base.Draw(gameTime);
         }
 
+        public void ResetujPromenne()
+        {
+            monstra = new List<Monstrum>();
+        }
+
         public void NaspawnujMonstra()
         {
             while (monstra.Count < MAX_POCET_MONSTER)
@@ -98,54 +103,19 @@ namespace Labyrinth_of_Secrets
                     foreach (var hrac in hra.komponentaMultiplayer.hraci)
                     {
                         if (Vector2.Distance(cil, monstrum.pozice) > Vector2.Distance(hrac.Value, monstrum.pozice))
-                        {
                             cil = hrac.Value;
-                            if (monstrum.sledovanyHrac != hrac.Key)
-                            {
-                                monstrum.sledovanyHrac = hrac.Key;
-                                monstrum.cesta = new LinkedList<Point>();
-                                monstrum.cesta.AddFirst((monstrum.pozice + monstrum.velikost.ToVector2() / 2).ToPoint() / new Point(KomponentaMapa.VELIKOST_BLOKU));
-                            }
-                        }
                     }
                 }
                 Point startovniKostka = (monstrum.pozice + monstrum.velikost.ToVector2() / 2).ToPoint() / new Point(KomponentaMapa.VELIKOST_BLOKU);
-
-                LinkedListNode<Point> aktualni = monstrum.cesta.First;
-                while (aktualni != null && aktualni.Next != null && aktualni.Value != startovniKostka)
-                    aktualni = aktualni.Next;
-                while (aktualni != null && aktualni.Previous != null)
-                    monstrum.cesta.Remove(aktualni.Previous);
-
                 Point cilovaKostka = (cil + monstrum.velikost.ToVector2() / 2).ToPoint() / new Point(KomponentaMapa.VELIKOST_BLOKU);
-                if (monstrum.cesta.Last() != cilovaKostka)
+
+                if (startovniKostka != cilovaKostka)
                 {
-                    LinkedListNode<Point> current = monstrum.cesta.Last;
-                    bool obsahuje = false;
-                    for (int i = 0; i < 10 && current.Previous != null; i++)
-                    {
-                        current = current.Previous;
-                        if (current.Value == cilovaKostka)
-                        {
-                            obsahuje = true;
-                            while (current.Next != null)
-                                monstrum.cesta.Remove(current.Next);
-                            break;
-                        }
-                    }
-                    if (!obsahuje)
-                    {
-                        List<Point> cesta = hra.komponentaMapa.NajdiCestuMeziBody(monstrum.cesta.Last(), cilovaKostka);
-                        if (cesta.Count == 0)
-                            continue;
-                        for (int i = 1; i < cesta.Count; i++)
-                            monstrum.cesta.AddLast(cesta[i]);
-                    }
-
+                    Point dalsiKrok = hra.komponentaMapa.NajdiDalsiKrokNaCesteMeziBody(startovniKostka, cilovaKostka);
+                    if (dalsiKrok == new Point(-1))
+                        continue;
+                    cil = (dalsiKrok.ToVector2() + new Vector2(0.5f)) * new Vector2(KomponentaMapa.VELIKOST_BLOKU) - monstrum.velikost.ToVector2() / 2;
                 }
-
-                if (monstrum.cesta.Count >= 2)
-                    cil = (monstrum.cesta.First.Next.Value.ToVector2() + new Vector2(0.5f)) * new Vector2(KomponentaMapa.VELIKOST_BLOKU) - monstrum.velikost.ToVector2() / 2;
 
                 Vector2 pohyb = Vector2.Normalize(cil - monstrum.pozice) * monstrum.rychlost * deltaTime;
 
@@ -180,8 +150,6 @@ namespace Labyrinth_of_Secrets
                 monstrum.pozice.Y = bytyMonster[2 + i * 10 + 5] * 255 + bytyMonster[2 + i * 10 + 6] + bytyMonster[2 + i * 10 + 7] / 255f;
                 monstrum.rychlost = bytyMonster[2 + i * 10 + 8];
                 monstrum.typMonstra = bytyMonster[2 + i * 10 + 9];
-                monstrum.cesta = new LinkedList<Point>();
-                monstrum.cesta.AddFirst((monstrum.pozice + monstrum.velikost.ToVector2() / 2).ToPoint() / new Point(KomponentaMapa.VELIKOST_BLOKU));
                 monstraZBytu.Add(monstrum);
             }
 

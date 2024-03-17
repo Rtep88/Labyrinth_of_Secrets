@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http.Headers;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
@@ -43,6 +42,9 @@ namespace Labyrinth_of_Secrets
         public Point vychod = new Point(-1);
         public List<Point> cestaZeStartuDoCile = new List<Point>();
         public bool ukazCestu = false;
+        private bool[,] projite; //Pro hledani cesty
+        private List<Node> nody; //Pro hledani cesty
+        private int[,] predpocitaneNody; //Pro hledani cesty
 
         public KomponentaMapa(Hra hra) : base(hra)
         {
@@ -86,12 +88,19 @@ namespace Labyrinth_of_Secrets
             cestaZeStartuDoCile = new List<Point>();
         }
 
-        //Vykresli všechny bloky na mapeif (mapa[novaPozice.X, novaPozice.Y].typPole != Pole.TypPole.Zed && projite[novaPozice.X, novaPozice.Y] == new Point())
+        //Vykresli všechny bloky na mape
         void VykresliMapu()
         {
-            for (int x = 0; x < VELIKOST_MAPY_X; x++)
+            Kamera _kamera = hra.komponentaKamera._kamera;
+            Vector2 opravdovaPoziceKamery = new Vector2(-_kamera.GetViewMatrix().Translation.X / _kamera.zoom, -_kamera.GetViewMatrix().Translation.Y / _kamera.zoom);
+            Vector2 opravdovaVelikostOkna = new Vector2(hra.velikostOkna.X / _kamera.zoom, hra.velikostOkna.Y / _kamera.zoom);
+
+            Point odkud = (opravdovaPoziceKamery / VELIKOST_BLOKU).ToPoint();
+            Point kam = ((opravdovaPoziceKamery + opravdovaVelikostOkna) / VELIKOST_BLOKU).ToPoint();
+
+            for (int x = Math.Max(0, odkud.X); x <= Math.Min(kam.X, VELIKOST_MAPY_X - 1); x++)
             {
-                for (int y = 0; y < VELIKOST_MAPY_Y; y++)
+                for (int y = Math.Max(0, odkud.Y); y <= Math.Min(kam.Y, VELIKOST_MAPY_Y - 1); y++)
                 {
                     if (mapa[x, y].typPole == Pole.TypPole.Zed)
                         hra._spriteBatch.Draw(brick, new Rectangle(x * VELIKOST_BLOKU, y * VELIKOST_BLOKU, VELIKOST_BLOKU, VELIKOST_BLOKU), Color.White);
@@ -125,10 +134,15 @@ namespace Labyrinth_of_Secrets
             foreach (Point bod in cestaZeStartuDoCile)
                 mapa[bod.X, bod.Y].naHlavniCeste = true;
 
+            VytvorStrom();
+            PredpocitejNody();
+
             hra.komponentaSvetlo.ResetujPromenne();
             hra.komponentaSvetlo.PridejZdrojeSvetla();
 
             hra.komponentaSvetlo.SpustPocitaniSvetla();
+
+            hra.komponentaMonstra.ResetujPromenne();
         }
 
         //Umisti na kazdy blok na mape zed
@@ -465,6 +479,125 @@ namespace Labyrinth_of_Secrets
             }
         }
 
+        public Node VytvorStrom()
+        {
+            projite = new bool[VELIKOST_MAPY_X, VELIKOST_MAPY_Y];
+            nody = new List<Node>();
+            projite[vychod.X, vychod.Y] = true;
+            Node root = new Node(vychod, new List<ushort>());
+            root.index = nody.Count;
+            nody.Add(root);
+            root.deti.Add(VytvorStromRekurzivne(vychod, root, 0));
+            return root;
+        }
+
+        private Node VytvorStromRekurzivne(Point odkud, Node rodic, ushort cislo)
+        {
+            List<Point> mozneSmery = new List<Point>()
+            {
+                new Point(-1, 0),
+                new Point(0, -1),
+                new Point(1, 0),
+                new Point(0, 1)
+            };
+
+            Point aktualniPozice = odkud;
+            List<Point> moznePokracovani;
+            ushort hloubka = 0;
+            Node node = new Node(aktualniPozice, new List<ushort>(rodic.cesta) { cislo });
+            node.index = nody.Count;
+            nody.Add(node);
+            mapa[odkud.X, odkud.Y].dalsi = node;
+            mapa[odkud.X, odkud.Y].hloubka = hloubka++;
+
+            do
+            {
+                moznePokracovani = new List<Point>();
+                foreach (Point smer in mozneSmery)
+                {
+                    Point novaPozice = aktualniPozice + smer;
+                    if (novaPozice.X >= 0 && novaPozice.X < VELIKOST_MAPY_X && novaPozice.Y >= 0 && novaPozice.Y < VELIKOST_MAPY_Y && (mapa[novaPozice.X, novaPozice.Y].typPole != Pole.TypPole.Zed) && projite[novaPozice.X, novaPozice.Y] == false)
+                    {
+                        projite[novaPozice.X, novaPozice.Y] = true;
+                        moznePokracovani.Add(novaPozice);
+                    }
+                }
+                if (moznePokracovani.Count == 1)
+                {
+                    mapa[aktualniPozice.X, aktualniPozice.Y].smeryOdVychodu = new List<Point>() { moznePokracovani[0] - aktualniPozice };
+                    mapa[moznePokracovani[0].X, moznePokracovani[0].Y].smerKVychodu = aktualniPozice - moznePokracovani[0];
+                    mapa[moznePokracovani[0].X, moznePokracovani[0].Y].dalsi = node;
+                    mapa[moznePokracovani[0].X, moznePokracovani[0].Y].hloubka = hloubka++;
+                    aktualniPozice = moznePokracovani[0];
+                }
+            } while (moznePokracovani.Count == 1);
+
+            node.pozice = aktualniPozice;
+
+            if (moznePokracovani.Count > 1)
+            {
+                ushort i = 0;
+                mapa[aktualniPozice.X, aktualniPozice.Y].smeryOdVychodu = new List<Point>();
+                foreach (Point pokracovani in moznePokracovani)
+                {
+                    mapa[aktualniPozice.X, aktualniPozice.Y].smeryOdVychodu.Add(pokracovani - aktualniPozice);
+                    mapa[pokracovani.X, pokracovani.Y].smerKVychodu = aktualniPozice - pokracovani;
+                    mapa[pokracovani.X, pokracovani.Y].dalsi = node;
+                    node.deti.Add(VytvorStromRekurzivne(pokracovani, node, i++));
+                }
+                mapa[aktualniPozice.X, aktualniPozice.Y].krizovatka = true;
+            }
+
+            return node;
+        }
+
+        public void PredpocitejNody()
+        {
+            predpocitaneNody = new int[nody.Count, nody.Count];
+            for (int i = 0; i < nody.Count; i++)
+            {
+                for (int j = 0; j < nody.Count; j++)
+                {
+                    int k;
+                    for (k = 0; k < nody[i].cesta.Count && k < nody[j].cesta.Count; k++)
+                    {
+                        if (nody[i].cesta[k] != nody[j].cesta[k])
+                            break;
+                    }
+                    predpocitaneNody[i, j] = k - 1;
+                }
+            }
+        }
+
+        public Point NajdiDalsiKrokNaCesteMeziBody(Point start, Point cil)
+        {
+            if (start.X < 0 || start.X >= VELIKOST_MAPY_X || start.Y < 0 || start.Y >= VELIKOST_MAPY_Y || cil.X < 0 || cil.X >= VELIKOST_MAPY_X || cil.Y < 0 ||
+                cil.Y >= VELIKOST_MAPY_Y || mapa[start.X, start.Y].typPole == Pole.TypPole.Zed || mapa[cil.X, cil.Y].typPole == Pole.TypPole.Zed)
+                return new Point(-1);
+
+            Node rodicStartu = mapa[start.X, start.Y].dalsi;
+            Node rodicCile = mapa[cil.X, cil.Y].dalsi;
+
+            if (predpocitaneNody[rodicStartu.index, rodicCile.index] == rodicStartu.cesta.Count - 1)
+            {
+                if (rodicCile.cesta.Count == rodicStartu.cesta.Count)
+                {
+                    if (mapa[start.X, start.Y].hloubka > mapa[cil.X, cil.Y].hloubka)
+                        return start + mapa[start.X, start.Y].smerKVychodu;
+                    else if (mapa[start.X, start.Y].hloubka < mapa[cil.X, cil.Y].hloubka)
+                        return start + mapa[start.X, start.Y].smeryOdVychodu[0];
+                    else
+                        return start;
+                }
+                else if (!mapa[start.X, start.Y].krizovatka)
+                    return start + mapa[start.X, start.Y].smeryOdVychodu[0];
+                else
+                    return start + mapa[start.X, start.Y].smeryOdVychodu[rodicCile.cesta[predpocitaneNody[rodicStartu.index, rodicCile.index] + 1]];
+            }
+            else
+                return start + mapa[start.X, start.Y].smerKVychodu;
+        }
+
         //Najde cestu mezi dvema body - pocita s tim ze cesta vzdy existuje
         public List<Point> NajdiCestuMeziBody(Point start, Point cil)
         {
@@ -526,9 +659,22 @@ namespace Labyrinth_of_Secrets
                 for (int x = 0; x < VELIKOST_MAPY_X; x++)
                 {
                     mapa[x, y] = new Pole((Pole.TypPole)mapaVBytech[pozice]);
+                    if (mapa[x, y].typPole == Pole.TypPole.Start)
+                        start = new Point(x, y);
+                    else if (mapa[x, y].typPole == Pole.TypPole.Vychod)
+                        vychod = new Point(x, y);
                     pozice++;
                 }
             }
+
+            cestaZeStartuDoCile = NajdiCestuMeziBody(start, vychod);
+
+            foreach (Point bod in cestaZeStartuDoCile)
+                mapa[bod.X, bod.Y].naHlavniCeste = true;
+
+            hra.komponentaHrac.poziceHrace = new Vector2((hra.komponentaMapa.start.X + 0.5f) * VELIKOST_BLOKU - KomponentaHrac.VELIKOST_HRACE_X / 2f,
+                (hra.komponentaMapa.start.Y + 0.5f) * VELIKOST_BLOKU - KomponentaHrac.VELIKOST_HRACE_Y / 2f);
+
             hra.komponentaSvetlo.ResetujPromenne();
 
             int pocetSvetel = mapaVBytech[pozice] * 255 * 255;
@@ -547,6 +693,9 @@ namespace Labyrinth_of_Secrets
                 pozice += 16;
                 odkazNaZdrojeSvetla.Add(noveSvetlo);
             }
+
+            VytvorStrom();
+            PredpocitejNody();
 
             hra.komponentaSvetlo.SpustPocitaniSvetla();
         }

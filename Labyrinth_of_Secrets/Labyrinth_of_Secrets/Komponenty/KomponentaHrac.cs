@@ -38,7 +38,7 @@ namespace Labyrinth_of_Secrets
         public override void Initialize()
         {
             poziceHrace = new Vector2((hra.komponentaMapa.start.X + 0.5f) * KomponentaMapa.VELIKOST_BLOKU - VELIKOST_HRACE_X / 2f,
-             (hra.komponentaMapa.start.Y + 0.5f) * KomponentaMapa.VELIKOST_BLOKU - VELIKOST_HRACE_Y / 2f);
+                (hra.komponentaMapa.start.Y + 0.5f) * KomponentaMapa.VELIKOST_BLOKU - VELIKOST_HRACE_Y / 2f);
             base.Initialize();
         }
 

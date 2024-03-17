@@ -24,6 +24,13 @@ namespace Labyrinth_of_Secrets
         public int neprusvitnost = 10;
         public bool statickaNeprusvitnost = false;
 
+        //Hledani cesty
+        public Point smerKVychodu = new Point();
+        public List<Point> smeryOdVychodu = new List<Point>();
+        public Node dalsi;
+        public bool krizovatka;
+        public ushort hloubka;
+
         public Pole(TypPole typPole)
         {
             this.typPole = typPole;
