@@ -27,6 +27,7 @@ namespace Labyrinth_of_Secrets
         public MouseState tlacitkaMysi, tlacitkaMysiMinule;
         public bool ukonceno = false;
         public KomponentaMapa komponentaMapa;
+        public KomponentaZbrane komponentaZbrane;
         public KomponentaMonstra komponentaMonstra;
         public KomponentaHrac komponentaHrac;
         public KomponentaKamera komponentaKamera;
@@ -44,6 +45,7 @@ namespace Labyrinth_of_Secrets
         protected override void Initialize()
         {
             komponentaMapa = new KomponentaMapa(this);
+            komponentaZbrane = new KomponentaZbrane(this);
             komponentaMonstra = new KomponentaMonstra(this);
             komponentaMultiplayer = new KomponentaMultiplayer(this);
             komponentaHrac = new KomponentaHrac(this);
@@ -51,6 +53,7 @@ namespace Labyrinth_of_Secrets
             komponentaSvetlo = new KomponentaSvetlo(this);
             komponentaKonzole = new KomponentaKonzole(this);
             Components.Add(komponentaMapa);
+            Components.Add(komponentaZbrane);
             Components.Add(komponentaMonstra);
             Components.Add(komponentaMultiplayer);
             Components.Add(komponentaHrac);

@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
+using System.Text;
 using Labyrinth_of_Secrets;
 
 namespace Server
@@ -11,6 +12,9 @@ namespace Server
 
         static void Main(string[] args)
         {
+            Console.InputEncoding = Encoding.UTF8;
+            Console.OutputEncoding = Encoding.UTF8;
+
             //Naparsovani argumentu
             for (int i = 0; i < args.Length; i++)
             {

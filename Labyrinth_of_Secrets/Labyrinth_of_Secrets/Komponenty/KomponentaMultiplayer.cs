@@ -311,6 +311,9 @@ namespace Labyrinth_of_Secrets
             procesServeru.StartInfo.RedirectStandardError = true;
             procesServeru.StartInfo.RedirectStandardOutput = true;
             procesServeru.StartInfo.RedirectStandardInput = true;
+            procesServeru.StartInfo.StandardErrorEncoding = Encoding.UTF8;
+            procesServeru.StartInfo.StandardOutputEncoding = Encoding.UTF8;
+            procesServeru.StartInfo.StandardInputEncoding = Encoding.UTF8;
 
             procesServeru.Start();
 

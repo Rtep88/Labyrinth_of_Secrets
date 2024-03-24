@@ -25,7 +25,7 @@ namespace Labyrinth_of_Secrets
         //Konstanty
         public const int VELIKOST_HRACE_X = 6; //Velikost vykresleni hrace
         public const int VELIKOST_HRACE_Y = 12; //Velikost vykresleni hrace
-        public const int RYCHLOST_HRACE = 15;
+        public const int RYCHLOST_HRACE = 50;
 
         //Promene
         public Vector2 poziceHrace = new Vector2();
@@ -69,7 +69,7 @@ namespace Labyrinth_of_Secrets
 
                     if (pohnuti.X != 0 || pohnuti.Y != 0)
                     {
-                        pohnuti = Vector2.Normalize(pohnuti * RYCHLOST_HRACE * (float)gameTime.ElapsedGameTime.TotalSeconds / pocetUpdatu);
+                        pohnuti = Vector2.Normalize(pohnuti) * RYCHLOST_HRACE * (float)gameTime.ElapsedGameTime.TotalSeconds / pocetUpdatu;
                         poziceHrace += pohnuti;
                     }
                 }
