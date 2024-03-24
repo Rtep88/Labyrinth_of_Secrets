@@ -34,7 +34,7 @@ namespace Labyrinth_of_Secrets
         }
 
         //Konstanty
-        private const int POCET_SVETLA_NA_BLOK = 16; //Udava jak moc dopodrobna se svetlo bude pocitat - Minimum je 1 a maximum je omezen pouze systemovymi prostredky ale doporucuji neprekracovat 32 :)
+        private const int POCET_SVETLA_NA_BLOK = 8; //Udava jak moc dopodrobna se svetlo bude pocitat - Minimum je 1 a maximum je omezen pouze systemovymi prostredky ale doporucuji neprekracovat 32 :)
         public Color GLOBALNI_BARVA = new Color(0, 0, 0); //Nenastavujte hodnoty na 255 jinak se svetlo bude nespravne mazat
         private Color BARVA_SVETLA_HRACE = new Color(255, 255, 255);
         private const int SILA_SVETLA_HRACE = 200;
@@ -162,11 +162,14 @@ namespace Labyrinth_of_Secrets
                 }
                 bodyNaSmazani[0] = new List<Point>();
 
-                PridejSvetloOdBodu(poziceHrace, SILA_SVETLA_HRACE, BARVA_SVETLA_HRACE, true);
+                Vector2 posun = (hra.komponentaHrac.poziceHrace + new Vector2(KomponentaHrac.VELIKOST_HRACE_X, KomponentaHrac.VELIKOST_HRACE_Y) / 2f) / KomponentaMapa.VELIKOST_BLOKU * new Vector2(POCET_SVETLA_NA_BLOK);
+                posun.X %= 1;
+                posun.Y %= 1;
+                PridejSvetloOdBodu(poziceHrace, posun, SILA_SVETLA_HRACE, BARVA_SVETLA_HRACE, true);
 
                 foreach (ZdrojSvetla svetlo in svetelneZdroje)
                 {
-                    PridejSvetloOdBodu(svetlo.odkud, svetlo.silaSvetla, svetlo.barvaSvetla, false);
+                    PridejSvetloOdBodu(svetlo.odkud, new Vector2(0.5f), svetlo.silaSvetla, svetlo.barvaSvetla, false);
                 }
 
                 lock (dataSvetla)
@@ -232,7 +235,7 @@ namespace Labyrinth_of_Secrets
         }
 
         //Vytvori svetlo od bodu se zadanou silou, barvou a take dostane zda se ma svetlo pro pristi vypocet smazat
-        public void PridejSvetloOdBodu(Point odkud, int pocatecniSila, Color barva, bool docasneSvetlo)
+        public void PridejSvetloOdBodu(Point odkud, Vector2 posun, int pocatecniSila, Color barva, bool docasneSvetlo)
         {
             if (odkud.X >= 0 && odkud.Y >= 0 && odkud.X < KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK && odkud.Y < KomponentaMapa.VELIKOST_MAPY_Y * POCET_SVETLA_NA_BLOK)
             {
@@ -249,28 +252,49 @@ namespace Labyrinth_of_Secrets
                     new Point(0, 1)
                 };
 
-                Queue<(Point, Vector2)> fronta = new Queue<(Point, Vector2)>();
-                fronta.Enqueue((odkud, new Vector2()));
+                Queue<(Point, Vector2, bool, bool)> fronta = new Queue<(Point, Vector2, bool, bool)>();
+                fronta.Enqueue((odkud, new Vector2(), false, false));
 
                 if (docasneSvetlo)
                     bodyNaSmazani[0].Add(odkud);
 
                 docasnaDataSvetla[odkud.X + odkud.Y * KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK] = barva;
-
                 while (fronta.Count > 0)
                 {
-                    (Point, Vector2) prvek = fronta.Dequeue();
+                    (Point, Vector2, bool, bool) prvek = fronta.Dequeue();
 
                     for (int i = 0; i < mozneSmery.Count; i++)
                     {
                         Point novyBod = prvek.Item1 + mozneSmery[i];
                         Vector2 novaVzdalenost = prvek.Item2;
+                        bool vypotrebovaneX = prvek.Item3;
+                        bool vypotrebovaneY = prvek.Item4;
+                        if (i == 0 && !vypotrebovaneX)
+                        {
+                            novaVzdalenost.X = posun.X * hra.komponentaMapa.mapa[prvek.Item1.X / POCET_SVETLA_NA_BLOK, prvek.Item1.Y / POCET_SVETLA_NA_BLOK].neprusvitnost;
+                            vypotrebovaneX = true;
+                        }
+                        else if (i == 1 && !vypotrebovaneY)
+                        {
+                            novaVzdalenost.Y = posun.Y * hra.komponentaMapa.mapa[prvek.Item1.X / POCET_SVETLA_NA_BLOK, prvek.Item1.Y / POCET_SVETLA_NA_BLOK].neprusvitnost;
+                            vypotrebovaneY = true;
+                        }
+                        else if (i == 2 && !vypotrebovaneX)
+                        {
+                            novaVzdalenost.X = (1 - posun.X) * hra.komponentaMapa.mapa[prvek.Item1.X / POCET_SVETLA_NA_BLOK, prvek.Item1.Y / POCET_SVETLA_NA_BLOK].neprusvitnost;
+                            vypotrebovaneX = true;
+                        }
+                        else if (i == 3 && !vypotrebovaneY)
+                        {
+                            novaVzdalenost.Y = (1 - posun.Y) * hra.komponentaMapa.mapa[prvek.Item1.X / POCET_SVETLA_NA_BLOK, prvek.Item1.Y / POCET_SVETLA_NA_BLOK].neprusvitnost;
+                            vypotrebovaneY = true;
+                        }
 
                         if (novyBod.X > 0 && novyBod.Y > 0 && novyBod.X < KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK && novyBod.Y < KomponentaMapa.VELIKOST_MAPY_Y * POCET_SVETLA_NA_BLOK)
                         {
-                            if (!hra.komponentaMapa.mapa[novyBod.X / POCET_SVETLA_NA_BLOK, novyBod.Y / POCET_SVETLA_NA_BLOK].statickaNeprusvitnost)
+                            if (vypotrebovaneX == prvek.Item3 && vypotrebovaneY == prvek.Item4 && !hra.komponentaMapa.mapa[novyBod.X / POCET_SVETLA_NA_BLOK, novyBod.Y / POCET_SVETLA_NA_BLOK].statickaNeprusvitnost)
                                 novaVzdalenost += new Vector2(Math.Abs(mozneSmery[i].X), Math.Abs(mozneSmery[i].Y)) * new Vector2(hra.komponentaMapa.mapa[novyBod.X / POCET_SVETLA_NA_BLOK, novyBod.Y / POCET_SVETLA_NA_BLOK].neprusvitnost);
-                            else
+                            else if (hra.komponentaMapa.mapa[novyBod.X / POCET_SVETLA_NA_BLOK, novyBod.Y / POCET_SVETLA_NA_BLOK].statickaNeprusvitnost)
                                 novaVzdalenost += new Vector2(Math.Abs(mozneSmery[i].X), Math.Abs(mozneSmery[i].Y)) * new Vector2(hra.komponentaMapa.mapa[novyBod.X / POCET_SVETLA_NA_BLOK, novyBod.Y / POCET_SVETLA_NA_BLOK].neprusvitnost * Math.Max(pocatecniSila / 255f, 1));
 
                             int noveSvetlo = 255 - (int)(Math.Sqrt(novaVzdalenost.X * novaVzdalenost.X + novaVzdalenost.Y * novaVzdalenost.Y) * 8 / POCET_SVETLA_NA_BLOK / pocatecniSila * 255);
@@ -284,7 +308,7 @@ namespace Labyrinth_of_Secrets
                             Color novaBarva = new Color((int)(noveSvetlo * (barva.R / 255f)), (int)(noveSvetlo * (barva.G / 255f)), (int)(noveSvetlo * (barva.B / 255f)));
                             docasnaDataSvetla[novyBod.X + novyBod.Y * KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK] = novaBarva;
 
-                            fronta.Enqueue((novyBod, novaVzdalenost));
+                            fronta.Enqueue((novyBod, novaVzdalenost, vypotrebovaneX, vypotrebovaneY));
                         }
                     }
                 }
