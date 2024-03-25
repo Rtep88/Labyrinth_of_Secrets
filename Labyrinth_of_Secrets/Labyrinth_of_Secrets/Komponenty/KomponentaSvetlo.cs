@@ -154,7 +154,8 @@ namespace Labyrinth_of_Secrets
         {
             while (!hra.ukonceno && pocitaniSvetlaBezi)
             {
-                Point poziceHrace = ((hra.komponentaHrac.poziceHrace + new Vector2(KomponentaHrac.VELIKOST_HRACE_X, KomponentaHrac.VELIKOST_HRACE_Y) / 2f) / KomponentaMapa.VELIKOST_BLOKU * new Vector2(POCET_SVETLA_NA_BLOK)).ToPoint();
+                Vector2 aktualniPoziceHrace = hra.komponentaHrac.poziceHrace;
+                Point poziceHrace = ((aktualniPoziceHrace + new Vector2(KomponentaHrac.VELIKOST_HRACE_X, KomponentaHrac.VELIKOST_HRACE_Y) / 2f) / KomponentaMapa.VELIKOST_BLOKU * new Vector2(POCET_SVETLA_NA_BLOK)).ToPoint();
 
                 foreach (Point odkudSmazat in bodyNaSmazani[0])
                 {
@@ -162,7 +163,7 @@ namespace Labyrinth_of_Secrets
                 }
                 bodyNaSmazani[0] = new List<Point>();
 
-                Vector2 posun = (hra.komponentaHrac.poziceHrace + new Vector2(KomponentaHrac.VELIKOST_HRACE_X, KomponentaHrac.VELIKOST_HRACE_Y) / 2f) / KomponentaMapa.VELIKOST_BLOKU * new Vector2(POCET_SVETLA_NA_BLOK);
+                Vector2 posun = (aktualniPoziceHrace + new Vector2(KomponentaHrac.VELIKOST_HRACE_X, KomponentaHrac.VELIKOST_HRACE_Y) / 2f) / KomponentaMapa.VELIKOST_BLOKU * new Vector2(POCET_SVETLA_NA_BLOK);
                 posun.X %= 1;
                 posun.Y %= 1;
                 PridejSvetloOdBodu(poziceHrace, posun, SILA_SVETLA_HRACE, BARVA_SVETLA_HRACE, true);
@@ -252,8 +253,8 @@ namespace Labyrinth_of_Secrets
                     new Point(0, 1)
                 };
 
-                Queue<(Point, Vector2, bool, bool)> fronta = new Queue<(Point, Vector2, bool, bool)>();
-                fronta.Enqueue((odkud, new Vector2(), false, false));
+                Queue<(Point, Vector2, Vector2)> fronta = new Queue<(Point, Vector2, Vector2)>();
+                fronta.Enqueue((odkud, new Vector2(), posun));
 
                 if (docasneSvetlo)
                     bodyNaSmazani[0].Add(odkud);
@@ -261,39 +262,41 @@ namespace Labyrinth_of_Secrets
                 docasnaDataSvetla[odkud.X + odkud.Y * KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK] = barva;
                 while (fronta.Count > 0)
                 {
-                    (Point, Vector2, bool, bool) prvek = fronta.Dequeue();
+                    (Point, Vector2, Vector2) prvek = fronta.Dequeue();
 
                     for (int i = 0; i < mozneSmery.Count; i++)
                     {
                         Point novyBod = prvek.Item1 + mozneSmery[i];
                         Vector2 novaVzdalenost = prvek.Item2;
-                        bool vypotrebovaneX = prvek.Item3;
-                        bool vypotrebovaneY = prvek.Item4;
-                        if (i == 0 && !vypotrebovaneX)
-                        {
-                            novaVzdalenost.X = posun.X * hra.komponentaMapa.mapa[prvek.Item1.X / POCET_SVETLA_NA_BLOK, prvek.Item1.Y / POCET_SVETLA_NA_BLOK].neprusvitnost;
-                            vypotrebovaneX = true;
-                        }
-                        else if (i == 1 && !vypotrebovaneY)
-                        {
-                            novaVzdalenost.Y = posun.Y * hra.komponentaMapa.mapa[prvek.Item1.X / POCET_SVETLA_NA_BLOK, prvek.Item1.Y / POCET_SVETLA_NA_BLOK].neprusvitnost;
-                            vypotrebovaneY = true;
-                        }
-                        else if (i == 2 && !vypotrebovaneX)
-                        {
-                            novaVzdalenost.X = (1 - posun.X) * hra.komponentaMapa.mapa[prvek.Item1.X / POCET_SVETLA_NA_BLOK, prvek.Item1.Y / POCET_SVETLA_NA_BLOK].neprusvitnost;
-                            vypotrebovaneX = true;
-                        }
-                        else if (i == 3 && !vypotrebovaneY)
-                        {
-                            novaVzdalenost.Y = (1 - posun.Y) * hra.komponentaMapa.mapa[prvek.Item1.X / POCET_SVETLA_NA_BLOK, prvek.Item1.Y / POCET_SVETLA_NA_BLOK].neprusvitnost;
-                            vypotrebovaneY = true;
-                        }
+                        Vector2 poziceNaSvetelnemBloku = prvek.Item3;
 
                         if (novyBod.X > 0 && novyBod.Y > 0 && novyBod.X < KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK && novyBod.Y < KomponentaMapa.VELIKOST_MAPY_Y * POCET_SVETLA_NA_BLOK)
                         {
-                            if (vypotrebovaneX == prvek.Item3 && vypotrebovaneY == prvek.Item4 && !hra.komponentaMapa.mapa[novyBod.X / POCET_SVETLA_NA_BLOK, novyBod.Y / POCET_SVETLA_NA_BLOK].statickaNeprusvitnost)
-                                novaVzdalenost += new Vector2(Math.Abs(mozneSmery[i].X), Math.Abs(mozneSmery[i].Y)) * new Vector2(hra.komponentaMapa.mapa[novyBod.X / POCET_SVETLA_NA_BLOK, novyBod.Y / POCET_SVETLA_NA_BLOK].neprusvitnost);
+                            if (!hra.komponentaMapa.mapa[novyBod.X / POCET_SVETLA_NA_BLOK, novyBod.Y / POCET_SVETLA_NA_BLOK].statickaNeprusvitnost)
+                            {
+                                Vector2 vzdalenost = Vector2.Zero;
+                                if (i == 0)
+                                {
+                                    vzdalenost.X = poziceNaSvetelnemBloku.X;
+                                    poziceNaSvetelnemBloku.X = 1;
+                                }
+                                else if (i == 1)
+                                {
+                                    vzdalenost.Y = poziceNaSvetelnemBloku.Y;
+                                    poziceNaSvetelnemBloku.Y = 1;
+                                }
+                                else if (i == 2)
+                                {
+                                    vzdalenost.X = 1 - poziceNaSvetelnemBloku.X;
+                                    poziceNaSvetelnemBloku.X = 0;
+                                }
+                                else if (i == 3)
+                                {
+                                    vzdalenost.Y = 1 - poziceNaSvetelnemBloku.Y;
+                                    poziceNaSvetelnemBloku.Y = 0;
+                                }
+                                novaVzdalenost += vzdalenost * new Vector2(hra.komponentaMapa.mapa[novyBod.X / POCET_SVETLA_NA_BLOK, novyBod.Y / POCET_SVETLA_NA_BLOK].neprusvitnost);
+                            }
                             else if (hra.komponentaMapa.mapa[novyBod.X / POCET_SVETLA_NA_BLOK, novyBod.Y / POCET_SVETLA_NA_BLOK].statickaNeprusvitnost)
                                 novaVzdalenost += new Vector2(Math.Abs(mozneSmery[i].X), Math.Abs(mozneSmery[i].Y)) * new Vector2(hra.komponentaMapa.mapa[novyBod.X / POCET_SVETLA_NA_BLOK, novyBod.Y / POCET_SVETLA_NA_BLOK].neprusvitnost * Math.Max(pocatecniSila / 255f, 1));
 
@@ -308,7 +311,7 @@ namespace Labyrinth_of_Secrets
                             Color novaBarva = new Color((int)(noveSvetlo * (barva.R / 255f)), (int)(noveSvetlo * (barva.G / 255f)), (int)(noveSvetlo * (barva.B / 255f)));
                             docasnaDataSvetla[novyBod.X + novyBod.Y * KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK] = novaBarva;
 
-                            fronta.Enqueue((novyBod, novaVzdalenost, vypotrebovaneX, vypotrebovaneY));
+                            fronta.Enqueue((novyBod, novaVzdalenost, poziceNaSvetelnemBloku));
                         }
                     }
                 }
