@@ -77,6 +77,8 @@ namespace Labyrinth_of_Secrets
 
             VytvorStrom();
             PredpocitejNody();
+
+            hra.komponentaSvetlo.PridejZdrojeSvetla();
         }
 
         //Umisti na kazdy blok na mape zed

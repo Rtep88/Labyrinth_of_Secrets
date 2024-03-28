@@ -10,7 +10,7 @@ namespace Labyrinth_of_Secrets
     public class Monstrum
     {
         public Vector2 pozice;
-        public Point velikost = new Point(6, 12);
+        public Point velikost = new Point(Hra.VELIKOST_HRACE_X, Hra.VELIKOST_HRACE_Y);
         public int typMonstra;
         public float rychlost = 20f;
 

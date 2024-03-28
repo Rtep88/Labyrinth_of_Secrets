@@ -8,13 +8,19 @@ namespace Labyrinth_of_Secrets
         //Promenne
         public Random rnd = new Random();
         public KomponentaMapa komponentaMapa;
+        public KomponentaZbrane komponentaZbrane;
         public KomponentaSvetlo komponentaSvetlo;
         public KomponentaMonstra komponentaMonstra;
         public KomponentaMultiplayer komponentaMultiplayer;
 
+        //Konstanty
+        public const int VELIKOST_HRACE_X = 6; //Velikost vykresleni hrace
+        public const int VELIKOST_HRACE_Y = 12; //Velikost vykresleni hrace
+
         public Hra()
         {
             komponentaMapa = new KomponentaMapa(this);
+            komponentaZbrane = new KomponentaZbrane(this);
             komponentaSvetlo = new KomponentaSvetlo(this);
             komponentaMonstra = new KomponentaMonstra(this);
             komponentaMultiplayer = new KomponentaMultiplayer(this);

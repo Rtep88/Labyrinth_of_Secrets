@@ -50,6 +50,12 @@ namespace Labyrinth_of_Secrets
 
         public override void Update(GameTime gameTime)
         {
+            if (hra.komponentaMultiplayer.typZarizeni == KomponentaMultiplayer.TypZarizeni.Klient && noveProjektily != null)
+            {
+                projektily = noveProjektily;
+                noveProjektily = null;
+            }
+
             if (casZautoceni > 0)
                 casZautoceni -= (float)gameTime.ElapsedGameTime.TotalSeconds;
 
@@ -58,14 +64,15 @@ namespace Labyrinth_of_Secrets
             Vector2 opravdovaVelikostOkna = new Vector2(hra.velikostOkna.X / _kamera.zoom, hra.velikostOkna.Y / _kamera.zoom);
             Vector2 opravdovaPoziceMysi = opravdovaPoziceKamery + Mouse.GetState().Position.ToVector2() * opravdovaVelikostOkna / hra.velikostOkna.ToVector2();
 
-            if (casZautoceni <= 0 && Mouse.GetState().LeftButton == ButtonState.Pressed)
+            if (casZautoceni <= 0 && Mouse.GetState().LeftButton == ButtonState.Pressed && hra.IsActive)
             {
                 Vector2 stredHrace = hra.komponentaHrac.poziceHrace + new Vector2(KomponentaHrac.VELIKOST_HRACE_X, KomponentaHrac.VELIKOST_HRACE_Y) / 2f;
-
-
                 casZautoceni = rychlostUtoceni;
-                projektily.Add(new Projektil(stredHrace, Vector2.Normalize(opravdovaPoziceMysi - stredHrace)));
 
+                if (hra.komponentaMultiplayer.typZarizeni == KomponentaMultiplayer.TypZarizeni.SinglePlayer)
+                    projektily.Add(new Projektil(stredHrace, Vector2.Normalize(opravdovaPoziceMysi - stredHrace)));
+                else
+                    hra.komponentaMultiplayer.PosliInfoONovemProjektilu(Vector2.Normalize(opravdovaPoziceMysi - stredHrace));
             }
 
             for (int i = 0; i < projektily.Count; i++)
@@ -147,6 +154,34 @@ namespace Labyrinth_of_Secrets
             hra._spriteBatch.End();
 
             base.Draw(gameTime);
+        }
+
+        public void PrevedBytyNaProjektily(byte[] prichoziBytyProjektilu)
+        {
+            byte[] bytyProjektilu = Convert.FromBase64String(Encoding.UTF8.GetString(prichoziBytyProjektilu));
+
+            int pocetMonster = bytyProjektilu[0] * 255 + bytyProjektilu[1];
+            List<Projektil> projektilyZBytu = new List<Projektil>(pocetMonster);
+
+            for (int i = 0; i < pocetMonster; i++)
+            {
+                Projektil projektil = new Projektil();
+                projektil.velikost.X = bytyProjektilu[2 + i * 14];
+                projektil.velikost.Y = bytyProjektilu[2 + i * 14 + 1];
+                projektil.pozice.X = bytyProjektilu[2 + i * 14 + 2] * 255 + bytyProjektilu[2 + i * 14 + 3] + bytyProjektilu[2 + i * 14 + 4] / 255f;
+                projektil.pozice.Y = bytyProjektilu[2 + i * 14 + 5] * 255 + bytyProjektilu[2 + i * 14 + 6] + bytyProjektilu[2 + i * 14 + 7] / 255f;
+                projektil.smer.X = bytyProjektilu[2 + i * 14 + 8] / 255f;
+                if (bytyProjektilu[2 + i * 14 + 9] == 1)
+                    projektil.smer.X *= -1;
+                projektil.smer.Y = bytyProjektilu[2 + i * 14 + 10] / 255f;
+                if (bytyProjektilu[2 + i * 14 + 11] == 1)
+                    projektil.smer.Y *= -1;
+                projektil.rychlost = bytyProjektilu[2 + i * 14 + 12];
+                projektil.typProjektilu = (Projektil.TypProjektilu)bytyProjektilu[2 + i * 14 + 13];
+                projektilyZBytu.Add(projektil);
+            }
+
+            noveProjektily = projektilyZBytu;
         }
     }
 }

@@ -28,7 +28,7 @@ namespace Labyrinth_of_Secrets
         }
 
         //Konstanty
-        private const int POCET_SVETLA_NA_BLOK = 16; //Udava jak moc dopodrobna se svetlo bude pocitat - Minimum je 1 a maximum je omezen pouze systemovymi prostredky ale doporucuji neprekracovat 32 :)
+        private const int POCET_SVETLA_NA_BLOK = 8; //Udava jak moc dopodrobna se svetlo bude pocitat - Minimum je 1 a maximum je omezen pouze systemovymi prostredky ale doporucuji neprekracovat 32 :)
 
         //Promene
         public List<ZdrojSvetla> svetelneZdroje = new List<ZdrojSvetla>();

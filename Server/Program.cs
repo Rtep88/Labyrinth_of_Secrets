@@ -121,6 +121,7 @@ namespace Server
             while (true)
             {
                 stopky.Restart();
+                hra.komponentaZbrane.Update(deltaTime);
                 hra.komponentaMonstra.Update(deltaTime);
                 hra.komponentaMultiplayer.Update(deltaTime);
 

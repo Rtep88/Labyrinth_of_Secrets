@@ -18,7 +18,7 @@ namespace Labyrinth_of_Secrets
         public static int MAX_POCET_MONSTER = 100;
 
         //Promenne
-        private List<Monstrum> monstra = new List<Monstrum>();
+        public List<Monstrum> monstra = new List<Monstrum>();
 
         public KomponentaMonstra(Hra hra)
         {

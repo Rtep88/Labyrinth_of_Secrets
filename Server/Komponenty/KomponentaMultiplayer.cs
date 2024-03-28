@@ -34,7 +34,9 @@ namespace Labyrinth_of_Secrets
             PotvrzujiPripojeni,
             DobrePripojujiSe,
             OdpojilSeKlient,
-            UpdateMonster
+            UpdateMonster,
+            NovyProjektil,
+            UpdateProjektilu
         }
 
         //Promenne
@@ -44,7 +46,7 @@ namespace Labyrinth_of_Secrets
         private List<Klient> klienti = new List<Klient>(); //Pro server
         private UdpClient udpServer; //Pro server
 
-        private float casUpdatuMonster = 0.5f;
+        private float casUpdatu = 0.1f;
 
         public KomponentaMultiplayer(Hra hra)
         {
@@ -71,13 +73,17 @@ namespace Labyrinth_of_Secrets
                 }
             }
 
-            casUpdatuMonster -= deltaTime;
-            if (casUpdatuMonster <= 0)
+            if (hra.komponentaZbrane.zmenaProjektilu)
             {
-                byte[] monstraVBytech = hra.komponentaMonstra.PrevedMonstraNaByty();
-                string monstraJakoString = Encoding.UTF8.GetString(monstraVBytech);
-                PosliVsemKlientum(Encoding.UTF8.GetBytes($"{(short)TypPacketu.UpdateMonster};{monstraJakoString}"));
-                casUpdatuMonster = 0.1f;
+                PosliUpdateProjektilu();
+                hra.komponentaZbrane.zmenaProjektilu = false;
+            }
+            casUpdatu -= deltaTime;
+            if (casUpdatu <= 0)
+            {
+                PosliUpdateMonster();
+                PosliUpdateProjektilu();
+                casUpdatu = 0.1f;
             }
         }
 
@@ -143,7 +149,29 @@ namespace Labyrinth_of_Secrets
                             PosliVsemKlientum(Encoding.UTF8.GetBytes($"{(short)TypPacketu.OdpojilSeKlient};{dataVStringu[1]}"));
                     }
                     break;
+                case TypPacketu.NovyProjektil:
+                    if (hraci.ContainsKey(dataVStringu[1]))
+                    {
+                        Vector2 stredHrace = hraci[dataVStringu[1]] + new Vector2(Hra.VELIKOST_HRACE_X, Hra.VELIKOST_HRACE_Y) / 2f;
+                        Vector2 smerProjektilu = new Vector2(PrevedStringNaFloat(dataVStringu[2]), PrevedStringNaFloat(dataVStringu[3]));
+                        hra.komponentaZbrane.noveProjektily.Add(new Projektil(stredHrace, smerProjektilu));
+                    }
+                    break;
             }
+        }
+
+        void PosliUpdateMonster()
+        {
+            byte[] monstraVBytech = hra.komponentaMonstra.PrevedMonstraNaByty();
+            string monstraJakoString = Encoding.UTF8.GetString(monstraVBytech);
+            PosliVsemKlientum(Encoding.UTF8.GetBytes($"{(short)TypPacketu.UpdateMonster};{monstraJakoString}"));
+        }
+
+        void PosliUpdateProjektilu()
+        {
+            byte[] projektilyVBytech = hra.komponentaZbrane.PrevedProjektilyNaByty();
+            string projektilyJakoString = Encoding.UTF8.GetString(projektilyVBytech);
+            PosliVsemKlientum(Encoding.UTF8.GetBytes($"{(short)TypPacketu.UpdateProjektilu};{projektilyJakoString}"));
         }
 
         //Zpracovani dotazu clienta
@@ -201,14 +229,17 @@ namespace Labyrinth_of_Secrets
 
         string PrevedFloatNaString(float cislo)
         {
-            byte[] floatVBytech = new byte[] { (byte)(cislo / 255), (byte)(cislo % 255), (byte)(cislo % 1 * 255) };
+            int minus = cislo < 0 ? 1 : 0;
+            cislo = Math.Abs(cislo);
+            byte[] floatVBytech = new byte[] { (byte)(128 * minus + cislo % (128 * 255) / 255), (byte)(cislo % 255), (byte)(cislo % 1 * 255) };
             return Convert.ToBase64String(floatVBytech);
         }
 
         float PrevedStringNaFloat(string cislo)
         {
             byte[] floatVBytech = Convert.FromBase64String(cislo);
-            return floatVBytech[0] * 255 + floatVBytech[1] + floatVBytech[2] / 255f;
+            int znamenko = floatVBytech[0] >= 128 ? -1 : 1;
+            return (floatVBytech[0] % 128 * 255 + floatVBytech[1] + floatVBytech[2] / 255f) * znamenko;
         }
     }
 }
