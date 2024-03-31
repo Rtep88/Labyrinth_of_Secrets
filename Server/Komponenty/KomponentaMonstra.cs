@@ -102,6 +102,12 @@ namespace Labyrinth_of_Secrets
                 monstrumVBytech.Add((byte)(monstra[i].pozice.Y / 255));
                 monstrumVBytech.Add((byte)(monstra[i].pozice.Y % 255));
                 monstrumVBytech.Add((byte)(monstra[i].pozice.Y % 1 * 255));
+                monstrumVBytech.Add((byte)(monstra[i].zivoty / 255 / 255));
+                monstrumVBytech.Add((byte)(monstra[i].zivoty % (255 * 255) / 255));
+                monstrumVBytech.Add((byte)(monstra[i].zivoty % 255));
+                monstrumVBytech.Add((byte)(monstra[i].maxZivoty / 255 / 255));
+                monstrumVBytech.Add((byte)(monstra[i].maxZivoty % (255 * 255) / 255));
+                monstrumVBytech.Add((byte)(monstra[i].maxZivoty % 255));
                 monstrumVBytech.Add((byte)monstra[i].rychlost);
                 monstrumVBytech.Add((byte)monstra[i].typMonstra);
             }

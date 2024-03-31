@@ -22,6 +22,8 @@ namespace Labyrinth_of_Secrets
 
         //Konstanty
         private const int MAX_POCET_MONSTER = 100;
+        private const int UKAZATEL_ZDRAVI_X_VEL = 6;
+        private const int UKAZATEL_ZDRAVI_Y_VEL = 1;
 
         //Promenne
         public List<Monstrum> monstra = new List<Monstrum>();
@@ -69,6 +71,13 @@ namespace Labyrinth_of_Secrets
             {
                 hra._spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, transformMatrix: hra.komponentaKamera._kamera.GetViewMatrix());
 
+                //zivoty
+                hra._spriteBatch.Draw(Hra.pixel, monstrum.pozice + new Vector2(monstrum.velikost.X / 2 - UKAZATEL_ZDRAVI_X_VEL / 2 - 0.25f, -0.5f - UKAZATEL_ZDRAVI_Y_VEL - 0.25f), null, Color.Black, 0, Vector2.Zero,
+                    new Vector2(UKAZATEL_ZDRAVI_X_VEL + 0.5f, UKAZATEL_ZDRAVI_Y_VEL + 0.5f), SpriteEffects.None, 0);
+                hra._spriteBatch.Draw(Hra.pixel, monstrum.pozice + new Vector2(monstrum.velikost.X / 2 - UKAZATEL_ZDRAVI_X_VEL / 2, -0.5f - UKAZATEL_ZDRAVI_Y_VEL), null, Color.Red, 0, Vector2.Zero,
+                    new Vector2(UKAZATEL_ZDRAVI_X_VEL, UKAZATEL_ZDRAVI_Y_VEL) * new Vector2(monstrum.zivoty / (float)monstrum.maxZivoty, 1), SpriteEffects.None, 0);
+
+                //monstrum
                 hra._spriteBatch.Draw(texturyMonster[monstrum.typMonstra], monstrum.pozice, null, Color.Red, 0, Vector2.Zero,
                     monstrum.velikost.ToVector2() / new Vector2(texturyMonster[monstrum.typMonstra].Width, texturyMonster[monstrum.typMonstra].Height), SpriteEffects.None, 0);
 
@@ -144,12 +153,14 @@ namespace Labyrinth_of_Secrets
             for (int i = 0; i < pocetMonster; i++)
             {
                 Monstrum monstrum = new Monstrum();
-                monstrum.velikost.X = bytyMonster[2 + i * 10];
-                monstrum.velikost.Y = bytyMonster[2 + i * 10 + 1];
-                monstrum.pozice.X = bytyMonster[2 + i * 10 + 2] * 255 + bytyMonster[2 + i * 10 + 3] + bytyMonster[2 + i * 10 + 4] / 255f;
-                monstrum.pozice.Y = bytyMonster[2 + i * 10 + 5] * 255 + bytyMonster[2 + i * 10 + 6] + bytyMonster[2 + i * 10 + 7] / 255f;
-                monstrum.rychlost = bytyMonster[2 + i * 10 + 8];
-                monstrum.typMonstra = bytyMonster[2 + i * 10 + 9];
+                monstrum.velikost.X = bytyMonster[2 + i * 16];
+                monstrum.velikost.Y = bytyMonster[2 + i * 16 + 1];
+                monstrum.pozice.X = bytyMonster[2 + i * 16 + 2] * 255 + bytyMonster[2 + i * 16 + 3] + bytyMonster[2 + i * 16 + 4] / 255f;
+                monstrum.pozice.Y = bytyMonster[2 + i * 16 + 5] * 255 + bytyMonster[2 + i * 16 + 6] + bytyMonster[2 + i * 16 + 7] / 255f;
+                monstrum.zivoty = bytyMonster[2 + i * 16 + 8] * 255 * 255 + bytyMonster[2 + i * 16 + 9] * 255 + bytyMonster[2 + i * 16 + 10];
+                monstrum.maxZivoty = bytyMonster[2 + i * 16 + 11] * 255 * 255 + bytyMonster[2 + i * 16 + 12] * 255 + bytyMonster[2 + i * 16 + 13];
+                monstrum.rychlost = bytyMonster[2 + i * 16 + 14];
+                monstrum.typMonstra = bytyMonster[2 + i * 16 + 15];
                 monstraZBytu.Add(monstrum);
             }
 

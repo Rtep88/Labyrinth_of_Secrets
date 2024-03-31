@@ -89,7 +89,10 @@ namespace Labyrinth_of_Secrets
                     };
                     if (obdelnikProjektilu.Intersects(obdelnikMonstra))
                     {
-                        monstra.RemoveAt(j);
+                        if (monstra[j].zivoty - projektily[i].zraneni <= 0)
+                            monstra.RemoveAt(j);
+                        else
+                            monstra[j].zivoty -= projektily[i].zraneni;
                         projektily.RemoveAt(i);
                         i--;
                         break;
@@ -121,6 +124,9 @@ namespace Labyrinth_of_Secrets
                 projektilyVBytech.Add((byte)(Math.Abs(projektily[i].smer.Y) * 255));
                 projektilyVBytech.Add((byte)(projektily[i].smer.Y < 0 ? 1 : 0));
                 projektilyVBytech.Add((byte)projektily[i].rychlost);
+                projektilyVBytech.Add((byte)(projektily[i].zraneni / 255 / 255));
+                projektilyVBytech.Add((byte)(projektily[i].zraneni % (255 * 255) / 255));
+                projektilyVBytech.Add((byte)(projektily[i].zraneni % 255));
                 projektilyVBytech.Add((byte)projektily[i].typProjektilu);
             }
 

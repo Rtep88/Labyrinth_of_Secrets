@@ -131,7 +131,10 @@ namespace Labyrinth_of_Secrets
                     };
                     if (obdelnikProjektilu.Intersects(obdelnikMonstra))
                     {
-                        monstra.RemoveAt(j);
+                        if (monstra[j].zivoty - projektily[i].zraneni <= 0)
+                            monstra.RemoveAt(j);
+                        else
+                            monstra[j].zivoty -= projektily[i].zraneni;
                         projektily.RemoveAt(i);
                         i--;
                         break;
@@ -166,18 +169,19 @@ namespace Labyrinth_of_Secrets
             for (int i = 0; i < pocetMonster; i++)
             {
                 Projektil projektil = new Projektil();
-                projektil.velikost.X = bytyProjektilu[2 + i * 14];
-                projektil.velikost.Y = bytyProjektilu[2 + i * 14 + 1];
-                projektil.pozice.X = bytyProjektilu[2 + i * 14 + 2] * 255 + bytyProjektilu[2 + i * 14 + 3] + bytyProjektilu[2 + i * 14 + 4] / 255f;
-                projektil.pozice.Y = bytyProjektilu[2 + i * 14 + 5] * 255 + bytyProjektilu[2 + i * 14 + 6] + bytyProjektilu[2 + i * 14 + 7] / 255f;
-                projektil.smer.X = bytyProjektilu[2 + i * 14 + 8] / 255f;
-                if (bytyProjektilu[2 + i * 14 + 9] == 1)
+                projektil.velikost.X = bytyProjektilu[2 + i * 17];
+                projektil.velikost.Y = bytyProjektilu[2 + i * 17 + 1];
+                projektil.pozice.X = bytyProjektilu[2 + i * 17 + 2] * 255 + bytyProjektilu[2 + i * 17 + 3] + bytyProjektilu[2 + i * 17 + 4] / 255f;
+                projektil.pozice.Y = bytyProjektilu[2 + i * 17 + 5] * 255 + bytyProjektilu[2 + i * 17 + 6] + bytyProjektilu[2 + i * 17 + 7] / 255f;
+                projektil.smer.X = bytyProjektilu[2 + i * 17 + 8] / 255f;
+                if (bytyProjektilu[2 + i * 17 + 9] == 1)
                     projektil.smer.X *= -1;
-                projektil.smer.Y = bytyProjektilu[2 + i * 14 + 10] / 255f;
-                if (bytyProjektilu[2 + i * 14 + 11] == 1)
+                projektil.smer.Y = bytyProjektilu[2 + i * 17 + 10] / 255f;
+                if (bytyProjektilu[2 + i * 17 + 11] == 1)
                     projektil.smer.Y *= -1;
-                projektil.rychlost = bytyProjektilu[2 + i * 14 + 12];
-                projektil.typProjektilu = (Projektil.TypProjektilu)bytyProjektilu[2 + i * 14 + 13];
+                projektil.rychlost = bytyProjektilu[2 + i * 17 + 12];
+                projektil.zraneni = bytyProjektilu[2 + i * 17 + 13] * 255 * 255 + bytyProjektilu[2 + i * 17 + 14] * 255 + bytyProjektilu[2 + i * 17 + 15];
+                projektil.typProjektilu = (Projektil.TypProjektilu)bytyProjektilu[2 + i * 17 + 16];
                 projektilyZBytu.Add(projektil);
             }
 

@@ -18,6 +18,7 @@ namespace Labyrinth_of_Secrets
         public Vector2 pozice;
         public Vector2 velikost = new Vector2(1, 2);
         public Vector2 smer;
+        public int zraneni = 10;
         public float rychlost = 80f;
         public TypProjektilu typProjektilu;
 

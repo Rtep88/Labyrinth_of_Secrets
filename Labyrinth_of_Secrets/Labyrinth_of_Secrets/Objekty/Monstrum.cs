@@ -16,6 +16,9 @@ namespace Labyrinth_of_Secrets
         public int typMonstra;
         public float rychlost = 20f;
 
+        public int maxZivoty = 100;
+        public int zivoty = 100;
+
         public Monstrum(Vector2 pozice)
         {
             this.pozice = pozice;
