@@ -154,7 +154,8 @@ namespace Labyrinth_of_Secrets
                     {
                         Vector2 stredHrace = hraci[dataVStringu[1]] + new Vector2(Hra.VELIKOST_HRACE_X, Hra.VELIKOST_HRACE_Y) / 2f;
                         Vector2 smerProjektilu = new Vector2(PrevedStringNaFloat(dataVStringu[2]), PrevedStringNaFloat(dataVStringu[3]));
-                        hra.komponentaZbrane.noveProjektily.Add(new Projektil(stredHrace, smerProjektilu));
+                        Zbran zbran = new Zbran((Zbran.TypZbrane)int.Parse(dataVStringu[4]));
+                        zbran.PouzijZbran(stredHrace, smerProjektilu, hra.komponentaZbrane.noveProjektily);
                     }
                     break;
             }

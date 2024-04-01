@@ -48,5 +48,25 @@ namespace Labyrinth_of_Secrets
                 list[n] = value;
             }
         }
+
+        public static float NaRadiany(float angle)
+        {
+            return (float)(Math.PI * angle / 180.0);
+        }
+
+        public static Vector2 OtocVector2(Vector2 vector, float angle)
+        {
+            float sin = (float)Math.Sin(angle);
+            float cos = (float)Math.Cos(angle);
+
+            float tx = vector.X;
+            float ty = vector.Y;
+
+            vector.X = cos * tx - sin * ty;
+            vector.Y = sin * tx + cos * ty;
+
+            return vector;
+        }
+
     }
 }

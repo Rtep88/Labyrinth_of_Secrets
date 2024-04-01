@@ -35,7 +35,7 @@ namespace Labyrinth_of_Secrets
 
             for (int i = 0; i < projektily.Count; i++)
             {
-                projektily[i].pozice += projektily[i].smer * projektily[i].rychlost * (float)deltaTime;
+                projektily[i].PohniSe(deltaTime);
                 RotatedRectangle obdelnikProjektilu = new RotatedRectangle
                 {
                     Center = projektily[i].pozice,

@@ -4,6 +4,8 @@ using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -19,15 +21,11 @@ namespace Labyrinth_of_Secrets
         //Textury
         public static List<Texture2D> texturyProjektilu = new List<Texture2D>();
 
-        //Struktury
-
-        //Konstanty
-        const float rychlostUtoceni = 0.2f;
-
         //Promenne
         public List<Projektil> projektily = new List<Projektil>();
         private List<Projektil> noveProjektily = null;
-        private float casZautoceni = 0;
+        public List<Zbran> zbrane = new List<Zbran>();
+        public int aktualniZbran = 0;
 
         public KomponentaZbrane(Hra hra) : base(hra)
         {
@@ -41,43 +39,60 @@ namespace Labyrinth_of_Secrets
 
         protected override void LoadContent()
         {
-            Texture2D pixel = new Texture2D(GraphicsDevice, 1, 1);
-            pixel.SetData(new Color[] { Color.White });
-            texturyProjektilu.Add(pixel);
+            string cesta = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
+            char lomeno = Path.DirectorySeparatorChar;
+            for (int i = 1; File.Exists(cesta + @$"{lomeno}Content{lomeno}Images{lomeno}Bullet_" + i + ".xnb"); i++)
+            {
+                texturyProjektilu.Add(hra.Content.Load<Texture2D>(@$"Images{lomeno}Bullet_" + i));
+            }
+
+            for (int i = 0; i < 4; i++)
+                zbrane.Add(new Zbran((Zbran.TypZbrane)i));
 
             base.LoadContent();
         }
 
         public override void Update(GameTime gameTime)
         {
+            //Vyber zbrani
+            if (Keyboard.GetState().IsKeyDown(Keys.D1))
+                aktualniZbran = 0;
+            if (Keyboard.GetState().IsKeyDown(Keys.D2))
+                aktualniZbran = 1;
+            if (Keyboard.GetState().IsKeyDown(Keys.D3))
+                aktualniZbran = 2;
+            if (Keyboard.GetState().IsKeyDown(Keys.D4))
+                aktualniZbran = 3;
+
             if (hra.komponentaMultiplayer.typZarizeni == KomponentaMultiplayer.TypZarizeni.Klient && noveProjektily != null)
             {
                 projektily = noveProjektily;
                 noveProjektily = null;
             }
-
-            if (casZautoceni > 0)
-                casZautoceni -= (float)gameTime.ElapsedGameTime.TotalSeconds;
+            
+            for (int i = 0; i < zbrane.Count; i++)
+                if (zbrane[i].aktCas > 0)
+                    zbrane[i].aktCas -= (float)gameTime.ElapsedGameTime.TotalSeconds;
 
             Kamera _kamera = hra.komponentaKamera._kamera;
             Vector2 opravdovaPoziceKamery = new Vector2(-_kamera.GetViewMatrix().Translation.X / _kamera.zoom, -_kamera.GetViewMatrix().Translation.Y / _kamera.zoom);
             Vector2 opravdovaVelikostOkna = new Vector2(hra.velikostOkna.X / _kamera.zoom, hra.velikostOkna.Y / _kamera.zoom);
             Vector2 opravdovaPoziceMysi = opravdovaPoziceKamery + Mouse.GetState().Position.ToVector2() * opravdovaVelikostOkna / hra.velikostOkna.ToVector2();
 
-            if (casZautoceni <= 0 && Mouse.GetState().LeftButton == ButtonState.Pressed && hra.IsActive)
+            if (zbrane[aktualniZbran].aktCas <= 0 && Mouse.GetState().LeftButton == ButtonState.Pressed && hra.IsActive)
             {
                 Vector2 stredHrace = hra.komponentaHrac.poziceHrace + new Vector2(KomponentaHrac.VELIKOST_HRACE_X, KomponentaHrac.VELIKOST_HRACE_Y) / 2f;
-                casZautoceni = rychlostUtoceni;
+                zbrane[aktualniZbran].aktCas = zbrane[aktualniZbran].rychlostZbrane;
 
                 if (hra.komponentaMultiplayer.typZarizeni == KomponentaMultiplayer.TypZarizeni.SinglePlayer)
-                    projektily.Add(new Projektil(stredHrace, Vector2.Normalize(opravdovaPoziceMysi - stredHrace)));
+                    zbrane[aktualniZbran].PouzijZbran(stredHrace, Vector2.Normalize(opravdovaPoziceMysi - stredHrace), projektily);
                 else
-                    hra.komponentaMultiplayer.PosliInfoONovemProjektilu(Vector2.Normalize(opravdovaPoziceMysi - stredHrace));
+                    hra.komponentaMultiplayer.PosliInfoONovemProjektilu(Vector2.Normalize(opravdovaPoziceMysi - stredHrace), zbrane[aktualniZbran].typZbrane);
             }
 
             for (int i = 0; i < projektily.Count; i++)
             {
-                projektily[i].pozice += projektily[i].smer * projektily[i].rychlost * (float)gameTime.ElapsedGameTime.TotalSeconds;
+                projektily[i].PohniSe((float)gameTime.ElapsedGameTime.TotalSeconds);
                 RotatedRectangle obdelnikProjektilu = new RotatedRectangle
                 {
                     Center = projektily[i].pozice,
@@ -151,8 +166,8 @@ namespace Labyrinth_of_Secrets
             foreach (Projektil projektil in projektily)
             {
                 Vector2 velikostTextury = new Vector2(texturyProjektilu[(int)projektil.typProjektilu].Width, texturyProjektilu[(int)projektil.typProjektilu].Height);
-                hra._spriteBatch.Draw(texturyProjektilu[(int)projektil.typProjektilu], projektil.pozice, null, Color.Red,
-                (float)(Math.PI / 2 + Math.Atan2(projektil.smer.Y, projektil.smer.X)), velikostTextury / 2f, projektil.velikost / velikostTextury, SpriteEffects.None, 0);
+                hra._spriteBatch.Draw(texturyProjektilu[(int)projektil.typProjektilu], projektil.pozice, null, Color.White,
+                    (float)(Math.PI / 2 + Math.Atan2(projektil.smer.Y, projektil.smer.X)), velikostTextury / 2f, projektil.velikost / velikostTextury, SpriteEffects.None, 0);
             }
             hra._spriteBatch.End();
 
