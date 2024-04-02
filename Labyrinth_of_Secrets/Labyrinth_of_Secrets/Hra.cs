@@ -39,6 +39,7 @@ namespace Labyrinth_of_Secrets
         {
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
+            InactiveSleepTime = TimeSpan.Zero;
             IsMouseVisible = true;
         }
 
@@ -53,10 +54,10 @@ namespace Labyrinth_of_Secrets
             komponentaSvetlo = new KomponentaSvetlo(this);
             komponentaKonzole = new KomponentaKonzole(this);
             Components.Add(komponentaMapa);
+            Components.Add(komponentaZbrane);
             Components.Add(komponentaMonstra);
             Components.Add(komponentaMultiplayer);
             Components.Add(komponentaHrac);
-            Components.Add(komponentaZbrane);
             Components.Add(komponentaKamera);
             Components.Add(komponentaSvetlo);
             Components.Add(komponentaKonzole);

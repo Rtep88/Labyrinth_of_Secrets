@@ -196,32 +196,32 @@ namespace Labyrinth_of_Secrets
                     (float)(Math.PI / 2 + Math.Atan2(projektil.smer.Y, projektil.smer.X)), velikostTextury / 2f, projektil.velikost / velikostTextury, SpriteEffects.None, 0);
             }
 
-            Kamera _kamera = hra.komponentaKamera._kamera;
-            Vector2 opravdovaPoziceKamery = new Vector2(-_kamera.GetViewMatrix().Translation.X / _kamera.zoom, -_kamera.GetViewMatrix().Translation.Y / _kamera.zoom);
-            Vector2 opravdovaVelikostOkna = new Vector2(hra.velikostOkna.X / _kamera.zoom, hra.velikostOkna.Y / _kamera.zoom);
-            Vector2 opravdovaPoziceMysi = opravdovaPoziceKamery + Mouse.GetState().Position.ToVector2() * opravdovaVelikostOkna / hra.velikostOkna.ToVector2();
-
-            if (opravdovaPoziceMysi.X >= hra.komponentaHrac.poziceHrace.X + KomponentaHrac.VELIKOST_HRACE_X / 2)
-            {
-                Vector2 origin = hra.komponentaHrac.poziceHrace + new Vector2(KomponentaHrac.VELIKOST_HRACE_X, KomponentaHrac.VELIKOST_HRACE_Y / 2);
-                Vector2 poziceVystreleni = hra.komponentaHrac.poziceHrace + new Vector2(KomponentaHrac.VELIKOST_HRACE_X, KomponentaHrac.VELIKOST_HRACE_Y / 2) - zbrane[aktualniZbran].origin * zbrane[aktualniZbran].meritkoVykresleni + zbrane[aktualniZbran].spawnProjektilu * zbrane[aktualniZbran].meritkoVykresleni;
-                float rotace = Hra.VypocitejRotaci(origin, poziceVystreleni - new Vector2(5, 0), poziceVystreleni, opravdovaPoziceMysi);
-                hra._spriteBatch.Draw(texturyZbrani[(int)zbrane[aktualniZbran].typZbrane], hra.komponentaHrac.poziceHrace + new Vector2(KomponentaHrac.VELIKOST_HRACE_X, KomponentaHrac.VELIKOST_HRACE_Y / 2),
-                    null, Color.White, rotace, zbrane[aktualniZbran].origin, zbrane[aktualniZbran].meritkoVykresleni, SpriteEffects.None, 0);
-            }
-            else
-            {
-                Vector2 origin = hra.komponentaHrac.poziceHrace + new Vector2(0, KomponentaHrac.VELIKOST_HRACE_Y / 2);
-                Vector2 invertovanyOriginZbrane = new Vector2(zbrane[aktualniZbran].origin.X * 2, zbrane[aktualniZbran].velikostZbrane.Y) - zbrane[aktualniZbran].origin;
-                Vector2 invertovanySpawnProjektilu = new Vector2(zbrane[aktualniZbran].spawnProjektilu.X * 2, zbrane[aktualniZbran].velikostZbrane.Y) - zbrane[aktualniZbran].spawnProjektilu;
-                Vector2 poziceVystreleni = hra.komponentaHrac.poziceHrace + new Vector2(0, KomponentaHrac.VELIKOST_HRACE_Y / 2) - invertovanyOriginZbrane * zbrane[aktualniZbran].meritkoVykresleni + invertovanySpawnProjektilu * zbrane[aktualniZbran].meritkoVykresleni;
-                float rotace = Hra.VypocitejRotaci(origin, poziceVystreleni - new Vector2(5, 0), poziceVystreleni, opravdovaPoziceMysi);
-                hra._spriteBatch.Draw(texturyZbrani[(int)zbrane[aktualniZbran].typZbrane], hra.komponentaHrac.poziceHrace + new Vector2(0, KomponentaHrac.VELIKOST_HRACE_Y / 2),
-                    null, Color.White, rotace, invertovanyOriginZbrane, zbrane[aktualniZbran].meritkoVykresleni, SpriteEffects.FlipVertically, 0);
-            }
             hra._spriteBatch.End();
 
             base.Draw(gameTime);
+        }
+
+        public void VykresliZbranUHrace(Zbran.TypZbrane typZbrane, Vector2 pozicehrace, Vector2 poziceMysi)
+        {
+            Zbran zbran = new Zbran(typZbrane);
+            if (poziceMysi.X >= pozicehrace.X + KomponentaHrac.VELIKOST_HRACE_X / 2)
+            {
+                Vector2 origin = pozicehrace + new Vector2(KomponentaHrac.VELIKOST_HRACE_X, KomponentaHrac.VELIKOST_HRACE_Y / 2);
+                Vector2 poziceVystreleni = pozicehrace + new Vector2(KomponentaHrac.VELIKOST_HRACE_X, KomponentaHrac.VELIKOST_HRACE_Y / 2) - zbran.origin * zbran.meritkoVykresleni + zbran.spawnProjektilu * zbran.meritkoVykresleni;
+                float rotace = Hra.VypocitejRotaci(origin, poziceVystreleni - new Vector2(5, 0), poziceVystreleni, poziceMysi);
+                hra._spriteBatch.Draw(texturyZbrani[(int)zbran.typZbrane], pozicehrace + new Vector2(KomponentaHrac.VELIKOST_HRACE_X, KomponentaHrac.VELIKOST_HRACE_Y / 2),
+                    null, Color.White, rotace, zbran.origin, zbran.meritkoVykresleni, SpriteEffects.None, 0);
+            }
+            else
+            {
+                Vector2 origin = pozicehrace + new Vector2(0, KomponentaHrac.VELIKOST_HRACE_Y / 2);
+                Vector2 invertovanyOriginZbrane = new Vector2(zbran.origin.X * 2, zbran.velikostZbrane.Y) - zbran.origin;
+                Vector2 invertovanySpawnProjektilu = new Vector2(zbran.spawnProjektilu.X * 2, zbran.velikostZbrane.Y) - zbran.spawnProjektilu;
+                Vector2 poziceVystreleni = pozicehrace + new Vector2(0, KomponentaHrac.VELIKOST_HRACE_Y / 2) - invertovanyOriginZbrane * zbran.meritkoVykresleni + invertovanySpawnProjektilu * zbran.meritkoVykresleni;
+                float rotace = Hra.VypocitejRotaci(origin, poziceVystreleni - new Vector2(5, 0), poziceVystreleni, poziceMysi);
+                hra._spriteBatch.Draw(texturyZbrani[(int)zbran.typZbrane], pozicehrace + new Vector2(0, KomponentaHrac.VELIKOST_HRACE_Y / 2),
+                    null, Color.White, rotace, invertovanyOriginZbrane, zbran.meritkoVykresleni, SpriteEffects.FlipVertically, 0);
+            }
         }
 
         public void PrevedBytyNaProjektily(byte[] prichoziBytyProjektilu)

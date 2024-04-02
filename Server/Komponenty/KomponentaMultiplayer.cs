@@ -40,7 +40,7 @@ namespace Labyrinth_of_Secrets
         }
 
         //Promenne
-        public Dictionary<string, Vector2> hraci = new Dictionary<string, Vector2>();
+        public Dictionary<string, Hrac> hraci = new Dictionary<string, Hrac>();
         private byte[] mapaVBytech;
         private IPEndPoint odesilatel = new IPEndPoint(IPAddress.Any, PORT);
         private List<Klient> klienti = new List<Klient>(); //Pro server
@@ -117,10 +117,15 @@ namespace Labyrinth_of_Secrets
             {
                 case TypPacketu.PohybHrace:
                     Vector2 poziceHrace = new Vector2(PrevedStringNaFloat(dataVStringu[2]), PrevedStringNaFloat(dataVStringu[3]));
+                    Vector2 poziceMysiHrace = new Vector2(PrevedStringNaFloat(dataVStringu[2]), PrevedStringNaFloat(dataVStringu[3]));
                     if (!hraci.ContainsKey(dataVStringu[1]))
-                        hraci.Add(dataVStringu[1], poziceHrace);
+                        hraci.Add(dataVStringu[1], new Hrac(dataVStringu[1]) { pozice = poziceHrace, poziceMysi = poziceMysiHrace, vybranaZbran = (Zbran.TypZbrane)int.Parse(dataVStringu[6]) });
                     else
-                        hraci[dataVStringu[1]] = poziceHrace;
+                    {
+                        hraci[dataVStringu[1]].pozice = poziceHrace;
+                        hraci[dataVStringu[1]].poziceMysi = poziceMysiHrace;
+                        hraci[dataVStringu[1]].vybranaZbran = (Zbran.TypZbrane)int.Parse(dataVStringu[6]);
+                    }
                     PosliVsemKlientum(data);
                     break;
                 case TypPacketu.ZiskatVelikostMapy:
@@ -156,19 +161,19 @@ namespace Labyrinth_of_Secrets
                         Vector2 poziceMysi = new Vector2(PrevedStringNaFloat(dataVStringu[2]), PrevedStringNaFloat(dataVStringu[3]));
                         Vector2 poziceVystreleni;
                         float rotaceVystreleni;
-                        if (poziceMysi.X >= hraci[dataVStringu[1]].X + Hra.VELIKOST_HRACE_X / 2)
+                        if (poziceMysi.X >= hraci[dataVStringu[1]].pozice.X + Hra.VELIKOST_HRACE_X / 2)
                         {
-                            Vector2 origin = hraci[dataVStringu[1]] + new Vector2(Hra.VELIKOST_HRACE_X, Hra.VELIKOST_HRACE_Y / 2);
-                            poziceVystreleni = hraci[dataVStringu[1]] + new Vector2(Hra.VELIKOST_HRACE_X, Hra.VELIKOST_HRACE_Y / 2) - zbran.origin * zbran.meritkoVykresleni + zbran.spawnProjektilu * zbran.meritkoVykresleni;
+                            Vector2 origin = hraci[dataVStringu[1]].pozice + new Vector2(Hra.VELIKOST_HRACE_X, Hra.VELIKOST_HRACE_Y / 2);
+                            poziceVystreleni = hraci[dataVStringu[1]].pozice + new Vector2(Hra.VELIKOST_HRACE_X, Hra.VELIKOST_HRACE_Y / 2) - zbran.origin * zbran.meritkoVykresleni + zbran.spawnProjektilu * zbran.meritkoVykresleni;
                             rotaceVystreleni = Hra.VypocitejRotaci(origin, poziceVystreleni - new Vector2(5, 0), poziceVystreleni, poziceMysi);
                             poziceVystreleni = Hra.RotaceBodu(poziceVystreleni, origin, rotaceVystreleni);
                         }
                         else
                         {
-                            Vector2 origin = hraci[dataVStringu[1]] + new Vector2(0, Hra.VELIKOST_HRACE_Y / 2);
+                            Vector2 origin = hraci[dataVStringu[1]].pozice + new Vector2(0, Hra.VELIKOST_HRACE_Y / 2);
                             Vector2 invertovanyOriginZbrane = new Vector2(zbran.origin.X * 2, zbran.velikostZbrane.Y) - zbran.origin;
                             Vector2 invertovanySpawnProjektilu = new Vector2(zbran.spawnProjektilu.X * 2, zbran.velikostZbrane.Y) - zbran.spawnProjektilu;
-                            poziceVystreleni = hraci[dataVStringu[1]] + new Vector2(0, Hra     .VELIKOST_HRACE_Y / 2) - invertovanyOriginZbrane * zbran.meritkoVykresleni + invertovanySpawnProjektilu * zbran.meritkoVykresleni;
+                            poziceVystreleni = hraci[dataVStringu[1]].pozice + new Vector2(0, Hra.VELIKOST_HRACE_Y / 2) - invertovanyOriginZbrane * zbran.meritkoVykresleni + invertovanySpawnProjektilu * zbran.meritkoVykresleni;
                             rotaceVystreleni = Hra.VypocitejRotaci(origin, poziceVystreleni - new Vector2(5, 0), poziceVystreleni, poziceMysi);
                             poziceVystreleni = Hra.RotaceBodu(poziceVystreleni, origin, rotaceVystreleni);
                         }

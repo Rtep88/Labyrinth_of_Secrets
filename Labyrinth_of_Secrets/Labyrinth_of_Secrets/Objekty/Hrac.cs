@@ -8,17 +8,16 @@ using System.Threading.Tasks;
 
 namespace Labyrinth_of_Secrets
 {
-    public class Klient
+    public class Hrac
     {
-        public IPEndPoint ipAdresa;
         public string jmeno;
-        public ulong casPosledniOdpovedi;
+        public Vector2 pozice;
+        public Vector2 poziceMysi;
+        public Zbran.TypZbrane vybranaZbran;
 
-        public Klient(IPEndPoint ipAdresa, string jmeno, ulong casPosledniOdpovedi)
+        public Hrac(string jmeno)
         {
-            this.ipAdresa = ipAdresa;
             this.jmeno = jmeno;
-            this.casPosledniOdpovedi = casPosledniOdpovedi;
         }
     }
 }

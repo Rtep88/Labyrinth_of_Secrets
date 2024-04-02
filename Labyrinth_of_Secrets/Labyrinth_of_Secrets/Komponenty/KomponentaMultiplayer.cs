@@ -51,7 +51,7 @@ namespace Labyrinth_of_Secrets
         //Promenne
         public string jmeno = "";
         public TypZarizeni typZarizeni = TypZarizeni.SinglePlayer;
-        public Dictionary<string, Vector2> hraci = new Dictionary<string, Vector2>();
+        public Dictionary<string, Hrac> hraci = new Dictionary<string, Hrac>();
         private UdpClient udpKlient;
         private byte[] mapaVBytech;
         private IPEndPoint odesilatel = new IPEndPoint(IPAddress.Any, PORT);
@@ -90,7 +90,11 @@ namespace Labyrinth_of_Secrets
             //Poslani pozice
             if (typZarizeni == TypZarizeni.Klient)
             {
-                PosliData(Encoding.UTF8.GetBytes($"{(short)TypPacketu.PohybHrace};{jmeno};{PrevedFloatNaString(hra.komponentaHrac.poziceHrace.X)};{PrevedFloatNaString(hra.komponentaHrac.poziceHrace.Y)}"));
+                Kamera _kamera = hra.komponentaKamera._kamera;
+                Vector2 opravdovaPoziceKamery = new Vector2(-_kamera.GetViewMatrix().Translation.X / _kamera.zoom, -_kamera.GetViewMatrix().Translation.Y / _kamera.zoom);
+                Vector2 opravdovaVelikostOkna = new Vector2(hra.velikostOkna.X / _kamera.zoom, hra.velikostOkna.Y / _kamera.zoom);
+                Vector2 opravdovaPoziceMysi = opravdovaPoziceKamery + Mouse.GetState().Position.ToVector2() * opravdovaVelikostOkna / hra.velikostOkna.ToVector2();
+                PosliData(Encoding.UTF8.GetBytes($"{(short)TypPacketu.PohybHrace};{jmeno};{PrevedFloatNaString(hra.komponentaHrac.poziceHrace.X)};{PrevedFloatNaString(hra.komponentaHrac.poziceHrace.Y)};{PrevedFloatNaString(opravdovaPoziceMysi.X)};{PrevedFloatNaString(opravdovaPoziceMysi.Y)};{(short)hra.komponentaZbrane.aktualniZbran}"));
             }
 
             base.Update(gameTime);
@@ -102,7 +106,8 @@ namespace Labyrinth_of_Secrets
 
             foreach (var hrac in hraci)
             {
-                hra.komponentaHrac.VykresliHraceSJmenovkou(hrac.Value, hrac.Key);
+                hra.komponentaHrac.VykresliHraceSJmenovkou(hrac.Value.pozice, hrac.Value.jmeno);
+                hra.komponentaZbrane.VykresliZbranUHrace(hrac.Value.vybranaZbran, hrac.Value.pozice, hrac.Value.poziceMysi);
             }
 
             hra._spriteBatch.End();
@@ -164,12 +169,17 @@ namespace Labyrinth_of_Secrets
             {
                 case TypPacketu.PohybHrace:
                     Vector2 poziceHrace = new Vector2(PrevedStringNaFloat(dataVStringu[2]), PrevedStringNaFloat(dataVStringu[3]));
+                    Vector2 poziceMysiHrace = new Vector2(PrevedStringNaFloat(dataVStringu[4]), PrevedStringNaFloat(dataVStringu[5]));
                     if (dataVStringu[1] != jmeno)
                     {
                         if (!hraci.ContainsKey(dataVStringu[1]))
-                            hraci.Add(dataVStringu[1], poziceHrace);
+                            hraci.Add(dataVStringu[1], new Hrac(dataVStringu[1]) { pozice = poziceHrace, poziceMysi = poziceMysiHrace, vybranaZbran = (Zbran.TypZbrane)int.Parse(dataVStringu[6]) });
                         else
-                            hraci[dataVStringu[1]] = poziceHrace;
+                        {
+                            hraci[dataVStringu[1]].pozice = poziceHrace;
+                            hraci[dataVStringu[1]].poziceMysi = poziceMysiHrace;
+                            hraci[dataVStringu[1]].vybranaZbran = (Zbran.TypZbrane)int.Parse(dataVStringu[6]);
+                        }
                     }
                     break;
                 case TypPacketu.ZiskatVelikostMapy:

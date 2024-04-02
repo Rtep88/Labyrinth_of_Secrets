@@ -49,8 +49,8 @@ namespace Labyrinth_of_Secrets
 
                 foreach (var hrac in hra.komponentaMultiplayer.hraci)
                 {
-                    if (Vector2.Distance(cil, monstrum.pozice) > Vector2.Distance(hrac.Value, monstrum.pozice))
-                        cil = hrac.Value;
+                    if (Vector2.Distance(cil, monstrum.pozice) > Vector2.Distance(hrac.Value.pozice, monstrum.pozice))
+                        cil = hrac.Value.pozice;
                 }
 
                 if (cil == new Vector2(float.MaxValue))
