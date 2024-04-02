@@ -379,9 +379,9 @@ namespace Labyrinth_of_Secrets
             return (floatVBytech[0] % 128 * 255 + floatVBytech[1] + floatVBytech[2] / 255f) * znamenko;
         }
 
-        public void PosliInfoONovemProjektilu(Vector2 smer, Zbran.TypZbrane typZbrane)
+        public void PosliInfoONovemProjektilu(Vector2 poziceMysi, Zbran.TypZbrane typZbrane)
         {
-            PosliData(Encoding.UTF8.GetBytes($"{(short)TypPacketu.NovyProjektil};{hra.komponentaMultiplayer.jmeno};{PrevedFloatNaString(smer.X)};{PrevedFloatNaString(smer.Y)};{(int)typZbrane}"));
+            PosliData(Encoding.UTF8.GetBytes($"{(short)TypPacketu.NovyProjektil};{hra.komponentaMultiplayer.jmeno};{PrevedFloatNaString(poziceMysi.X)};{PrevedFloatNaString(poziceMysi.Y)};{(int)typZbrane}"));
         }
     }
 }

@@ -152,10 +152,30 @@ namespace Labyrinth_of_Secrets
                 case TypPacketu.NovyProjektil:
                     if (hraci.ContainsKey(dataVStringu[1]))
                     {
-                        Vector2 stredHrace = hraci[dataVStringu[1]] + new Vector2(Hra.VELIKOST_HRACE_X, Hra.VELIKOST_HRACE_Y) / 2f;
-                        Vector2 smerProjektilu = new Vector2(PrevedStringNaFloat(dataVStringu[2]), PrevedStringNaFloat(dataVStringu[3]));
                         Zbran zbran = new Zbran((Zbran.TypZbrane)int.Parse(dataVStringu[4]));
-                        zbran.PouzijZbran(stredHrace, smerProjektilu, hra.komponentaZbrane.noveProjektily);
+                        Vector2 poziceMysi = new Vector2(PrevedStringNaFloat(dataVStringu[2]), PrevedStringNaFloat(dataVStringu[3]));
+                        Vector2 poziceVystreleni;
+                        float rotaceVystreleni;
+                        if (poziceMysi.X >= hraci[dataVStringu[1]].X + Hra.VELIKOST_HRACE_X / 2)
+                        {
+                            Vector2 origin = hraci[dataVStringu[1]] + new Vector2(Hra.VELIKOST_HRACE_X, Hra.VELIKOST_HRACE_Y / 2);
+                            poziceVystreleni = hraci[dataVStringu[1]] + new Vector2(Hra.VELIKOST_HRACE_X, Hra.VELIKOST_HRACE_Y / 2) - zbran.origin * zbran.meritkoVykresleni + zbran.spawnProjektilu * zbran.meritkoVykresleni;
+                            rotaceVystreleni = Hra.VypocitejRotaci(origin, poziceVystreleni - new Vector2(5, 0), poziceVystreleni, poziceMysi);
+                            poziceVystreleni = Hra.RotaceBodu(poziceVystreleni, origin, rotaceVystreleni);
+                        }
+                        else
+                        {
+                            Vector2 origin = hraci[dataVStringu[1]] + new Vector2(0, Hra.VELIKOST_HRACE_Y / 2);
+                            Vector2 invertovanyOriginZbrane = new Vector2(zbran.origin.X * 2, zbran.velikostZbrane.Y) - zbran.origin;
+                            Vector2 invertovanySpawnProjektilu = new Vector2(zbran.spawnProjektilu.X * 2, zbran.velikostZbrane.Y) - zbran.spawnProjektilu;
+                            poziceVystreleni = hraci[dataVStringu[1]] + new Vector2(0, Hra     .VELIKOST_HRACE_Y / 2) - invertovanyOriginZbrane * zbran.meritkoVykresleni + invertovanySpawnProjektilu * zbran.meritkoVykresleni;
+                            rotaceVystreleni = Hra.VypocitejRotaci(origin, poziceVystreleni - new Vector2(5, 0), poziceVystreleni, poziceMysi);
+                            poziceVystreleni = Hra.RotaceBodu(poziceVystreleni, origin, rotaceVystreleni);
+                        }
+
+                        Vector2 rotaceVystreleniJakoVector = new Vector2((float)Math.Cos(rotaceVystreleni), (float)Math.Sin(rotaceVystreleni));
+
+                        zbran.PouzijZbran(poziceVystreleni, rotaceVystreleniJakoVector, hra.komponentaZbrane.noveProjektily);
                     }
                     break;
             }

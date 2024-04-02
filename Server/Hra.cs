@@ -54,19 +54,60 @@ namespace Labyrinth_of_Secrets
             return (float)(Math.PI * angle / 180.0);
         }
 
-        public static Vector2 OtocVector2(Vector2 vector, float angle)
+        //Vypocita potrebnou rotaci primnky AB okolo originu v radianech tak, aby se ji bod C co nejvice priblizoval
+        public static float VypocitejRotaci(Vector2 origin, Vector2 bodA, Vector2 bodB, Vector2 bodC)
         {
-            float sin = (float)Math.Sin(angle);
-            float cos = (float)Math.Cos(angle);
+            float idealniRotace = (float)Math.Atan2(bodC.Y - origin.Y, bodC.X - origin.X);
+            float krok = (float)Math.PI / 4f;
 
-            float tx = vector.X;
-            float ty = vector.Y;
+            bodA = RotaceBodu(bodA, origin, idealniRotace);
+            bodB = RotaceBodu(bodB, origin, idealniRotace);
 
-            vector.X = cos * tx - sin * ty;
-            vector.Y = sin * tx + cos * ty;
+            //Binarni vyhledavani rotace
+            while (krok > float.Epsilon)
+            {
+                float vzdalenost1 = VypocitejVzdalenostBoduOdPrimky(RotaceBodu(bodA, origin, -krok), RotaceBodu(bodB, origin, -krok), bodC);
+                float vzdalenost2 = VypocitejVzdalenostBoduOdPrimky(RotaceBodu(bodA, origin, krok), RotaceBodu(bodB, origin, krok), bodC);
+                float vzdalenost3 = VypocitejVzdalenostBoduOdPrimky(RotaceBodu(bodA, origin, 0), RotaceBodu(bodB, origin, 0), bodC);
 
-            return vector;
+                if (Math.Min(vzdalenost1, Math.Min(vzdalenost2, vzdalenost3)) == vzdalenost1)
+                {
+                    idealniRotace -= krok;
+                    bodA = RotaceBodu(bodA, origin, -krok);
+                    bodB = RotaceBodu(bodB, origin, -krok);
+                }
+                else if (Math.Min(vzdalenost1, Math.Min(vzdalenost2, vzdalenost3)) == vzdalenost2)
+                {
+                    idealniRotace += krok;
+                    bodA = RotaceBodu(bodA, origin, krok);
+                    bodB = RotaceBodu(bodB, origin, krok);
+                }
+                krok /= 2f;
+            }
+
+            return idealniRotace;
         }
 
+        //Vrati vzdalenost bodu C od primky AB
+        public static float VypocitejVzdalenostBoduOdPrimky(Vector2 bodA, Vector2 bodB, Vector2 bodC)
+        {
+            double A = bodB.Y - bodA.Y;
+            double B = bodA.X - bodB.X;
+            double C = bodB.X * bodA.Y - bodA.X * bodB.Y;
+
+            return (float)(Math.Abs(A * bodC.X + B * bodC.Y + C) / Math.Sqrt(A * A + B * B));
+        }
+
+        //Otoci bod kolem originu o urcity pocet radianu
+        public static Vector2 RotaceBodu(Vector2 bodA, Vector2 origin, float rotace)
+        {
+            Vector2 posunutyBod = bodA - origin;
+            Vector2 otocenyBod = new Vector2(
+                posunutyBod.X * (float)Math.Cos(rotace) - posunutyBod.Y * (float)Math.Sin(rotace),
+                posunutyBod.X * (float)Math.Sin(rotace) + posunutyBod.Y * (float)Math.Cos(rotace)
+            );
+
+            return otocenyBod + origin;
+        }
     }
 }

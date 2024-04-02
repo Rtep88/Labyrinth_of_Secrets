@@ -7,6 +7,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,6 +22,7 @@ namespace Labyrinth_of_Secrets
 
         //Textury
         public static List<Texture2D> texturyProjektilu = new List<Texture2D>();
+        public static List<Texture2D> texturyZbrani = new List<Texture2D>();
 
         //Promenne
         public List<Projektil> projektily = new List<Projektil>();
@@ -45,6 +48,10 @@ namespace Labyrinth_of_Secrets
             {
                 texturyProjektilu.Add(hra.Content.Load<Texture2D>(@$"Images{lomeno}Bullet_" + i));
             }
+            for (int i = 1; File.Exists(cesta + @$"{lomeno}Content{lomeno}Images{lomeno}Weapon_" + i + ".xnb"); i++)
+            {
+                texturyZbrani.Add(hra.Content.Load<Texture2D>(@$"Images{lomeno}Weapon_" + i));
+            }
 
             for (int i = 0; i < 4; i++)
                 zbrane.Add(new Zbran((Zbran.TypZbrane)i));
@@ -69,7 +76,7 @@ namespace Labyrinth_of_Secrets
                 projektily = noveProjektily;
                 noveProjektily = null;
             }
-            
+
             for (int i = 0; i < zbrane.Count; i++)
                 if (zbrane[i].aktCas > 0)
                     zbrane[i].aktCas -= (float)gameTime.ElapsedGameTime.TotalSeconds;
@@ -81,13 +88,32 @@ namespace Labyrinth_of_Secrets
 
             if (zbrane[aktualniZbran].aktCas <= 0 && Mouse.GetState().LeftButton == ButtonState.Pressed && hra.IsActive)
             {
-                Vector2 stredHrace = hra.komponentaHrac.poziceHrace + new Vector2(KomponentaHrac.VELIKOST_HRACE_X, KomponentaHrac.VELIKOST_HRACE_Y) / 2f;
                 zbrane[aktualniZbran].aktCas = zbrane[aktualniZbran].rychlostZbrane;
+                Vector2 poziceVystreleni;
+                float rotaceVystreleni;
+                if (opravdovaPoziceMysi.X >= hra.komponentaHrac.poziceHrace.X + KomponentaHrac.VELIKOST_HRACE_X / 2)
+                {
+                    Vector2 origin = hra.komponentaHrac.poziceHrace + new Vector2(KomponentaHrac.VELIKOST_HRACE_X, KomponentaHrac.VELIKOST_HRACE_Y / 2);
+                    poziceVystreleni = hra.komponentaHrac.poziceHrace + new Vector2(KomponentaHrac.VELIKOST_HRACE_X, KomponentaHrac.VELIKOST_HRACE_Y / 2) - zbrane[aktualniZbran].origin * zbrane[aktualniZbran].meritkoVykresleni + zbrane[aktualniZbran].spawnProjektilu * zbrane[aktualniZbran].meritkoVykresleni;
+                    rotaceVystreleni = Hra.VypocitejRotaci(origin, poziceVystreleni - new Vector2(5, 0), poziceVystreleni, opravdovaPoziceMysi);
+                    poziceVystreleni = Hra.RotaceBodu(poziceVystreleni, origin, rotaceVystreleni);
+                }
+                else
+                {
+                    Vector2 origin = hra.komponentaHrac.poziceHrace + new Vector2(0, KomponentaHrac.VELIKOST_HRACE_Y / 2);
+                    Vector2 invertovanyOriginZbrane = new Vector2(zbrane[aktualniZbran].origin.X * 2, zbrane[aktualniZbran].velikostZbrane.Y) - zbrane[aktualniZbran].origin;
+                    Vector2 invertovanySpawnProjektilu = new Vector2(zbrane[aktualniZbran].spawnProjektilu.X * 2, zbrane[aktualniZbran].velikostZbrane.Y) - zbrane[aktualniZbran].spawnProjektilu;
+                    poziceVystreleni = hra.komponentaHrac.poziceHrace + new Vector2(0, KomponentaHrac.VELIKOST_HRACE_Y / 2) - invertovanyOriginZbrane * zbrane[aktualniZbran].meritkoVykresleni + invertovanySpawnProjektilu * zbrane[aktualniZbran].meritkoVykresleni;
+                    rotaceVystreleni = Hra.VypocitejRotaci(origin, poziceVystreleni - new Vector2(5, 0), poziceVystreleni, opravdovaPoziceMysi);
+                    poziceVystreleni = Hra.RotaceBodu(poziceVystreleni, origin, rotaceVystreleni);
+                }
+
+                Vector2 rotaceVystreleniJakoVector = new Vector2((float)Math.Cos(rotaceVystreleni), (float)Math.Sin(rotaceVystreleni));
 
                 if (hra.komponentaMultiplayer.typZarizeni == KomponentaMultiplayer.TypZarizeni.SinglePlayer)
-                    zbrane[aktualniZbran].PouzijZbran(stredHrace, Vector2.Normalize(opravdovaPoziceMysi - stredHrace), projektily);
+                    zbrane[aktualniZbran].PouzijZbran(poziceVystreleni, rotaceVystreleniJakoVector, projektily);
                 else
-                    hra.komponentaMultiplayer.PosliInfoONovemProjektilu(Vector2.Normalize(opravdovaPoziceMysi - stredHrace), zbrane[aktualniZbran].typZbrane);
+                    hra.komponentaMultiplayer.PosliInfoONovemProjektilu(opravdovaPoziceMysi, zbrane[aktualniZbran].typZbrane);
             }
 
             for (int i = 0; i < projektily.Count; i++)
@@ -168,6 +194,30 @@ namespace Labyrinth_of_Secrets
                 Vector2 velikostTextury = new Vector2(texturyProjektilu[(int)projektil.typProjektilu].Width, texturyProjektilu[(int)projektil.typProjektilu].Height);
                 hra._spriteBatch.Draw(texturyProjektilu[(int)projektil.typProjektilu], projektil.pozice, null, Color.White,
                     (float)(Math.PI / 2 + Math.Atan2(projektil.smer.Y, projektil.smer.X)), velikostTextury / 2f, projektil.velikost / velikostTextury, SpriteEffects.None, 0);
+            }
+
+            Kamera _kamera = hra.komponentaKamera._kamera;
+            Vector2 opravdovaPoziceKamery = new Vector2(-_kamera.GetViewMatrix().Translation.X / _kamera.zoom, -_kamera.GetViewMatrix().Translation.Y / _kamera.zoom);
+            Vector2 opravdovaVelikostOkna = new Vector2(hra.velikostOkna.X / _kamera.zoom, hra.velikostOkna.Y / _kamera.zoom);
+            Vector2 opravdovaPoziceMysi = opravdovaPoziceKamery + Mouse.GetState().Position.ToVector2() * opravdovaVelikostOkna / hra.velikostOkna.ToVector2();
+
+            if (opravdovaPoziceMysi.X >= hra.komponentaHrac.poziceHrace.X + KomponentaHrac.VELIKOST_HRACE_X / 2)
+            {
+                Vector2 origin = hra.komponentaHrac.poziceHrace + new Vector2(KomponentaHrac.VELIKOST_HRACE_X, KomponentaHrac.VELIKOST_HRACE_Y / 2);
+                Vector2 poziceVystreleni = hra.komponentaHrac.poziceHrace + new Vector2(KomponentaHrac.VELIKOST_HRACE_X, KomponentaHrac.VELIKOST_HRACE_Y / 2) - zbrane[aktualniZbran].origin * zbrane[aktualniZbran].meritkoVykresleni + zbrane[aktualniZbran].spawnProjektilu * zbrane[aktualniZbran].meritkoVykresleni;
+                float rotace = Hra.VypocitejRotaci(origin, poziceVystreleni - new Vector2(5, 0), poziceVystreleni, opravdovaPoziceMysi);
+                hra._spriteBatch.Draw(texturyZbrani[(int)zbrane[aktualniZbran].typZbrane], hra.komponentaHrac.poziceHrace + new Vector2(KomponentaHrac.VELIKOST_HRACE_X, KomponentaHrac.VELIKOST_HRACE_Y / 2),
+                    null, Color.White, rotace, zbrane[aktualniZbran].origin, zbrane[aktualniZbran].meritkoVykresleni, SpriteEffects.None, 0);
+            }
+            else
+            {
+                Vector2 origin = hra.komponentaHrac.poziceHrace + new Vector2(0, KomponentaHrac.VELIKOST_HRACE_Y / 2);
+                Vector2 invertovanyOriginZbrane = new Vector2(zbrane[aktualniZbran].origin.X * 2, zbrane[aktualniZbran].velikostZbrane.Y) - zbrane[aktualniZbran].origin;
+                Vector2 invertovanySpawnProjektilu = new Vector2(zbrane[aktualniZbran].spawnProjektilu.X * 2, zbrane[aktualniZbran].velikostZbrane.Y) - zbrane[aktualniZbran].spawnProjektilu;
+                Vector2 poziceVystreleni = hra.komponentaHrac.poziceHrace + new Vector2(0, KomponentaHrac.VELIKOST_HRACE_Y / 2) - invertovanyOriginZbrane * zbrane[aktualniZbran].meritkoVykresleni + invertovanySpawnProjektilu * zbrane[aktualniZbran].meritkoVykresleni;
+                float rotace = Hra.VypocitejRotaci(origin, poziceVystreleni - new Vector2(5, 0), poziceVystreleni, opravdovaPoziceMysi);
+                hra._spriteBatch.Draw(texturyZbrani[(int)zbrane[aktualniZbran].typZbrane], hra.komponentaHrac.poziceHrace + new Vector2(0, KomponentaHrac.VELIKOST_HRACE_Y / 2),
+                    null, Color.White, rotace, invertovanyOriginZbrane, zbrane[aktualniZbran].meritkoVykresleni, SpriteEffects.FlipVertically, 0);
             }
             hra._spriteBatch.End();
 
