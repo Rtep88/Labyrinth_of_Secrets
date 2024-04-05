@@ -16,6 +16,8 @@ namespace Labyrinth_of_Secrets
         //Konstanty
         public const int VELIKOST_HRACE_X = 6; //Velikost vykresleni hrace
         public const int VELIKOST_HRACE_Y = 12; //Velikost vykresleni hrace
+        public const int RYCHLOST_HRACE = 50;
+        public const int MAX_ZIVOTY = 10000;
 
         public Hra()
         {
@@ -27,7 +29,7 @@ namespace Labyrinth_of_Secrets
         }
 
         //Kolize obdelniku
-        public bool KolizeObdelniku(float x1, float y1, float width1, float height1, float x2, float y2, float width2, float height2)
+        public static bool KolizeObdelniku(float x1, float y1, float width1, float height1, float x2, float y2, float width2, float height2)
         {
             return x1 < x2 + width2 &&
                    x1 + width1 > x2 &&

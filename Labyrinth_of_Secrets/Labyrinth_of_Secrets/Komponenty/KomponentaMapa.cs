@@ -643,6 +643,64 @@ namespace Labyrinth_of_Secrets
             return cesta;
         }
 
+        //Vrati takovou pozici aby entita nebyla ve zdi
+        public Vector2 VypocitejKolizeSBloky(Vector2 pozice, Vector2 velikost)
+        {
+            Point aktualniBlok = new Point((int)((pozice.X + velikost.X / 2f) / VELIKOST_BLOKU),
+                   (int)((pozice.Y + velikost.Y / 2f) / VELIKOST_BLOKU));
+
+            Point odkudKontrolovat = new Point(Math.Max(0, aktualniBlok.X - 2), Math.Max(0, aktualniBlok.Y - 2));
+            Point kamKontrolovat = new Point(Math.Min(VELIKOST_MAPY_X - 1, aktualniBlok.X + 2),
+                Math.Min(VELIKOST_MAPY_Y - 1, aktualniBlok.Y + 2));
+
+            List<Point> poziceNaKontrolu = new List<Point>();
+            for (int x = odkudKontrolovat.X; x <= kamKontrolovat.X; x++)
+                for (int y = odkudKontrolovat.Y; y <= kamKontrolovat.Y; y++)
+                    poziceNaKontrolu.Add(new Point(x, y));
+
+            poziceNaKontrolu = poziceNaKontrolu.OrderBy(x => Vector2.Distance(new Vector2((x.X + 0.5f) * VELIKOST_BLOKU,
+                (x.Y + 0.5f) * VELIKOST_BLOKU), pozice + new Vector2(velikost.X / 2f, velikost.Y / 2f))).ToList();
+
+            for (int j = 0; j < poziceNaKontrolu.Count; j++)
+            {
+                int x = poziceNaKontrolu[j].X;
+                int y = poziceNaKontrolu[j].Y;
+
+                if (mapa[x, y].typPole != Pole.TypPole.Zed)
+                    continue;
+
+                Rectangle obdelnikBloku = new Rectangle(x * VELIKOST_BLOKU, y * VELIKOST_BLOKU,
+                    VELIKOST_BLOKU, VELIKOST_BLOKU);
+
+                if (Hra.KolizeObdelniku(pozice.X, pozice.Y, velikost.X, velikost.Y,
+                    obdelnikBloku.X, obdelnikBloku.Y, obdelnikBloku.Width, obdelnikBloku.Height))
+                {
+                    float x1 = Math.Max(pozice.X, obdelnikBloku.Left);
+                    float y1 = Math.Max(pozice.Y, obdelnikBloku.Top);
+                    float x2 = Math.Min(pozice.X + velikost.X, obdelnikBloku.Right);
+                    float y2 = Math.Min(pozice.Y + velikost.Y, obdelnikBloku.Bottom);
+
+                    Vector2 bodDotyku = new Vector2((x1 + x2) / 2, (y1 + y2) / 2);
+
+                    float vzdalenostKeStene = Math.Min(Math.Min(Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Left, obdelnikBloku.Center.Y)),
+                    Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Right, obdelnikBloku.Center.Y))), Math.Min(
+                        Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Center.X, obdelnikBloku.Top)),
+                        Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Center.X, obdelnikBloku.Bottom))
+                    ));
+
+                    if (vzdalenostKeStene == Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Left, obdelnikBloku.Center.Y))) //Leva
+                        pozice.X = obdelnikBloku.Left - velikost.X;
+                    else if (vzdalenostKeStene == Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Right, obdelnikBloku.Center.Y))) //Prava
+                        pozice.X = obdelnikBloku.Right;
+                    else if (vzdalenostKeStene == Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Center.X, obdelnikBloku.Bottom))) //Dolni
+                        pozice.Y = obdelnikBloku.Bottom;
+                    else if (vzdalenostKeStene == Vector2.Distance(bodDotyku, new Vector2(obdelnikBloku.Center.X, obdelnikBloku.Top))) //Horni
+                        pozice.Y = obdelnikBloku.Top - velikost.Y;
+                }
+            }
+            return pozice;
+        }
+        
         public void PrevedBytyNaMapu(byte[] prichoziMapaVBytech)
         {
             byte[] mapaVBytech = Convert.FromBase64String(Encoding.UTF8.GetString(prichoziMapaVBytech));

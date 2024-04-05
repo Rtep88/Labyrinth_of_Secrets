@@ -36,17 +36,17 @@ namespace Labyrinth_of_Secrets
             {
                 case TypProjektilu.Normalni:
                     velikost = new Vector2(1, 2);
-                    rychlost = 80f;
+                    rychlost = 110f;
                     zraneni = 10;
                     break;
                 case TypProjektilu.Odstrelovaci:
                     velikost = new Vector2(1, 3);
-                    rychlost = 120f;
+                    rychlost = 160f;
                     zraneni = 60;
                     break;
                 case TypProjektilu.Lehka:
                     velikost = new Vector2(1, 1);
-                    rychlost = 60f;
+                    rychlost = 80f;
                     zraneni = 4;
                     break;
             }

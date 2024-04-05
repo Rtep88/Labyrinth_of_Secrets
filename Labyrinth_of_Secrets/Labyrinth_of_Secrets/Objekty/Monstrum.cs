@@ -17,12 +17,13 @@ namespace Labyrinth_of_Secrets
         public float rychlost = 20f;
 
         public int maxZivoty = 100;
-        public int zivoty = 100;
+        public int zivoty;
 
         public Monstrum(Vector2 pozice)
         {
             this.pozice = pozice;
             rychlost *= new Random().Next(700, 1300) / 1000f;
+            zivoty = maxZivoty;
         }
 
         public Monstrum()

@@ -40,48 +40,91 @@ namespace Labyrinth_of_Secrets
             }
         }
 
+        //Vrati pokud je hrac v kolizi a zaroven vrati odpudivou silu
+        public (Vector2, bool) VypocitejOdpudivouSilu(Vector2 pozice1, Vector2 velikost1, Vector2 pozice2, Vector2 velikost2)
+        {
+            if (Hra.KolizeObdelniku(pozice1.X, pozice1.Y, velikost1.X, velikost1.Y, pozice2.X, pozice2.Y, velikost2.X, velikost2.Y))
+            {
+                Vector2 rozdilPozic = pozice1 + velikost1 / 2 - pozice2 - velikost2 / 2;
+                if (rozdilPozic.X != 0 || rozdilPozic.Y != 0)
+                {
+                    Vector2 normalizace = Vector2.Normalize(rozdilPozic);
+                    float sila = (float)Math.Sqrt((velikost2.X / 2f + velikost1.X / 2f - Math.Abs(rozdilPozic.X)) * (velikost2.Y / 2f + velikost1.Y / 2f - Math.Abs(rozdilPozic.Y)));
+                    return (normalizace * sila, true);
+                }
+            }
+            return (Vector2.Zero, false);
+        }
+
         public void PohniMonstra(float deltaTime)
         {
-            List<Monstrum> monstra2 = new List<Monstrum>();
-            foreach (Monstrum monstrum in monstra)
+            //Aplikovani monster na monstra
+            for (int i = 0; i < monstra.Count; i++)
+            {
+                for (int j = 0; j < monstra.Count; j++)
+                {
+                    if (j == i)
+                        continue;
+                    (Vector2, bool) odpudivaSila = VypocitejOdpudivouSilu(monstra[j].pozice, monstra[j].velikost.ToVector2(), monstra[i].pozice, monstra[i].velikost.ToVector2());
+                    monstra[j].pozice += odpudivaSila.Item1 * 0.15f;
+                }
+            }
+
+            //Aplikovani hracu na monstra
+            for (int i = 0; i < monstra.Count; i++)
+            {
+                foreach (var hrac in hra.komponentaMultiplayer.hraci)
+                {
+                    if (Hra.KolizeObdelniku(hrac.Value.pozice.X, hrac.Value.pozice.Y, Hra.VELIKOST_HRACE_X, Hra.VELIKOST_HRACE_Y, monstra[i].pozice.X, monstra[i].pozice.Y, monstra[i].velikost.X, monstra[i].velikost.Y))
+                    {
+                        (Vector2, bool) odpudivaSila = VypocitejOdpudivouSilu(monstra[i].pozice, monstra[i].velikost.ToVector2(), hrac.Value.pozice, new Vector2(Hra.VELIKOST_HRACE_X, Hra.VELIKOST_HRACE_Y));
+                        monstra[i].pozice += odpudivaSila.Item1 * 0.3f;
+                    }
+                }
+            }
+
+            //Aplikovani bloku na monstra
+            for (int i = 0; i < monstra.Count; i++)
+                monstra[i].pozice = hra.komponentaMapa.VypocitejKolizeSBloky(monstra[i].pozice, monstra[i].velikost.ToVector2());
+
+            //Pohyb
+            for (int i = 0; i < monstra.Count; i++)
             {
                 Vector2 cil = new Vector2(float.MaxValue);
 
                 foreach (var hrac in hra.komponentaMultiplayer.hraci)
                 {
-                    if (Vector2.Distance(cil, monstrum.pozice) > Vector2.Distance(hrac.Value.pozice, monstrum.pozice))
+                    if (Vector2.Distance(cil, monstra[i].pozice) > Vector2.Distance(hrac.Value.pozice, monstra[i].pozice))
                         cil = hrac.Value.pozice;
                 }
 
-                if (cil == new Vector2(float.MaxValue))
-                    return;
-
-                Point startovniKostka = (monstrum.pozice + monstrum.velikost.ToVector2() / 2).ToPoint() / new Point(KomponentaMapa.VELIKOST_BLOKU);
-                Point cilovaKostka = (cil + monstrum.velikost.ToVector2() / 2).ToPoint() / new Point(KomponentaMapa.VELIKOST_BLOKU);
+                Point startovniKostka = (monstra[i].pozice + monstra[i].velikost.ToVector2() / 2).ToPoint() / new Point(KomponentaMapa.VELIKOST_BLOKU);
+                Point cilovaKostka = (cil + new Vector2(Hra.VELIKOST_HRACE_X, Hra.VELIKOST_HRACE_Y) / 2).ToPoint() / new Point(KomponentaMapa.VELIKOST_BLOKU);
 
                 if (startovniKostka != cilovaKostka)
                 {
                     Point dalsiKrok = hra.komponentaMapa.NajdiDalsiKrokNaCesteMeziBody(startovniKostka, cilovaKostka);
                     if (dalsiKrok == new Point(-1))
+                    {
+                        monstra.RemoveAt(i);
+                        i--;
                         continue;
-                    cil = (dalsiKrok.ToVector2() + new Vector2(0.5f)) * new Vector2(KomponentaMapa.VELIKOST_BLOKU) - monstrum.velikost.ToVector2() / 2;
+                    }
+                    cil = (dalsiKrok.ToVector2() + new Vector2(0.5f)) * new Vector2(KomponentaMapa.VELIKOST_BLOKU) - monstra[i].velikost.ToVector2() / 2;
                 }
 
-                Vector2 pohyb = Vector2.Normalize(cil - monstrum.pozice) * monstrum.rychlost * deltaTime;
+                Vector2 pohyb = Vector2.Normalize(cil - monstra[i].pozice) * monstra[i].rychlost * deltaTime;
 
-                if (Math.Abs(monstrum.pozice.X - cil.X) > pohyb.X)
-                    monstrum.pozice.X += pohyb.X;
+                if (Math.Abs(monstra[i].pozice.X - cil.X) > pohyb.X)
+                    monstra[i].pozice.X += pohyb.X;
                 else
-                    monstrum.pozice.X = cil.X;
+                    monstra[i].pozice.X = cil.X;
 
-                if (Math.Abs(monstrum.pozice.Y - cil.Y) > pohyb.Y)
-                    monstrum.pozice.Y += pohyb.Y;
+                if (Math.Abs(monstra[i].pozice.Y - cil.Y) > pohyb.Y)
+                    monstra[i].pozice.Y += pohyb.Y;
                 else
-                    monstrum.pozice.Y = cil.Y;
-                monstra2.Add(monstrum);
+                    monstra[i].pozice.Y = cil.Y;
             }
-
-            monstra = monstra2;
         }
 
         public byte[] PrevedMonstraNaByty()

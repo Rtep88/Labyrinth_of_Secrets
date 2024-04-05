@@ -34,6 +34,7 @@ namespace Labyrinth_of_Secrets
         public KomponentaSvetlo komponentaSvetlo;
         public KomponentaKonzole komponentaKonzole;
         public KomponentaMultiplayer komponentaMultiplayer;
+        public KomponentaMenu komponentaMenu;
 
         public Hra()
         {
@@ -53,6 +54,7 @@ namespace Labyrinth_of_Secrets
             komponentaKamera = new KomponentaKamera(this);
             komponentaSvetlo = new KomponentaSvetlo(this);
             komponentaKonzole = new KomponentaKonzole(this);
+            komponentaMenu = new KomponentaMenu(this);
             Components.Add(komponentaMapa);
             Components.Add(komponentaZbrane);
             Components.Add(komponentaMonstra);
@@ -61,6 +63,7 @@ namespace Labyrinth_of_Secrets
             Components.Add(komponentaKamera);
             Components.Add(komponentaSvetlo);
             Components.Add(komponentaKonzole);
+            Components.Add(komponentaMenu);
             _graphics.HardwareModeSwitch = false;
             NastavRozliseni();
 
@@ -78,11 +81,6 @@ namespace Labyrinth_of_Secrets
 
         protected override void Update(GameTime gameTime)
         {
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
-            {
-                Exit();
-            }
-
             klavesyMinule = klavesy;
             tlacitkaMysiMinule = tlacitkaMysi;
             klavesy = Keyboard.GetState();

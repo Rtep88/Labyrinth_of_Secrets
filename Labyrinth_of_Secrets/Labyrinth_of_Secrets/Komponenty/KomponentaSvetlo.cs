@@ -243,7 +243,8 @@ namespace Labyrinth_of_Secrets
                 if (!docasneSvetlo && jeAktualni[0][odkud.X + odkud.Y * KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK] == true)
                     return;
 
-                jeAktualni[0][odkud.X + odkud.Y * KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK] = true;
+                if (!docasneSvetlo)
+                    jeAktualni[0][odkud.X + odkud.Y * KomponentaMapa.VELIKOST_MAPY_X * POCET_SVETLA_NA_BLOK] = true;
 
                 List<Point> mozneSmery = new List<Point>()
                 {
