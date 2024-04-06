@@ -50,11 +50,21 @@ namespace Labyrinth_of_Secrets
             if (hra.komponentaMultiplayer.typZarizeni == KomponentaMultiplayer.TypZarizeni.SinglePlayer)
             {
                 NaspawnujMonstra();
-                PohniMonstra((float)gameTime.ElapsedGameTime.TotalSeconds);
+                if ((float)gameTime.ElapsedGameTime.TotalSeconds != 0)
+                {
+                    int pocet = Math.Max(1, (int)(360f * (float)gameTime.ElapsedGameTime.TotalSeconds));
+                    for (int i = 0; i < pocet; i++)
+                        PohniMonstra((float)gameTime.ElapsedGameTime.TotalSeconds / pocet);
+                }
             }
             else if (hra.komponentaMultiplayer.typZarizeni == KomponentaMultiplayer.TypZarizeni.Klient)
             {
-                PohniMonstra((float)gameTime.ElapsedGameTime.TotalSeconds);
+                if ((float)gameTime.ElapsedGameTime.TotalSeconds != 0)
+                {
+                    int pocet = Math.Max(1, (int)(360f * (float)gameTime.ElapsedGameTime.TotalSeconds));
+                    for (int i = 0; i < pocet; i++)
+                        PohniMonstra((float)gameTime.ElapsedGameTime.TotalSeconds / pocet);
+                }
                 if (novaMonstra != null)
                 {
                     monstra = novaMonstra;
@@ -126,7 +136,7 @@ namespace Labyrinth_of_Secrets
                     if (j == i)
                         continue;
                     (Vector2, bool) odpudivaSila = VypocitejOdpudivouSilu(monstra[j].pozice, monstra[j].velikost.ToVector2(), monstra[i].pozice, monstra[i].velikost.ToVector2());
-                    monstra[j].pozice += odpudivaSila.Item1 * 0.15f;
+                    monstra[j].pozice += odpudivaSila.Item1 * 0.15f * 60 * deltaTime;
                 }
             }
 
@@ -134,9 +144,9 @@ namespace Labyrinth_of_Secrets
             for (int i = 0; i < monstra.Count; i++)
             {
                 (Vector2, bool) odpudivaSila = VypocitejOdpudivouSilu(monstra[i].pozice, monstra[i].velikost.ToVector2(), hra.komponentaHrac.poziceHrace, new Vector2(KomponentaHrac.VELIKOST_HRACE_X, KomponentaHrac.VELIKOST_HRACE_Y));
-                monstra[i].pozice += odpudivaSila.Item1 * 0.3f;
+                monstra[i].pozice += odpudivaSila.Item1 * 0.3f * 60 * deltaTime;
                 if (odpudivaSila.Item2)
-                    hra.komponentaHrac.zivoty -= 3;
+                    hra.komponentaHrac.zivoty -= 180 * deltaTime;
 
             }
             for (int i = 0; i < monstra.Count; i++)
@@ -144,9 +154,7 @@ namespace Labyrinth_of_Secrets
                 foreach (var hrac in hra.komponentaMultiplayer.hraci)
                 {
                     (Vector2, bool) odpudivaSila = VypocitejOdpudivouSilu(monstra[i].pozice, monstra[i].velikost.ToVector2(), hrac.Value.pozice, new Vector2(KomponentaHrac.VELIKOST_HRACE_X, KomponentaHrac.VELIKOST_HRACE_Y));
-                    monstra[i].pozice += odpudivaSila.Item1 * 0.3f;
-                    if (odpudivaSila.Item2)
-                        hra.komponentaHrac.zivoty -= 3;
+                    monstra[i].pozice += odpudivaSila.Item1 * 0.3f * 60 * deltaTime;
                 }
             }
 

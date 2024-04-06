@@ -29,7 +29,12 @@ namespace Labyrinth_of_Secrets
         {
             NaspawnujMonstra();
 
-            PohniMonstra(deltaTime);
+            if (deltaTime != 0)
+            {
+                int pocet = Math.Max(1, (int)(360f * deltaTime));
+                for (int i = 0; i < pocet; i++)
+                    PohniMonstra(deltaTime / pocet);
+            }
         }
 
         public void NaspawnujMonstra()
@@ -66,7 +71,7 @@ namespace Labyrinth_of_Secrets
                     if (j == i)
                         continue;
                     (Vector2, bool) odpudivaSila = VypocitejOdpudivouSilu(monstra[j].pozice, monstra[j].velikost.ToVector2(), monstra[i].pozice, monstra[i].velikost.ToVector2());
-                    monstra[j].pozice += odpudivaSila.Item1 * 0.15f;
+                    monstra[j].pozice += odpudivaSila.Item1 * 0.15f * 60 * deltaTime;
                 }
             }
 
@@ -78,7 +83,7 @@ namespace Labyrinth_of_Secrets
                     if (Hra.KolizeObdelniku(hrac.Value.pozice.X, hrac.Value.pozice.Y, Hra.VELIKOST_HRACE_X, Hra.VELIKOST_HRACE_Y, monstra[i].pozice.X, monstra[i].pozice.Y, monstra[i].velikost.X, monstra[i].velikost.Y))
                     {
                         (Vector2, bool) odpudivaSila = VypocitejOdpudivouSilu(monstra[i].pozice, monstra[i].velikost.ToVector2(), hrac.Value.pozice, new Vector2(Hra.VELIKOST_HRACE_X, Hra.VELIKOST_HRACE_Y));
-                        monstra[i].pozice += odpudivaSila.Item1 * 0.3f;
+                        monstra[i].pozice += odpudivaSila.Item1 * 0.3f * 60 * deltaTime;
                     }
                 }
             }

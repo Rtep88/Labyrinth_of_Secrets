@@ -8,6 +8,7 @@ namespace Server
     class Program
     {
         const int FPS = 60;
+        static float opravdovaFPS = FPS;
         static int idParenta = -1;
 
         static void Main(string[] args)
@@ -128,9 +129,10 @@ namespace Server
                 if (idParenta != -1 && !Process.GetProcesses().Any(x => x.Id == idParenta))
                     Environment.Exit(0);
 
-                while (stopky.ElapsedMilliseconds / 1000f < 1f / FPS) { Thread.Sleep(1); }
+                while (stopky.ElapsedMilliseconds / 1000f < 1f / FPS) { Thread.Sleep(0); }
 
                 deltaTime = stopky.ElapsedMilliseconds / 1000f;
+                opravdovaFPS = 1 / deltaTime;
             }
         }
 
@@ -141,6 +143,8 @@ namespace Server
                 string prikaz = Console.ReadLine();
                 if (prikaz == "exit")
                     Environment.Exit(0);
+                if (prikaz == "fps")
+                    Console.WriteLine("FPS: " + opravdovaFPS);
                 else
                     Console.WriteLine("Neznámý příkaz: " + prikaz);
             }

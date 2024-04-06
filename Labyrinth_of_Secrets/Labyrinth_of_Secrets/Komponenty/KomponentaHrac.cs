@@ -30,7 +30,7 @@ namespace Labyrinth_of_Secrets
 
         //Promene
         public Vector2 poziceHrace = new Vector2();
-        public int zivoty = MAX_ZIVOTY;
+        public float zivoty = MAX_ZIVOTY;
 
         public KomponentaHrac(Hra hra) : base(hra)
         {

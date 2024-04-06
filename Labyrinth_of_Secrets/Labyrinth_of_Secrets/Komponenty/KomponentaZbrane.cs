@@ -90,12 +90,14 @@ namespace Labyrinth_of_Secrets
             {
                 zbrane[aktualniZbran].aktCas = zbrane[aktualniZbran].rychlostZbrane;
                 Vector2 poziceVystreleni;
+                Vector2 poziceZacatkuHlavne;
                 float rotaceVystreleni;
                 if (opravdovaPoziceMysi.X >= hra.komponentaHrac.poziceHrace.X + KomponentaHrac.VELIKOST_HRACE_X / 2)
                 {
                     Vector2 origin = hra.komponentaHrac.poziceHrace + new Vector2(KomponentaHrac.VELIKOST_HRACE_X, KomponentaHrac.VELIKOST_HRACE_Y / 2);
                     poziceVystreleni = hra.komponentaHrac.poziceHrace + new Vector2(KomponentaHrac.VELIKOST_HRACE_X, KomponentaHrac.VELIKOST_HRACE_Y / 2) - zbrane[aktualniZbran].origin * zbrane[aktualniZbran].meritkoVykresleni + zbrane[aktualniZbran].spawnProjektilu * zbrane[aktualniZbran].meritkoVykresleni;
                     rotaceVystreleni = Hra.VypocitejRotaci(origin, poziceVystreleni - new Vector2(5, 0), poziceVystreleni, opravdovaPoziceMysi);
+                    poziceZacatkuHlavne = Hra.RotaceBodu(poziceVystreleni - new Vector2(zbrane[aktualniZbran].velikostZbrane.X * zbrane[aktualniZbran].meritkoVykresleni, 0), origin, rotaceVystreleni);
                     poziceVystreleni = Hra.RotaceBodu(poziceVystreleni, origin, rotaceVystreleni);
                 }
                 else
@@ -105,14 +107,42 @@ namespace Labyrinth_of_Secrets
                     Vector2 invertovanySpawnProjektilu = new Vector2(zbrane[aktualniZbran].spawnProjektilu.X * 2, zbrane[aktualniZbran].velikostZbrane.Y) - zbrane[aktualniZbran].spawnProjektilu;
                     poziceVystreleni = hra.komponentaHrac.poziceHrace + new Vector2(0, KomponentaHrac.VELIKOST_HRACE_Y / 2) - invertovanyOriginZbrane * zbrane[aktualniZbran].meritkoVykresleni + invertovanySpawnProjektilu * zbrane[aktualniZbran].meritkoVykresleni;
                     rotaceVystreleni = Hra.VypocitejRotaci(origin, poziceVystreleni - new Vector2(5, 0), poziceVystreleni, opravdovaPoziceMysi);
+                    poziceZacatkuHlavne = Hra.RotaceBodu(poziceVystreleni - new Vector2(zbrane[aktualniZbran].velikostZbrane.X * zbrane[aktualniZbran].meritkoVykresleni, 0), origin, rotaceVystreleni);
                     poziceVystreleni = Hra.RotaceBodu(poziceVystreleni, origin, rotaceVystreleni);
+                }
+
+                Point aktualniBlok = new Point((int)((hra.komponentaHrac.poziceHrace.X + KomponentaHrac.VELIKOST_HRACE_X / 2f) / KomponentaMapa.VELIKOST_BLOKU),
+                   (int)((hra.komponentaHrac.poziceHrace.Y + KomponentaHrac.VELIKOST_HRACE_Y / 2f) / KomponentaMapa.VELIKOST_BLOKU));
+
+                Point odkudKontrolovat = new Point(Math.Max(0, aktualniBlok.X - 2), Math.Max(0, aktualniBlok.Y - 2));
+                Point kamKontrolovat = new Point(Math.Min(KomponentaMapa.VELIKOST_MAPY_X - 1, aktualniBlok.X + 2),
+                    Math.Min(KomponentaMapa.VELIKOST_MAPY_Y - 1, aktualniBlok.Y + 2));
+
+                List<Point> poziceNaKontrolu = new List<Point>();
+                for (int x = odkudKontrolovat.X; x <= kamKontrolovat.X; x++)
+                    for (int y = odkudKontrolovat.Y; y <= kamKontrolovat.Y; y++)
+                        poziceNaKontrolu.Add(new Point(x, y));
+
+                bool kolize = false;
+                for (int j = 0; j < poziceNaKontrolu.Count && !kolize; j++)
+                {
+                    int x = poziceNaKontrolu[j].X;
+                    int y = poziceNaKontrolu[j].Y;
+
+                    if (hra.komponentaMapa.mapa[x, y].typPole != Pole.TypPole.Zed)
+                        continue;
+
+                    Rectangle obdelnikBloku = new Rectangle(x * KomponentaMapa.VELIKOST_BLOKU, y * KomponentaMapa.VELIKOST_BLOKU,
+                        KomponentaMapa.VELIKOST_BLOKU, KomponentaMapa.VELIKOST_BLOKU);
+
+                    kolize = Hra.KolizeCarySObdelnikem(poziceZacatkuHlavne, poziceVystreleni, obdelnikBloku);
                 }
 
                 Vector2 rotaceVystreleniJakoVector = new Vector2((float)Math.Cos(rotaceVystreleni), (float)Math.Sin(rotaceVystreleni));
 
-                if (hra.komponentaMultiplayer.typZarizeni == KomponentaMultiplayer.TypZarizeni.SinglePlayer)
+                if (!kolize && hra.komponentaMultiplayer.typZarizeni == KomponentaMultiplayer.TypZarizeni.SinglePlayer)
                     zbrane[aktualniZbran].PouzijZbran(poziceVystreleni, rotaceVystreleniJakoVector, projektily);
-                else
+                else if (hra.komponentaMultiplayer.typZarizeni == KomponentaMultiplayer.TypZarizeni.Klient)
                     hra.komponentaMultiplayer.PosliInfoONovemProjektilu(opravdovaPoziceMysi, zbrane[aktualniZbran].typZbrane);
             }
 

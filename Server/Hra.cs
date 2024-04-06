@@ -37,6 +37,38 @@ namespace Labyrinth_of_Secrets
                    y1 + height1 > y2;
         }
 
+        public static bool KolizeCarySObdelnikem(Vector2 bod1, Vector2 bod2, Rectangle obdelnik)
+        {
+            return KolizeCarySCarou(bod1, bod2, new Vector2(obdelnik.X, obdelnik.Y), new Vector2(obdelnik.X + obdelnik.Width, obdelnik.Y)) ||
+                   KolizeCarySCarou(bod1, bod2, new Vector2(obdelnik.X + obdelnik.Width, obdelnik.Y), new Vector2(obdelnik.X + obdelnik.Width, obdelnik.Y + obdelnik.Height)) ||
+                   KolizeCarySCarou(bod1, bod2, new Vector2(obdelnik.X + obdelnik.Width, obdelnik.Y + obdelnik.Height), new Vector2(obdelnik.X, obdelnik.Y + obdelnik.Height)) ||
+                   KolizeCarySCarou(bod1, bod2, new Vector2(obdelnik.X, obdelnik.Y + obdelnik.Height), new Vector2(obdelnik.X, obdelnik.Y)) ||
+                   (obdelnik.Contains(bod1) && obdelnik.Contains(bod2));
+        }
+
+        private static bool KolizeCarySCarou(Vector2 cara1bod1, Vector2 cara1bod2, Vector2 cara2bod1, Vector2 cara2bod2)
+        {
+            float q = (cara1bod1.Y - cara2bod1.Y) * (cara2bod2.X - cara2bod1.X) - (cara1bod1.X - cara2bod1.X) * (cara2bod2.Y - cara2bod1.Y);
+            float d = (cara1bod2.X - cara1bod1.X) * (cara2bod2.Y - cara2bod1.Y) - (cara1bod2.Y - cara1bod1.Y) * (cara2bod2.X - cara2bod1.X);
+
+            if (d == 0)
+            {
+                return false;
+            }
+
+            float r = q / d;
+
+            q = (cara1bod1.Y - cara2bod1.Y) * (cara1bod2.X - cara1bod1.X) - (cara1bod1.X - cara2bod1.X) * (cara1bod2.Y - cara1bod1.Y);
+            float s = q / d;
+
+            if (r < 0 || r > 1 || s < 0 || s > 1)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         //Nahodne prohazi polozky v listu
         public void PromichejList<T>(IList<T> list)
         {
