@@ -80,6 +80,8 @@ namespace Labyrinth_of_Secrets
             for (int i = 0; i < zbrane.Count; i++)
                 if (zbrane[i].aktCas > 0)
                     zbrane[i].aktCas -= (float)gameTime.ElapsedGameTime.TotalSeconds;
+                else
+                    zbrane[i].aktCas = 0;
 
             Kamera _kamera = hra.komponentaKamera._kamera;
             Vector2 opravdovaPoziceKamery = new Vector2(-_kamera.GetViewMatrix().Translation.X / _kamera.zoom, -_kamera.GetViewMatrix().Translation.Y / _kamera.zoom);
@@ -88,7 +90,6 @@ namespace Labyrinth_of_Secrets
 
             if (zbrane[aktualniZbran].aktCas <= 0 && Mouse.GetState().LeftButton == ButtonState.Pressed && hra.IsActive)
             {
-                zbrane[aktualniZbran].aktCas = zbrane[aktualniZbran].rychlostZbrane;
                 Vector2 poziceVystreleni;
                 Vector2 poziceZacatkuHlavne;
                 float rotaceVystreleni;
@@ -141,9 +142,15 @@ namespace Labyrinth_of_Secrets
                 Vector2 rotaceVystreleniJakoVector = new Vector2((float)Math.Cos(rotaceVystreleni), (float)Math.Sin(rotaceVystreleni));
 
                 if (!kolize && hra.komponentaMultiplayer.typZarizeni == KomponentaMultiplayer.TypZarizeni.SinglePlayer)
+                {
+                    zbrane[aktualniZbran].aktCas = zbrane[aktualniZbran].rychlostZbrane;
                     zbrane[aktualniZbran].PouzijZbran(poziceVystreleni, rotaceVystreleniJakoVector, projektily);
+                }
                 else if (hra.komponentaMultiplayer.typZarizeni == KomponentaMultiplayer.TypZarizeni.Klient)
+                {
                     hra.komponentaMultiplayer.PosliInfoONovemProjektilu(opravdovaPoziceMysi, zbrane[aktualniZbran].typZbrane);
+                    zbrane[aktualniZbran].aktCas = zbrane[aktualniZbran].rychlostZbrane;
+                }
             }
 
             for (int i = 0; i < projektily.Count; i++)
