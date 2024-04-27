@@ -18,6 +18,7 @@ namespace Labyrinth_of_Secrets
 
         //Textury
         Texture2D texturaSlotuInventare;
+        Texture2D texturePenez;
 
         //Konstanty
         private const int UKAZATEL_ZDRAVI_X_VEL = 350;
@@ -25,6 +26,11 @@ namespace Labyrinth_of_Secrets
         private const int UKAZATEL_ZDRAVI_OKRAJ_VEL = 6;
         private const int ODSAZENI = 10;
         private const int INVENTAR_SLOT_VEL = 64;
+        private const int TEXTURA_PENEZ_VEL = 40;
+
+        //Promenne
+        public bool obchodJeOtevreny = false;
+        List<Tlacitko> tlacitkaObchodu = new List<Tlacitko>();
 
         public KomponentaMenu(Hra hra) : base(hra)
         {
@@ -39,12 +45,44 @@ namespace Labyrinth_of_Secrets
         protected override void LoadContent()
         {
             texturaSlotuInventare = hra.Content.Load<Texture2D>("Images/Inventory_slot");
+            texturePenez = hra.Content.Load<Texture2D>("Images/Coin");
 
             base.LoadContent();
         }
 
         public override void Update(GameTime gameTime)
         {
+            //Nacitani akt bloku
+            Point aktualniKostka = (hra.komponentaHrac.poziceHrace + new Vector2(KomponentaHrac.VELIKOST_HRACE_X, KomponentaHrac.VELIKOST_HRACE_Y) / 2).ToPoint() / new Point(KomponentaMapa.VELIKOST_BLOKU);
+            Pole.TypPole aktualniTypKostky = (Pole.TypPole)int.MaxValue;
+            if (aktualniKostka.X < KomponentaMapa.VELIKOST_MAPY_X && aktualniKostka.X >= 0 && aktualniKostka.Y < KomponentaMapa.VELIKOST_MAPY_Y && aktualniKostka.Y >= 0)
+                aktualniTypKostky = hra.komponentaMapa.mapa[aktualniKostka.X, aktualniKostka.Y].typPole;
+
+            //Otevirani obchodu
+            if ((aktualniTypKostky == Pole.TypPole.Obchod || aktualniTypKostky == Pole.TypPole.Obchodnik) && hra.NoveZmacknutaKlavesa(Keys.E))
+            {
+                obchodJeOtevreny = !obchodJeOtevreny;
+                if (obchodJeOtevreny)
+                {
+                    tlacitkaObchodu.Add(new Tlacitko(new Vector2(50, 50), new Vector2(300, 200), "Koupit", Color.LimeGreen, "1"));
+                    tlacitkaObchodu.Add(new Tlacitko(new Vector2(450, 50), new Vector2(300, 200), "Koupit", Color.LimeGreen, "1"));
+                    tlacitkaObchodu.Add(new Tlacitko(new Vector2(50, 350), new Vector2(300, 200), "Koupit", Color.LimeGreen, "1"));
+                    tlacitkaObchodu.Add(new Tlacitko(new Vector2(450, 350), new Vector2(300, 200), "Koupit", Color.LimeGreen, "1"));
+                }
+                else
+                    tlacitkaObchodu.Clear();
+            }
+
+            //Update obchodu
+            if (obchodJeOtevreny)
+            {
+                Vector2 poziceObchodu = hra.velikostOkna.ToVector2() / 2 - new Vector2(400, 300);
+
+                MouseState stavMysi = Mouse.GetState();
+                foreach (Tlacitko tlacitko in tlacitkaObchodu)
+                    tlacitko.UpdatujTlacitko(stavMysi, poziceObchodu);
+            }
+
             base.Update(gameTime);
         }
 
@@ -82,6 +120,37 @@ namespace Labyrinth_of_Secrets
             new Vector2(UKAZATEL_ZDRAVI_X_VEL, UKAZATEL_ZDRAVI_Y_VEL), SpriteEffects.None, 0);
             hra._spriteBatch.Draw(Hra.pixel, new Vector2(hra.velikostOkna.X - UKAZATEL_ZDRAVI_X_VEL - UKAZATEL_ZDRAVI_OKRAJ_VEL / 2 - ODSAZENI, UKAZATEL_ZDRAVI_OKRAJ_VEL / 2 + ODSAZENI), null, Color.Red, 0, Vector2.Zero,
                 new Vector2(UKAZATEL_ZDRAVI_X_VEL, UKAZATEL_ZDRAVI_Y_VEL) * new Vector2(hra.komponentaHrac.zivoty / (float)KomponentaHrac.MAX_ZIVOTY, 1), SpriteEffects.None, 0);
+
+            //Vykresleni penez
+            string pocetPenez = hra.komponentaHrac.penize.ToString();
+            hra.VykresliTextSOkrajem(Hra.pixeloidSans, new Vector2(hra.velikostOkna.X - TEXTURA_PENEZ_VEL - ODSAZENI * 2 - Hra.pixeloidSans.MeasureString(pocetPenez).X * 0.1f,
+                ODSAZENI * 2 + UKAZATEL_ZDRAVI_Y_VEL + UKAZATEL_ZDRAVI_OKRAJ_VEL), pocetPenez, 0.1f, Color.White, Color.Black, 0.08f, 16, true);
+            hra._spriteBatch.Draw(texturePenez, new Vector2(hra.velikostOkna.X - TEXTURA_PENEZ_VEL - ODSAZENI, ODSAZENI * 2 + UKAZATEL_ZDRAVI_Y_VEL + UKAZATEL_ZDRAVI_OKRAJ_VEL),
+                null, Color.White, 0, Vector2.Zero, new Vector2(TEXTURA_PENEZ_VEL, TEXTURA_PENEZ_VEL) / texturePenez.Bounds.Size.ToVector2(), SpriteEffects.None, 0);
+
+            //Nacitani akt bloku
+            Point aktualniKostka = (hra.komponentaHrac.poziceHrace + new Vector2(KomponentaHrac.VELIKOST_HRACE_X, KomponentaHrac.VELIKOST_HRACE_Y) / 2).ToPoint() / new Point(KomponentaMapa.VELIKOST_BLOKU);
+            Pole.TypPole aktualniTypKostky = (Pole.TypPole)int.MaxValue;
+            if (aktualniKostka.X < KomponentaMapa.VELIKOST_MAPY_X && aktualniKostka.X >= 0 && aktualniKostka.Y < KomponentaMapa.VELIKOST_MAPY_Y && aktualniKostka.Y >= 0)
+                aktualniTypKostky = hra.komponentaMapa.mapa[aktualniKostka.X, aktualniKostka.Y].typPole;
+
+            //Jsem v obchode
+            if (aktualniTypKostky == Pole.TypPole.Obchod || aktualniTypKostky == Pole.TypPole.Obchodnik)
+            {
+                if (!obchodJeOtevreny)//Navod jak otevrit obchod
+                {
+                    string textObchodu = "Zmáčkněte E pro otevření obchodu";
+                    hra.VykresliTextSOkrajem(Hra.pixeloidSans, hra.velikostOkna.ToVector2() / 2 - Hra.pixeloidSans.MeasureString(textObchodu) * 0.1f / 2, textObchodu, 0.1f, Color.White, Color.Black, 0.07f, 8, true);
+                }
+                else//Otevreny obchod
+                {
+                    Vector2 poziceObchodu = hra.velikostOkna.ToVector2() / 2 - new Vector2(400, 300);
+                    hra._spriteBatch.Draw(Hra.pixel, poziceObchodu, null, new Color(40, 40, 40, 180), 0, Vector2.Zero, new Vector2(800, 600), SpriteEffects.None, 0);
+
+                    foreach (Tlacitko tlacitko in tlacitkaObchodu)
+                        tlacitko.VykresliTlacitko(hra, poziceObchodu);
+                }
+            }
 
             hra._spriteBatch.End();
 

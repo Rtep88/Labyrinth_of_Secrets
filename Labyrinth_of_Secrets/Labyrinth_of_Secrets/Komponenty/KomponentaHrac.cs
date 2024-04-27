@@ -31,6 +31,7 @@ namespace Labyrinth_of_Secrets
         //Promene
         public Vector2 poziceHrace = new Vector2();
         public float zivoty = MAX_ZIVOTY;
+        public int penize = 1000;
 
         public KomponentaHrac(Hra hra) : base(hra)
         {
@@ -57,7 +58,7 @@ namespace Labyrinth_of_Secrets
             for (int i = 0; i < pocetUpdatu; i++)
             {
                 //Pohyb hrace
-                if (!hra.komponentaKonzole.jeOtevrena)
+                if (!hra.komponentaKonzole.jeOtevrena && !hra.komponentaMenu.obchodJeOtevreny)
                 {
                     Vector2 pohnuti = Vector2.Zero;
                     if (Keyboard.GetState().IsKeyDown(Keys.W))

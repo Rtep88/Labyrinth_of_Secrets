@@ -325,14 +325,14 @@ namespace Labyrinth_of_Secrets
                 hra._spriteBatch.Draw(texturaKonzole1, new Rectangle(0, (int)(hra.velikostOkna.Y - 595), 550, 578), Color.White);
                 hra._spriteBatch.Draw(texturaKonzole2, new Rectangle(0, (int)(hra.velikostOkna.Y - 17), 550, 17), Color.White);
                 if (casKurzoru < 0.5f)
-                    hra.VykresliTextSOkrajem(Hra.comicSans, new Vector2(8, (int)(hra.velikostOkna.Y - 18)), "> " + zprava.Substring(0, poziceKurzoru) + "l" + zprava.Substring(poziceKurzoru), 0.05f, Color.White, Color.Black, 0.08f, 8);
+                    hra.VykresliTextSOkrajem(Hra.comicSans, new Vector2(8, (int)(hra.velikostOkna.Y - 18)), "> " + zprava.Substring(0, poziceKurzoru) + "l" + zprava.Substring(poziceKurzoru), 0.05f, Color.White, Color.Black, 0.08f, 8, false);
                 else
-                    hra.VykresliTextSOkrajem(Hra.comicSans, new Vector2(8, (int)(hra.velikostOkna.Y - 18)), "> " + zprava.Substring(0, poziceKurzoru) + " " + zprava.Substring(poziceKurzoru), 0.05f, Color.White, Color.Black, 0.08f, 8);
+                    hra.VykresliTextSOkrajem(Hra.comicSans, new Vector2(8, (int)(hra.velikostOkna.Y - 18)), "> " + zprava.Substring(0, poziceKurzoru) + " " + zprava.Substring(poziceKurzoru), 0.05f, Color.White, Color.Black, 0.08f, 8, false);
             }
             for (int i = 0; i < radky.Count; i++)
             {
                 if (jeOtevrena)
-                    hra.VykresliTextSOkrajem(Hra.comicSans, new Vector2(2, (int)(hra.velikostOkna.Y - 18 - ((i + 1) * Hra.comicSans.MeasureString("abcde").Y * 0.05f))), radky[i].text, 0.05f, radky[i].barva, Color.Black, 0.08f, 8);
+                    hra.VykresliTextSOkrajem(Hra.comicSans, new Vector2(2, (int)(hra.velikostOkna.Y - 18 - ((i + 1) * Hra.comicSans.MeasureString("abcde").Y * 0.05f))), radky[i].text, 0.05f, radky[i].barva, Color.Black, 0.08f, 8, false);
             }
             hra._spriteBatch.End();
             base.Draw(gameTime);

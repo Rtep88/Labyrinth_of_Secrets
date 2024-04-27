@@ -15,6 +15,7 @@ namespace Labyrinth_of_Secrets
         public Point velikost = new Point(KomponentaHrac.VELIKOST_HRACE_X, KomponentaHrac.VELIKOST_HRACE_Y);
         public int typMonstra;
         public float rychlost = 20f;
+        public int penize = 10;
 
         public int maxZivoty = 100;
         public int zivoty;

@@ -88,7 +88,7 @@ namespace Labyrinth_of_Secrets
             Vector2 opravdovaVelikostOkna = new Vector2(hra.velikostOkna.X / _kamera.zoom, hra.velikostOkna.Y / _kamera.zoom);
             Vector2 opravdovaPoziceMysi = opravdovaPoziceKamery + Mouse.GetState().Position.ToVector2() * opravdovaVelikostOkna / hra.velikostOkna.ToVector2();
 
-            if (zbrane[aktualniZbran].aktCas <= 0 && Mouse.GetState().LeftButton == ButtonState.Pressed && hra.IsActive)
+            if (zbrane[aktualniZbran].aktCas <= 0 && Mouse.GetState().LeftButton == ButtonState.Pressed && hra.IsActive && !hra.komponentaMenu.obchodJeOtevreny)
             {
                 Vector2 poziceVystreleni;
                 Vector2 poziceZacatkuHlavne;
@@ -210,7 +210,10 @@ namespace Labyrinth_of_Secrets
                     if (obdelnikProjektilu.Intersects(obdelnikMonstra))
                     {
                         if (monstra[j].zivoty - projektily[i].zraneni <= 0)
+                        {
+                            hra.komponentaHrac.penize += monstra[j].penize;
                             monstra.RemoveAt(j);
+                        }
                         else
                             monstra[j].zivoty -= projektily[i].zraneni;
                         projektily.RemoveAt(i);

@@ -700,7 +700,7 @@ namespace Labyrinth_of_Secrets
             }
             return pozice;
         }
-        
+
         public void PrevedBytyNaMapu(byte[] prichoziMapaVBytech)
         {
             byte[] mapaVBytech = Convert.FromBase64String(Encoding.UTF8.GetString(prichoziMapaVBytech));

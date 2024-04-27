@@ -13,7 +13,7 @@ namespace Labyrinth_of_Secrets
         public SpriteBatch _spriteBatch;
 
         //Textury a fonty
-        public static SpriteFont comicSans;
+        public static SpriteFont comicSans, pixeloidSans;
         public static Texture2D pixel;
 
         //Konstanty
@@ -73,6 +73,7 @@ namespace Labyrinth_of_Secrets
         protected override void LoadContent()
         {
             comicSans = Content.Load<SpriteFont>("Fonts/ComicSansMS");
+            pixeloidSans = Content.Load<SpriteFont>("Fonts/PixeloidSans");
             pixel = new Texture2D(GraphicsDevice, 1, 1);
             pixel.SetData(new Color[] { Color.White });
 
@@ -224,7 +225,7 @@ namespace Labyrinth_of_Secrets
         }
 
         //Vykresli text s okrajem
-        public void VykresliTextSOkrajem(SpriteFont font, Vector2 pozice, string text, float scale, Color barva, Color barvaObrysu, float tloustkaOkraje, int presnost)
+        public void VykresliTextSOkrajem(SpriteFont font, Vector2 pozice, string text, float scale, Color barva, Color barvaObrysu, float tloustkaOkraje, int presnost, bool pixelovyFont)
         {
             Vector2 pozice2 = pozice;
 
@@ -233,7 +234,14 @@ namespace Labyrinth_of_Secrets
                 //Okraj
                 for (int i = 0; i < presnost; i++)
                 {
-                    _spriteBatch.DrawString(font, text[j].ToString(), pozice2 + new Vector2(font.MeasureString(text[j].ToString()).Y) * scale * tloustkaOkraje * new Vector2((float)Math.Sin(i * Math.PI * 2 / presnost), (float)Math.Cos(i * Math.PI * 2 / presnost)), barvaObrysu, 0, Vector2.Zero, scale, SpriteEffects.None, 0);
+                    Vector2 posun = new Vector2((float)Math.Sin(i * Math.PI * 2 / presnost), (float)Math.Cos(i * Math.PI * 2 / presnost));
+                    if (pixelovyFont)
+                    {
+                        float delitel = Math.Max(Math.Abs(posun.X), Math.Abs(posun.Y));
+                        posun.X /= delitel;
+                        posun.Y /= delitel;
+                    }
+                    _spriteBatch.DrawString(font, text[j].ToString(), pozice2 + new Vector2(font.MeasureString(text[j].ToString()).Y) * scale * tloustkaOkraje * posun, barvaObrysu, 0, Vector2.Zero, scale, SpriteEffects.None, 0);
                 }
                 pozice2 += new Vector2(font.MeasureString(text[j].ToString()).X * scale, 0);
             }
