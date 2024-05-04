@@ -57,9 +57,10 @@ namespace Labyrinth_of_Secrets
             }
             else if (!volnaKamera) //Sledovani hrace
             {
-                float cilovyZoom = NORMALNI_ZOOM;
+                float pomerRozliseni = Math.Max(hra.velikostOkna.X / 1920f, hra.velikostOkna.Y / 1080f);
+                float cilovyZoom = NORMALNI_ZOOM * pomerRozliseni;
                 if (Keyboard.GetState().IsKeyDown(Keys.L) && !hra.komponentaKonzole.jeOtevrena)
-                    cilovyZoom = ODDALENY_ZOOM;
+                    cilovyZoom = ODDALENY_ZOOM * pomerRozliseni;
                 Vector2 novaNula = new Vector2(_kamera.pozice.X + Kamera.GetViewMatrix(_kamera.pozice, _kamera.origin, cilovyZoom).Translation.X / cilovyZoom,
                     _kamera.pozice.Y + Kamera.GetViewMatrix(_kamera.pozice, _kamera.origin, cilovyZoom).Translation.Y / cilovyZoom);
                 Vector2 novaOpravdovaVelikostOkna = new Vector2(hra.velikostOkna.X / cilovyZoom, hra.velikostOkna.Y / cilovyZoom);

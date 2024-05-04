@@ -17,7 +17,7 @@ namespace Labyrinth_of_Secrets
         public Vector2 velikost;
         public string text;
         public Color barva;
-        public float okraj = 6f;
+        public float okraj;
 
         //Funkcnost
         public string data = "";
@@ -27,18 +27,20 @@ namespace Labyrinth_of_Secrets
         public bool mysZmacknutaNaMe = false;
         public bool mysJeNaMe = false;
 
-        public Tlacitko(Vector2 pozice, Vector2 velikost, string text, Color barva, string data)
+        public Tlacitko(Vector2 pozice, Vector2 velikost, string text, Color barva, string data, float okraj)
         {
             this.pozice = pozice;
             this.velikost = velikost;
             this.text = text;
             this.barva = barva;
             this.data = data;
+            this.okraj = okraj;
         }
 
-        public bool UpdatujTlacitko(MouseState stavMysi, Vector2 relativniPozice)
+        public bool UpdatujTlacitko(MouseState stavMysi, Vector2 relativniPozice, float roztahnutiSouradnic)
         {
-            Vector2 pozice = this.pozice + relativniPozice;
+            Vector2 pozice = this.pozice * roztahnutiSouradnic + relativniPozice;
+            Vector2 velikost = this.velikost * roztahnutiSouradnic;
             bool nyniZmacknuto = false;
 
             mysJeNaMe = Hra.KolizeObdelniku(pozice.X, pozice.Y, velikost.X, velikost.Y, stavMysi.X, stavMysi.Y, 1, 1);
@@ -53,7 +55,6 @@ namespace Labyrinth_of_Secrets
             {
                 nyniZmacknuto = true;
                 mysZmacknutaNaMe = false;
-                barva = new Color(new Random().Next(0, 256), new Random().Next(0, 256), new Random().Next(0, 256));
             }
 
             mysZmacknuta = stavMysi.LeftButton == ButtonState.Pressed;
@@ -61,9 +62,11 @@ namespace Labyrinth_of_Secrets
             return nyniZmacknuto;
         }
 
-        public void VykresliTlacitko(Hra hra, Vector2 relativniPozice)
+        public void VykresliTlacitko(Hra hra, Vector2 relativniPozice, float roztahnutiSouradnic)
         {
-            Vector2 pozice = this.pozice + relativniPozice;
+            Vector2 pozice = this.pozice * roztahnutiSouradnic + relativniPozice;
+            Vector2 velikost = this.velikost * roztahnutiSouradnic;
+            float okraj = this.okraj * roztahnutiSouradnic;
 
             float nasobeniBarvy = 0.8f;
             if (mysJeNaMe)

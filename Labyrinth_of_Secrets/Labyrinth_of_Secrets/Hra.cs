@@ -34,6 +34,7 @@ namespace Labyrinth_of_Secrets
         public KomponentaSvetlo komponentaSvetlo;
         public KomponentaKonzole komponentaKonzole;
         public KomponentaMultiplayer komponentaMultiplayer;
+        public KomponentaObchod komponentaObchod;
         public KomponentaMenu komponentaMenu;
 
         public Hra()
@@ -42,6 +43,8 @@ namespace Labyrinth_of_Secrets
             Content.RootDirectory = "Content";
             InactiveSleepTime = TimeSpan.Zero;
             IsMouseVisible = true;
+            Window.AllowUserResizing = true;
+            Window.ClientSizeChanged += ZmenaRozliseni;
         }
 
         protected override void Initialize()
@@ -54,6 +57,7 @@ namespace Labyrinth_of_Secrets
             komponentaKamera = new KomponentaKamera(this);
             komponentaSvetlo = new KomponentaSvetlo(this);
             komponentaKonzole = new KomponentaKonzole(this);
+            komponentaObchod = new KomponentaObchod(this);
             komponentaMenu = new KomponentaMenu(this);
             Components.Add(komponentaMapa);
             Components.Add(komponentaZbrane);
@@ -63,6 +67,7 @@ namespace Labyrinth_of_Secrets
             Components.Add(komponentaKamera);
             Components.Add(komponentaSvetlo);
             Components.Add(komponentaKonzole);
+            Components.Add(komponentaObchod);
             Components.Add(komponentaMenu);
             _graphics.HardwareModeSwitch = false;
             NastavRozliseni();
@@ -309,6 +314,20 @@ namespace Labyrinth_of_Secrets
             );
 
             return otocenyBod + origin;
+        }
+
+        public void ZmenaRozliseni(Object sender, EventArgs e)
+        {
+            if ((_graphics.PreferredBackBufferWidth != _graphics.GraphicsDevice.Viewport.Width) ||
+                (_graphics.PreferredBackBufferHeight != _graphics.GraphicsDevice.Viewport.Height))
+            {
+                _graphics.PreferredBackBufferWidth = _graphics.GraphicsDevice.Viewport.Width;
+                _graphics.PreferredBackBufferHeight = _graphics.GraphicsDevice.Viewport.Height;
+                _graphics.ApplyChanges();
+
+                velikostOkna.X = _graphics.PreferredBackBufferWidth;
+                velikostOkna.Y = _graphics.PreferredBackBufferHeight;
+            }
         }
     }
 }
