@@ -712,6 +712,43 @@ namespace Labyrinth_of_Secrets
             return pozice;
         }
 
+        public byte[] PrevedMapuNaBytovePole()
+        {
+            List<byte> mapaVBytech = new List<byte>
+            {
+                (byte)(VELIKOST_MAPY_X / 255),
+                (byte)(VELIKOST_MAPY_X % 255),
+                (byte)(VELIKOST_MAPY_Y / 255),
+                (byte)(VELIKOST_MAPY_Y % 255)
+            };
+
+            for (int y = 0; y < VELIKOST_MAPY_Y; y++)
+            {
+                for (int x = 0; x < VELIKOST_MAPY_X; x++)
+                {
+                    mapaVBytech.Add((byte)mapa[x, y].typPole);
+                }
+            }
+
+            List<KomponentaSvetlo.ZdrojSvetla> odkazNaZdrojeSvetla = hra.komponentaSvetlo.svetelneZdroje;
+
+            mapaVBytech.Add((byte)(odkazNaZdrojeSvetla.Count / 255 / 255));
+            mapaVBytech.Add((byte)(odkazNaZdrojeSvetla.Count % (255 * 255) / 255));
+            mapaVBytech.Add((byte)(odkazNaZdrojeSvetla.Count % 255));
+
+            for (int i = 0; i < odkazNaZdrojeSvetla.Count; i++)
+            {
+                mapaVBytech.AddRange(BitConverter.GetBytes(odkazNaZdrojeSvetla[i].silaSvetla));
+                mapaVBytech.AddRange(BitConverter.GetBytes(odkazNaZdrojeSvetla[i].odkud.X));
+                mapaVBytech.AddRange(BitConverter.GetBytes(odkazNaZdrojeSvetla[i].odkud.Y));
+                mapaVBytech.Add(odkazNaZdrojeSvetla[i].barvaSvetla.R);
+                mapaVBytech.Add(odkazNaZdrojeSvetla[i].barvaSvetla.G);
+                mapaVBytech.Add(odkazNaZdrojeSvetla[i].barvaSvetla.B);
+                mapaVBytech.Add(odkazNaZdrojeSvetla[i].barvaSvetla.A);
+            }
+            return Encoding.UTF8.GetBytes(Convert.ToBase64String(mapaVBytech.ToArray()));
+        }
+        
         public void PrevedBytyNaMapu(byte[] prichoziMapaVBytech)
         {
             byte[] mapaVBytech = Convert.FromBase64String(Encoding.UTF8.GetString(prichoziMapaVBytech));
@@ -767,6 +804,20 @@ namespace Labyrinth_of_Secrets
             PredpocitejNody();
 
             hra.komponentaSvetlo.SpustPocitaniSvetla();
+        }
+    
+        public void UlozMapuNaDisk(string cesta)
+        {
+            byte[] mapaVBytech = PrevedMapuNaBytovePole();
+
+            File.WriteAllBytes(cesta, mapaVBytech);
+        }
+
+        public void NactiMapuZeSouboru(string cesta)
+        {
+            byte[] mapaVBytech = File.ReadAllBytes(cesta);
+
+            PrevedBytyNaMapu(mapaVBytech);
         }
     }
 }

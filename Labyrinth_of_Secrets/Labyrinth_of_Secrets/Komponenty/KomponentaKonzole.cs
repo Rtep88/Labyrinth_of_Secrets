@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -87,7 +89,10 @@ namespace Labyrinth_of_Secrets
                         radky.Insert(0, new Radek("echoname/en - Vypíše jméno hráče", Color.White));
                         radky.Insert(0, new Radek("setname/sn [jméno] - Nastaví jméno hráče", Color.White));
                         radky.Insert(0, new Radek("disconnect/dc - Odpojí se od serveru", Color.White));
-                        radky.Insert(0, new Radek("server/sv [příkaz) - Pokud hostuji server, předám mu příkaz", Color.White));
+                        radky.Insert(0, new Radek("server/sv [příkaz] - Pokud hostuji server, předám mu příkaz", Color.White));
+                        radky.Insert(0, new Radek("save/sa [název souboru] [nahradit - \"true\"] - Uloží mapu na disk", Color.White));
+                        radky.Insert(0, new Radek("load/lo [název souboru] - Načte mapy z disku", Color.White));
+                        radky.Insert(0, new Radek("lsmaps/lm - Vypíše mapy na disku", Color.White));
                     }
                     else if (rozebranaMessage[0] == "clear" || rozebranaMessage[0] == "cl")
                     {
@@ -250,6 +255,73 @@ namespace Labyrinth_of_Secrets
                         }
                         else
                             radky.Insert(0, new Radek("Nelze předat příkaz serveru, když ho nehostuji!", Color.Yellow));
+                    }
+                    else if (rozebranaMessage[0] == "save" || rozebranaMessage[0] == "sa")
+                    {
+                        if (Regex.Match(rozebranaMessage[1], @"^[a-zA-Z0-9_]+$").Success)
+                        {
+                            string cestaKDokumentum = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                            string cestaKSavum = Path.Combine(new string[] { cestaKDokumentum, ".Labyrinth_of_Secrets", "Saves" });
+                            string cestaKSavu = Path.Combine(cestaKSavum, rozebranaMessage[1]) + ".bin";
+
+                            if (!Directory.Exists(cestaKSavum))
+                                Directory.CreateDirectory(cestaKSavum);
+
+                            if (!File.Exists(cestaKSavu) || (rozebranaMessage.Length > 2 && rozebranaMessage[2] == "true"))
+                            {
+                                hra.komponentaMapa.UlozMapuNaDisk(cestaKSavu);
+                                radky.Insert(0, new Radek("Mapa úspěšně uložena.", Color.LimeGreen));
+                            }
+                            else
+                                radky.Insert(0, new Radek("Tento soubor už existuje! (Pokud ho chcete nahradit připište nakonec \"true\")", Color.Yellow));
+                        }
+                        else
+                        {
+                            radky.Insert(0, new Radek("Jméno nesmí obsahovat speciální znaky!", Color.Yellow));
+                        }
+                    }
+                    else if (rozebranaMessage[0] == "load" || rozebranaMessage[0] == "lo")
+                    {
+                        if (Regex.Match(rozebranaMessage[1], @"^[a-zA-Z0-9_]+$").Success)
+                        {
+                            string cestaKDokumentum = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                            string cestaKSavum = Path.Combine(new string[] { cestaKDokumentum, ".Labyrinth_of_Secrets", "Saves" });
+                            string cestaKSavu = Path.Combine(cestaKSavum, rozebranaMessage[1]) + ".bin";
+
+                            if (Directory.Exists(cestaKSavum))
+                            {
+                                hra.komponentaMapa.NactiMapuZeSouboru(cestaKSavu);
+                                radky.Insert(0, new Radek("Mapa úspěšně načtena.", Color.LimeGreen));
+                            }
+                            else
+                                radky.Insert(0, new Radek("Tento soubor neexistuje!", Color.Yellow));
+                        }
+                        else
+                        {
+                            radky.Insert(0, new Radek("Jméno nesmí obsahovat speciální znaky!", Color.Yellow));
+                        }
+                    }
+                    else if (rozebranaMessage[0] == "lsmaps" || rozebranaMessage[0] == "lm")
+                    {
+                        string cestaKDokumentum = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                        string cestaKSavum = Path.Combine(new string[] { cestaKDokumentum, ".Labyrinth_of_Secrets", "Saves" });
+
+                        if (Directory.Exists(cestaKSavum))
+                        {
+                            string[] savy = Directory.GetFiles(cestaKSavum);
+                            if (savy.Length == 0)
+                                radky.Insert(0, new Radek("Žádne mapy zatím nejsou uloženy.", Color.Yellow));
+                            else
+                            {
+                                radky.Insert(0, new Radek("Uložené mapy:", Color.White));
+                                foreach (string save in savy)
+                                {
+                                    radky.Insert(0, new Radek(save, Color.White));
+                                }
+                            }
+                        }
+                        else
+                            radky.Insert(0, new Radek("Žádne mapy zatím nejsou uloženy.", Color.Yellow));
                     }
                     else
                     {
