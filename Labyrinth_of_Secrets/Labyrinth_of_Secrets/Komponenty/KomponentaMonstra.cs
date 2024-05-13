@@ -77,21 +77,24 @@ namespace Labyrinth_of_Secrets
 
         public override void Draw(GameTime gameTime)
         {
-            foreach (Monstrum monstrum in monstra)
+            if (!hra.komponentaMinimapa.jeOtevrena)
             {
-                hra._spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, transformMatrix: hra.komponentaKamera._kamera.GetViewMatrix());
+                foreach (Monstrum monstrum in monstra)
+                {
+                    hra._spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, transformMatrix: hra.komponentaKamera._kamera.GetViewMatrix());
 
-                //zivoty
-                hra._spriteBatch.Draw(Hra.pixel, monstrum.pozice + new Vector2(monstrum.velikost.X / 2 - UKAZATEL_ZDRAVI_X_VEL / 2 - 0.25f, -0.5f - UKAZATEL_ZDRAVI_Y_VEL - 0.25f), null, Color.Black, 0, Vector2.Zero,
-                    new Vector2(UKAZATEL_ZDRAVI_X_VEL + 0.5f, UKAZATEL_ZDRAVI_Y_VEL + 0.5f), SpriteEffects.None, 0);
-                hra._spriteBatch.Draw(Hra.pixel, monstrum.pozice + new Vector2(monstrum.velikost.X / 2 - UKAZATEL_ZDRAVI_X_VEL / 2, -0.5f - UKAZATEL_ZDRAVI_Y_VEL), null, Color.Red, 0, Vector2.Zero,
-                    new Vector2(UKAZATEL_ZDRAVI_X_VEL, UKAZATEL_ZDRAVI_Y_VEL) * new Vector2(monstrum.zivoty / (float)monstrum.maxZivoty, 1), SpriteEffects.None, 0);
+                    //zivoty
+                    hra._spriteBatch.Draw(Hra.pixel, monstrum.pozice + new Vector2(monstrum.velikost.X / 2 - UKAZATEL_ZDRAVI_X_VEL / 2 - 0.25f, -0.5f - UKAZATEL_ZDRAVI_Y_VEL - 0.25f), null, Color.Black, 0, Vector2.Zero,
+                        new Vector2(UKAZATEL_ZDRAVI_X_VEL + 0.5f, UKAZATEL_ZDRAVI_Y_VEL + 0.5f), SpriteEffects.None, 0);
+                    hra._spriteBatch.Draw(Hra.pixel, monstrum.pozice + new Vector2(monstrum.velikost.X / 2 - UKAZATEL_ZDRAVI_X_VEL / 2, -0.5f - UKAZATEL_ZDRAVI_Y_VEL), null, Color.Red, 0, Vector2.Zero,
+                        new Vector2(UKAZATEL_ZDRAVI_X_VEL, UKAZATEL_ZDRAVI_Y_VEL) * new Vector2(monstrum.zivoty / (float)monstrum.maxZivoty, 1), SpriteEffects.None, 0);
 
-                //monstrum
-                hra._spriteBatch.Draw(texturyMonster[monstrum.typMonstra], monstrum.pozice, null, Color.Red, 0, Vector2.Zero,
-                    monstrum.velikost.ToVector2() / new Vector2(texturyMonster[monstrum.typMonstra].Width, texturyMonster[monstrum.typMonstra].Height), SpriteEffects.None, 0);
+                    //monstrum
+                    hra._spriteBatch.Draw(texturyMonster[monstrum.typMonstra], monstrum.pozice, null, Color.Red, 0, Vector2.Zero,
+                        monstrum.velikost.ToVector2() / new Vector2(texturyMonster[monstrum.typMonstra].Width, texturyMonster[monstrum.typMonstra].Height), SpriteEffects.None, 0);
 
-                hra._spriteBatch.End();
+                    hra._spriteBatch.End();
+                }
             }
 
             base.Draw(gameTime);

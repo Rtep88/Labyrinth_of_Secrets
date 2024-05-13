@@ -229,11 +229,15 @@ namespace Labyrinth_of_Secrets
         public override void Draw(GameTime gameTime)
         {
             hra._spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, transformMatrix: hra.komponentaKamera._kamera.GetViewMatrix());
-            foreach (Projektil projektil in projektily)
+
+            if (!hra.komponentaMinimapa.jeOtevrena)
             {
-                Vector2 velikostTextury = new Vector2(texturyProjektilu[(int)projektil.typProjektilu].Width, texturyProjektilu[(int)projektil.typProjektilu].Height);
-                hra._spriteBatch.Draw(texturyProjektilu[(int)projektil.typProjektilu], projektil.pozice, null, Color.White,
-                    (float)(Math.PI / 2 + Math.Atan2(projektil.smer.Y, projektil.smer.X)), velikostTextury / 2f, projektil.velikost / velikostTextury, SpriteEffects.None, 0);
+                foreach (Projektil projektil in projektily)
+                {
+                    Vector2 velikostTextury = new Vector2(texturyProjektilu[(int)projektil.typProjektilu].Width, texturyProjektilu[(int)projektil.typProjektilu].Height);
+                    hra._spriteBatch.Draw(texturyProjektilu[(int)projektil.typProjektilu], projektil.pozice, null, Color.White,
+                        (float)(Math.PI / 2 + Math.Atan2(projektil.smer.Y, projektil.smer.X)), velikostTextury / 2f, projektil.velikost / velikostTextury, SpriteEffects.None, 0);
+                }
             }
 
             hra._spriteBatch.End();

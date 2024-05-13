@@ -104,10 +104,13 @@ namespace Labyrinth_of_Secrets
         {
             hra._spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, transformMatrix: hra.komponentaKamera._kamera.GetViewMatrix());
 
-            foreach (var hrac in hraci)
+            if (!hra.komponentaMinimapa.jeOtevrena)
             {
-                hra.komponentaHrac.VykresliHraceSJmenovkou(hrac.Value.pozice, hrac.Value.jmeno);
-                hra.komponentaZbrane.VykresliZbranUHrace(hrac.Value.vybranaZbran, hrac.Value.pozice, hrac.Value.poziceMysi);
+                foreach (var hrac in hraci)
+                {
+                    hra.komponentaHrac.VykresliHraceSJmenovkou(hrac.Value.pozice, hrac.Value.jmeno);
+                    hra.komponentaZbrane.VykresliZbranUHrace(hrac.Value.vybranaZbran, hrac.Value.pozice, hrac.Value.poziceMysi);
+                }
             }
 
             hra._spriteBatch.End();

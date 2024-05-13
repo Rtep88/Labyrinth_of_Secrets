@@ -55,7 +55,7 @@ namespace Labyrinth_of_Secrets
             Vector2 velikostObchodu = new Vector2(VELIKOST_OBCHODU_X, VELIKOST_OBCHODU_Y) * pomerRozliseni;
 
             //Otevirani obchodu
-            if ((aktualniTypKostky == Pole.TypPole.Obchod || aktualniTypKostky == Pole.TypPole.Obchodnik) && hra.NoveZmacknutaKlavesa(Keys.E))
+            if ((aktualniTypKostky == Pole.TypPole.Obchod || aktualniTypKostky == Pole.TypPole.Obchodnik) && hra.NoveZmacknutaKlavesa(Keys.E) && !hra.komponentaKonzole.jeOtevrena)
             {
                 obchodJeOtevreny = !obchodJeOtevreny;
                 if (obchodJeOtevreny)
@@ -72,7 +72,7 @@ namespace Labyrinth_of_Secrets
                     tlacitkaObchodu.Clear();
             }
 
-            //Update obchodua
+            //Update obchodu
             if (obchodJeOtevreny)
             {
                 MouseState stavMysi = Mouse.GetState();
@@ -113,7 +113,7 @@ namespace Labyrinth_of_Secrets
             //Jsem v obchode
             if (aktualniTypKostky == Pole.TypPole.Obchod || aktualniTypKostky == Pole.TypPole.Obchodnik)
             {
-                if (!obchodJeOtevreny)//Navod jak otevrit obchod
+                if (!obchodJeOtevreny && !hra.komponentaMinimapa.jeOtevrena)//Navod jak otevrit obchod
                 {
                     string textObchodu = "Zmáčkněte E pro otevření obchodu";
                     hra.VykresliTextSOkrajem(Hra.pixeloidSans, hra.velikostOkna.ToVector2() / 2 - Hra.pixeloidSans.MeasureString(textObchodu) * 0.1f / 2 * pomerRozliseni, textObchodu, 0.1f * pomerRozliseni, Color.White, Color.Black, 0.07f, 8, true);

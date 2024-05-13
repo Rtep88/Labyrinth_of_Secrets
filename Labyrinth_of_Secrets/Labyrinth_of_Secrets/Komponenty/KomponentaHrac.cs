@@ -88,14 +88,16 @@ namespace Labyrinth_of_Secrets
         {
             hra._spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, transformMatrix: hra.komponentaKamera._kamera.GetViewMatrix());
 
-            VykresliHraceSJmenovkou(poziceHrace, hra.komponentaMultiplayer.jmeno);
+            if (!hra.komponentaMinimapa.jeOtevrena)
+            {
+                VykresliHraceSJmenovkou(poziceHrace, hra.komponentaMultiplayer.jmeno);
 
-            Kamera _kamera = hra.komponentaKamera._kamera;
-            Vector2 opravdovaPoziceKamery = new Vector2(-_kamera.GetViewMatrix().Translation.X / _kamera.zoom, -_kamera.GetViewMatrix().Translation.Y / _kamera.zoom);
-            Vector2 opravdovaVelikostOkna = new Vector2(hra.velikostOkna.X / _kamera.zoom, hra.velikostOkna.Y / _kamera.zoom);
-            Vector2 opravdovaPoziceMysi = opravdovaPoziceKamery + Mouse.GetState().Position.ToVector2() * opravdovaVelikostOkna / hra.velikostOkna.ToVector2();
-            hra.komponentaZbrane.VykresliZbranUHrace(hra.komponentaZbrane.zbrane[hra.komponentaZbrane.aktualniZbran].typZbrane, hra.komponentaHrac.poziceHrace, opravdovaPoziceMysi);
-
+                Kamera _kamera = hra.komponentaKamera._kamera;
+                Vector2 opravdovaPoziceKamery = new Vector2(-_kamera.GetViewMatrix().Translation.X / _kamera.zoom, -_kamera.GetViewMatrix().Translation.Y / _kamera.zoom);
+                Vector2 opravdovaVelikostOkna = new Vector2(hra.velikostOkna.X / _kamera.zoom, hra.velikostOkna.Y / _kamera.zoom);
+                Vector2 opravdovaPoziceMysi = opravdovaPoziceKamery + Mouse.GetState().Position.ToVector2() * opravdovaVelikostOkna / hra.velikostOkna.ToVector2();
+                hra.komponentaZbrane.VykresliZbranUHrace(hra.komponentaZbrane.zbrane[hra.komponentaZbrane.aktualniZbran].typZbrane, hra.komponentaHrac.poziceHrace, opravdovaPoziceMysi);
+            }
             hra._spriteBatch.End();
 
             base.Draw(gameTime);

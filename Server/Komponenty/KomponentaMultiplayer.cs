@@ -17,6 +17,7 @@ namespace Labyrinth_of_Secrets
         //Zaklad
         private Hra hra;
 
+
         //Konstanty
         public static int PORT = 34200;
         public static int MAX_VELIKOST_PACKETU = 4096;

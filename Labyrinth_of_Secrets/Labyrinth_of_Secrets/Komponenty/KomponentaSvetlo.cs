@@ -16,7 +16,7 @@ namespace Labyrinth_of_Secrets
         private Hra hra;
 
         //Textury
-        private Texture2D svetlo;
+        public Texture2D svetlo;
 
         //Struktury
         public struct ZdrojSvetla
@@ -34,14 +34,14 @@ namespace Labyrinth_of_Secrets
         }
 
         //Konstanty
-        private const int POCET_SVETLA_NA_BLOK = 8; //Udava jak moc dopodrobna se svetlo bude pocitat - Minimum je 1 a maximum je omezen pouze systemovymi prostredky ale doporucuji neprekracovat 32 :)
+        public const int POCET_SVETLA_NA_BLOK = 8; //Udava jak moc dopodrobna se svetlo bude pocitat - Minimum je 1 a maximum je omezen pouze systemovymi prostredky ale doporucuji neprekracovat 32 :)
         public Color GLOBALNI_BARVA = new Color(0, 0, 0); //Nenastavujte hodnoty na 255 jinak se svetlo bude nespravne mazat
         private Color BARVA_SVETLA_HRACE = new Color(255, 255, 255);
         private const int SILA_SVETLA_HRACE = 200;
 
         //Promene
         private Color[] docasnaDataSvetla;
-        private Color[][] dataSvetla = new Color[2][];
+        public Color[][] dataSvetla = new Color[2][];
         private bool[][] jeAktualni = new bool[2][];
         private List<Point>[] bodyNaSmazani = new List<Point>[2];
         public List<ZdrojSvetla> svetelneZdroje = new List<ZdrojSvetla>();
@@ -85,7 +85,7 @@ namespace Labyrinth_of_Secrets
                 ColorBlendFunction = BlendFunction.Add
             };
 
-            if (!fullBright)
+            if (!fullBright && !hra.komponentaMinimapa.jeOtevrena)
             {
                 lock (dataSvetla)
                 {

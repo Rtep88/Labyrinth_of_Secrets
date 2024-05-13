@@ -37,7 +37,7 @@ namespace Labyrinth_of_Secrets
             //Velikost vykresleni mapy
             Vector2 velikostMapy = new Vector2(KomponentaMapa.VELIKOST_MAPY_X * KomponentaMapa.VELIKOST_BLOKU, KomponentaMapa.VELIKOST_MAPY_Y * KomponentaMapa.VELIKOST_BLOKU);
 
-            if (!hra.komponentaKonzole.jeOtevrena && volnaKamera) //Volna kamera
+            if (!hra.komponentaKonzole.jeOtevrena && !hra.komponentaMinimapa.jeOtevrena && volnaKamera) //Volna kamera
             {
                 if (Keyboard.GetState().IsKeyDown(Keys.P))
                     _kamera.zoom *= 1.02f;

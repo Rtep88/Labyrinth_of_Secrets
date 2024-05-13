@@ -34,6 +34,7 @@ namespace Labyrinth_of_Secrets
         public KomponentaSvetlo komponentaSvetlo;
         public KomponentaKonzole komponentaKonzole;
         public KomponentaMultiplayer komponentaMultiplayer;
+        public KomponentaMinimapa komponentaMinimapa;
         public KomponentaObchod komponentaObchod;
         public KomponentaMenu komponentaMenu;
 
@@ -56,6 +57,7 @@ namespace Labyrinth_of_Secrets
             komponentaHrac = new KomponentaHrac(this);
             komponentaKamera = new KomponentaKamera(this);
             komponentaSvetlo = new KomponentaSvetlo(this);
+            komponentaMinimapa = new KomponentaMinimapa(this);
             komponentaKonzole = new KomponentaKonzole(this);
             komponentaObchod = new KomponentaObchod(this);
             komponentaMenu = new KomponentaMenu(this);
@@ -66,6 +68,7 @@ namespace Labyrinth_of_Secrets
             Components.Add(komponentaHrac);
             Components.Add(komponentaKamera);
             Components.Add(komponentaSvetlo);
+            Components.Add(komponentaMinimapa);
             Components.Add(komponentaKonzole);
             Components.Add(komponentaObchod);
             Components.Add(komponentaMenu);
