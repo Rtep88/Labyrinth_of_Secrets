@@ -29,12 +29,14 @@ namespace Labyrinth_of_Secrets
         public KomponentaMapa komponentaMapa;
         public KomponentaZbrane komponentaZbrane;
         public KomponentaMonstra komponentaMonstra;
+        public KomponentaPostavy komponentaPostavy;
         public KomponentaHrac komponentaHrac;
         public KomponentaKamera komponentaKamera;
         public KomponentaSvetlo komponentaSvetlo;
         public KomponentaKonzole komponentaKonzole;
         public KomponentaMultiplayer komponentaMultiplayer;
         public KomponentaMinimapa komponentaMinimapa;
+        public KomponentaDialogy komponentaDialogy;
         public KomponentaObchod komponentaObchod;
         public KomponentaMenu komponentaMenu;
 
@@ -53,24 +55,28 @@ namespace Labyrinth_of_Secrets
             komponentaMapa = new KomponentaMapa(this);
             komponentaZbrane = new KomponentaZbrane(this);
             komponentaMonstra = new KomponentaMonstra(this);
+            komponentaPostavy = new KomponentaPostavy(this);
             komponentaMultiplayer = new KomponentaMultiplayer(this);
             komponentaHrac = new KomponentaHrac(this);
             komponentaKamera = new KomponentaKamera(this);
             komponentaSvetlo = new KomponentaSvetlo(this);
             komponentaMinimapa = new KomponentaMinimapa(this);
             komponentaKonzole = new KomponentaKonzole(this);
+            komponentaDialogy = new KomponentaDialogy(this);
             komponentaObchod = new KomponentaObchod(this);
             komponentaMenu = new KomponentaMenu(this);
             Components.Add(komponentaMapa);
             Components.Add(komponentaZbrane);
             Components.Add(komponentaMonstra);
+            Components.Add(komponentaPostavy);
             Components.Add(komponentaMultiplayer);
             Components.Add(komponentaHrac);
             Components.Add(komponentaKamera);
             Components.Add(komponentaSvetlo);
             Components.Add(komponentaMinimapa);
-            Components.Add(komponentaKonzole);
+            Components.Add(komponentaDialogy);
             Components.Add(komponentaObchod);
+            Components.Add(komponentaKonzole);
             Components.Add(komponentaMenu);
             _graphics.HardwareModeSwitch = false;
             NastavRozliseni();
@@ -206,6 +212,14 @@ namespace Labyrinth_of_Secrets
                 list[k] = list[n];
                 list[n] = value;
             }
+        }
+
+        //Vrátí podpole podle indexu a délky
+        public static T[] SubArray<T>(T[] data, int index, int length)
+        {
+            T[] result = new T[length];
+            Array.Copy(data, index, result, 0, length);
+            return result;
         }
 
         //Vrati novou texturu obdelniku s okrajem se zadanymi parametry

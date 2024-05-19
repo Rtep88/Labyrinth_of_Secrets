@@ -18,7 +18,7 @@ namespace Labyrinth_of_Secrets
         private Hra hra;
 
         //Textury
-        private static Texture2D texturaHrace;
+        public static Texture2D texturaHrace;
 
         //Struktury
 
@@ -58,7 +58,7 @@ namespace Labyrinth_of_Secrets
             for (int i = 0; i < pocetUpdatu; i++)
             {
                 //Pohyb hrace
-                if (!hra.komponentaKonzole.jeOtevrena && !hra.komponentaObchod.obchodJeOtevreny)
+                if (!hra.komponentaKonzole.jeOtevrena && !hra.komponentaObchod.obchodJeOtevreny && !hra.komponentaDialogy.dialogJeOtevren)
                 {
                     Vector2 pohnuti = Vector2.Zero;
                     if (Keyboard.GetState().IsKeyDown(Keys.W))
@@ -103,14 +103,19 @@ namespace Labyrinth_of_Secrets
             base.Draw(gameTime);
         }
 
-        public void VykresliHraceSJmenovkou(Vector2 poziceHrace, string jmenoHrace)
+        public void VykresliJmenovku(Vector2 pozicePostavy, Vector2 velikostPostavy, string jmeno)
         {
             float zvetseniTextu = 0.008f;
-            Vector2 velikostTextu = Hra.comicSans.MeasureString(jmenoHrace) * zvetseniTextu;
-            Vector2 poziceTextu = new Vector2(poziceHrace.X - velikostTextu.X / 2f + VELIKOST_HRACE_X / 2f, poziceHrace.Y - velikostTextu.Y);
+            Vector2 velikostTextu = Hra.comicSans.MeasureString(jmeno) * zvetseniTextu;
+            Vector2 poziceTextu = new Vector2(pozicePostavy.X - velikostTextu.X / 2f + velikostPostavy.X / 2f, pozicePostavy.Y - velikostTextu.Y);
 
             hra._spriteBatch.Draw(Hra.pixel, poziceTextu - velikostTextu * 0.05f - new Vector2(0, velikostTextu.Y / 4), null, new Color(32, 32, 32, 128), 0, Vector2.Zero, velikostTextu * 1.1f, SpriteEffects.None, 0);
-            hra._spriteBatch.DrawString(Hra.comicSans, jmenoHrace, poziceTextu - new Vector2(0, velikostTextu.Y / 4), Color.White, 0, Vector2.Zero, zvetseniTextu, SpriteEffects.None, 0);
+            hra._spriteBatch.DrawString(Hra.comicSans, jmeno, poziceTextu - new Vector2(0, velikostTextu.Y / 4), Color.White, 0, Vector2.Zero, zvetseniTextu, SpriteEffects.None, 0);
+        }
+
+        public void VykresliHraceSJmenovkou(Vector2 poziceHrace, string jmenoHrace)
+        {
+            VykresliJmenovku(poziceHrace, new Vector2(VELIKOST_HRACE_X, VELIKOST_HRACE_Y), jmenoHrace);
 
             hra._spriteBatch.Draw(texturaHrace, poziceHrace, null, Color.White, 0, Vector2.Zero,
                 new Vector2((float)VELIKOST_HRACE_X / texturaHrace.Width, (float)VELIKOST_HRACE_Y / texturaHrace.Height), SpriteEffects.None, 0);

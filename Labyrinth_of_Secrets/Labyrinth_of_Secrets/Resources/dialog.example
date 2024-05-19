@@ -1,0 +1,32 @@
+Basic chars:
+^ = separation of arguments
+§ = end of screen
+; = end of conversation
+new line = does not do anything
+something else = text
+
+Body of file:
+[Name of salesmen]^
+[Character name]^
+[Distance expressed as a percentage from the start]^
+[Text]^
+[Character name]^
+[Distance expressed as a percentage from the start]^
+[Text]
+
+Note: If you talk to character more times, that is the count of all conversations, the last text is repeated.
+
+Example file:
+Salesman^
+Jeff^
+0.5^
+Hello, this is example text 1&
+Hello, this is example text 2&
+Hello, this is example text 3;
+Why are you talking to me again?^
+Peter^
+0.7^
+Hello, this is example text 4&
+Hello, this is example text 5&
+Hello, this is example text 6;
+Why are you talking to me again?

@@ -113,8 +113,6 @@ namespace Labyrinth_of_Secrets
                 {
                     if (mapa[x, y].typPole == Pole.TypPole.Zed)
                         hra._spriteBatch.Draw(brick, new Rectangle(x * VELIKOST_BLOKU, y * VELIKOST_BLOKU, VELIKOST_BLOKU, VELIKOST_BLOKU), Color.White);
-                    else if (mapa[x, y].typPole == Pole.TypPole.Obchodnik)
-                        hra._spriteBatch.Draw(brick, new Rectangle(x * VELIKOST_BLOKU, y * VELIKOST_BLOKU, VELIKOST_BLOKU, VELIKOST_BLOKU), new Color(180, 180, 180));
                     else if (ukazCestu && mapa[x, y].naHlavniCeste)
                         hra._spriteBatch.Draw(Hra.pixel, new Rectangle(x * VELIKOST_BLOKU, y * VELIKOST_BLOKU, VELIKOST_BLOKU, VELIKOST_BLOKU), new Color(255, 200, 200));
                     else
@@ -131,7 +129,7 @@ namespace Labyrinth_of_Secrets
 
             if ((VELIKOST_MAPY_X + 1) % 6 != 0 || (VELIKOST_MAPY_Y + 1) % 6 != 0 || MAX_POCET_OBCHODU < 2 ||
                 VELIKOST_MAPY_X != VELIKOST_MAPY_Y || VELIKOST_MAPY_X < 11 || VELIKOST_MAPY_Y < 11)
-                throw new Exception("Neplatně nastevené argumenty pro generování mapy!");
+                throw new Exception("Invalid arguments for map generation!");
 
             ResetujPromenne();
             VyplnCelouMapuZdmi();
@@ -154,6 +152,8 @@ namespace Labyrinth_of_Secrets
             hra.komponentaSvetlo.SpustPocitaniSvetla();
 
             hra.komponentaMonstra.ResetujPromenne();
+
+            hra.komponentaPostavy.NactiPostavy();
         }
 
         //Umisti na kazdy blok na mape zed
@@ -228,7 +228,7 @@ namespace Labyrinth_of_Secrets
                 ohnisko++;
             }
 
-            throw new Exception("Neplatně nastevené argumenty pro generování mapy!");
+            throw new Exception("Invalid arguments for map generation!");
         }
 
         //Najde na mape volne misto od ktereho lze zacit generovat bludiste
@@ -260,7 +260,7 @@ namespace Labyrinth_of_Secrets
             if (volneMista.Count != 0)
                 return volneMista[hra.rnd.Next(0, volneMista.Count)];
             else
-                throw new Exception("Neplatně nastevené argumenty pro generování mapy!");
+                throw new Exception("Invalid arguments for map generation!");
         }
 
         //Pouziva Randomized depth-first search algoritmus pro vygenerovani bludiste tak aby neprekrylo obchod
