@@ -7,6 +7,7 @@ using System.Net.Http.Headers;
 using System.Net.Mime;
 using System.Reflection.Metadata;
 using System.Text;
+using System.Xml;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -19,7 +20,7 @@ namespace Labyrinth_of_Secrets
         private Hra hra;
 
         //konstanty
-        readonly string cestaKSouboruKDialogum = Path.Combine("Resources", "dialog.cz");
+        readonly string cestaKSouboruKDialogum = Path.Combine("Resources", "dialog.cz.xml");
 
         //Promenne
         private string jmenoProdavace = "";
@@ -68,15 +69,19 @@ namespace Labyrinth_of_Secrets
         public void NactiPostavy()
         {
             postavy.Clear();
+
             try
             {
-                string[] argumenty = File.ReadAllText(cestaKSouboruKDialogum).Replace("\r", "").Replace("\n", "").Split('^');
-                jmenoProdavace = argumenty[0];
-                for (int i = 1; i + 2 < argumenty.Length; i += 3)
-                {
-                    string jmenoNpccka = argumenty[i];
+                XmlDocument dialogyDokument = new XmlDocument();
+                dialogyDokument.Load(cestaKSouboruKDialogum);
+                XmlNode dialogy = dialogyDokument.FirstChild;
+                string jmenoProdavace = dialogy.Attributes["sellerName"].Value;
 
-                    float vzdalenostOdStartu = float.Parse(argumenty[i + 1]) % 1;
+                foreach (XmlNode npc in dialogy.ChildNodes)
+                {
+                    string jmenoNpccka = npc.Attributes["name"].Value;
+
+                    float vzdalenostOdStartu = float.Parse(npc.Attributes["distanceFromStart"].Value) % 1;
                     Vector2 pozice = hra.komponentaMapa.cestaZeStartuDoCile[(int)((hra.komponentaMapa.cestaZeStartuDoCile.Count - 1) * vzdalenostOdStartu)].ToVector2();
                     List<Vector2> mozneRelativniPozice = new List<Vector2>();
 
@@ -99,15 +104,10 @@ namespace Labyrinth_of_Secrets
                     }
                     pozice = pozice * KomponentaMapa.VELIKOST_BLOKU + mozneRelativniPozice[hra.rnd.Next(0, mozneRelativniPozice.Count)];
 
-                    List<List<string>> dialogy = new List<List<string>>();
-                    string[] obrazovky = argumenty[i + 2].Split(';');
+                    if (!RekurznivneZvalidujNpc(npc))
+                        throw new Exception("Dialogs are in bad format!");
 
-                    foreach (string obrazovka in obrazovky)
-                    {
-                        dialogy.Add(obrazovka.Split('&').ToList());
-                    }
-
-                    postavy.Add(new Postava(jmenoNpccka, pozice, dialogy));
+                    postavy.Add(new Postava(jmenoNpccka, pozice, npc.ChildNodes));
                 }
             }
             catch
@@ -116,6 +116,63 @@ namespace Labyrinth_of_Secrets
             }
 
             NactiPostavyObchodu();
+        }
+
+        public bool RekurznivneZvalidujNpc(XmlNode node)
+        {
+            if (node.NodeType == XmlNodeType.Element)
+            {
+                if (node.Name == "npc")
+                {
+                    if (node.ChildNodes.Count == 0)
+                        return false;
+
+                    foreach (XmlNode dite in node.ChildNodes)
+                    {
+                        if (dite.Name != "dialog" || !RekurznivneZvalidujNpc(dite))
+                            return false;
+                    }
+                }
+                else if (node.Name == "dialog")
+                {
+                    if (node.ChildNodes.Count == 0)
+                        return false;
+
+                    foreach (XmlNode dite in node.ChildNodes)
+                    {
+                        if (dite.Name != "page" || !RekurznivneZvalidujNpc(dite))
+                            return false;
+                    }
+                }
+                else if (node.Name == "page")
+                {
+                    if (node.Attributes == null || node.Attributes["message"] == null)
+                        return false;
+
+                    foreach (XmlNode dite in node.ChildNodes)
+                    {
+                        if (dite.Name != "choice" || !RekurznivneZvalidujNpc(dite))
+                            return false;
+                    }
+                }
+                else if (node.Name == "choice")
+                {
+                    if (node.Attributes == null || node.Attributes["message"] == null)
+                        return false;
+
+                    foreach (XmlNode dite in node.ChildNodes)
+                    {
+                        if (dite.Name != "page" || !RekurznivneZvalidujNpc(dite))
+                            return false;
+                    }
+                }
+                else
+                    return false;
+            }
+            else
+                return false;
+
+            return true;
         }
 
         private void NactiPostavyObchodu()

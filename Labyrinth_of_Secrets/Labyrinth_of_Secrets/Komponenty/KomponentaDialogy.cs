@@ -7,6 +7,7 @@ using System.Net.Http.Headers;
 using System.Net.Mime;
 using System.Reflection.Metadata;
 using System.Text;
+using System.Xml;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -23,12 +24,14 @@ namespace Labyrinth_of_Secrets
         private const int VELIKOST_DIALOGU_Y = 400;
         private const int ODSAZENI = 100;
         private const int ODSAZENI_TEXTU = 10;
+        private const int RYCHLOST_TEXTU = 20;
 
-        //Promenne
         public bool dialogJeOtevren = false;
-        private List<string> dialogy;
-        private int aktualniDialog;
-        private int otevrenaPostava;
+        private XmlNode dialog;
+        private XmlNode aktualniDialog;
+        private Postava otevrenaPostava;
+        private float pocetNactenychPismen = 0;
+        public int zvolenaVolba = 0;
 
         public KomponentaDialogy(Hra hra) : base(hra)
         {
@@ -64,25 +67,66 @@ namespace Labyrinth_of_Secrets
                     else if (postavy[i].dialogy != null)
                     {
                         dialogJeOtevren = true;
-                        dialogy = postavy[i].dialogy[postavy[i].kolikatyDialog];
-                        aktualniDialog = 0;
-                        otevrenaPostava = i;
+                        dialog = postavy[i].dialogy[postavy[i].kolikatyDialog];
+                        aktualniDialog = dialog.FirstChild;
+                        otevrenaPostava = postavy[i];
+                        pocetNactenychPismen = 0;
+                        zvolenaVolba = 0;
                     }
 
                     break;
                 }
             }
 
-            if (dialogJeOtevren && hra.NoveZmacknutaKlavesa(Keys.Enter))
+            if (dialogJeOtevren)
             {
-                aktualniDialog++;
-
-                if (aktualniDialog >= dialogy.Count)
+                if (pocetNactenychPismen < aktualniDialog.Attributes["message"].Value.Length)
                 {
-                    dialogJeOtevren = false;
+                    pocetNactenychPismen += (float)gameTime.ElapsedGameTime.TotalSeconds * RYCHLOST_TEXTU;
+                    if (hra.NoveZmacknutaKlavesa(Keys.Enter))
+                        pocetNactenychPismen = aktualniDialog.Attributes["message"].Value.Length;
+                }
+                else
+                {
+                    if (hra.NoveZmacknutaKlavesa(Keys.Up) && zvolenaVolba > 0)
+                    {
+                        zvolenaVolba--;
+                    }
+                    if (hra.NoveZmacknutaKlavesa(Keys.Down) && zvolenaVolba < aktualniDialog.ChildNodes.Count - 1)
+                    {
+                        zvolenaVolba++;
+                    }
+                    if (hra.NoveZmacknutaKlavesa(Keys.Enter))
+                    {
+                        pocetNactenychPismen = 0;
 
-                    if (postavy[otevrenaPostava].kolikatyDialog + 1 < postavy[otevrenaPostava].dialogy.Count)
-                        postavy[otevrenaPostava].kolikatyDialog++;
+                        if (aktualniDialog.ChildNodes.Count > 0 && aktualniDialog.ChildNodes[zvolenaVolba].FirstChild != null)
+                            aktualniDialog = aktualniDialog.ChildNodes[zvolenaVolba].FirstChild;
+                        else
+                        {
+                            while (true)
+                            {
+                                if (aktualniDialog.NextSibling != null)
+                                {
+                                    aktualniDialog = aktualniDialog.NextSibling;
+                                    break;
+                                }
+                                else if (aktualniDialog.ParentNode != null && aktualniDialog.ParentNode.ParentNode != null && aktualniDialog.ParentNode.ParentNode.Name == "page")
+                                    aktualniDialog = aktualniDialog.ParentNode.ParentNode;
+                                else
+                                {
+                                    dialogJeOtevren = false;
+
+                                    if (otevrenaPostava.kolikatyDialog + 1 < otevrenaPostava.dialogy.Count)
+                                        otevrenaPostava.kolikatyDialog++;
+
+                                    break;
+                                }
+                            }
+                        }
+
+                        zvolenaVolba = 0;
+                    }
                 }
             }
 
@@ -121,13 +165,16 @@ namespace Labyrinth_of_Secrets
 
                 int i = 0, j = 0;
                 float odsazeniVysky = 0;
-                string[] slovaDialogu = dialogy[aktualniDialog].Split(' ');
+                string[] slovaDialogu = aktualniDialog.Attributes["message"].Value.Split(' ');
+                int pocetVykreslenychPismen = 0;
+                float velikostFontu = 0.16f * pomerRozliseni;
                 while (j < slovaDialogu.Length)
                 {
-                    float velikostFontu = 0.08f;
                     if (j + 1 >= slovaDialogu.Length)
                     {
                         string text = string.Join(' ', Hra.SubArray(slovaDialogu, i, j - i + 1));
+                        if (pocetVykreslenychPismen + text.Length > pocetNactenychPismen)
+                            text = text.Substring(0, (int)pocetNactenychPismen - pocetVykreslenychPismen);
 
                         hra.VykresliTextSOkrajem(Hra.pixeloidSans, poziceDialogu + new Vector2(ODSAZENI_TEXTU * pomerRozliseni,
                             ODSAZENI_TEXTU * pomerRozliseni + odsazeniVysky), text,
@@ -141,19 +188,39 @@ namespace Labyrinth_of_Secrets
                         if (delkaTextu >= (VELIKOST_DIALOGU_X - ODSAZENI_TEXTU * 2) * pomerRozliseni)
                         {
                             string text = string.Join(' ', Hra.SubArray(slovaDialogu, i, j - i + 1));
+                            if (pocetVykreslenychPismen + text.Length > pocetNactenychPismen)
+                                text = text.Substring(0, (int)pocetNactenychPismen - pocetVykreslenychPismen);
 
                             hra.VykresliTextSOkrajem(Hra.pixeloidSans, poziceDialogu + new Vector2(ODSAZENI_TEXTU * pomerRozliseni,
                                 ODSAZENI_TEXTU * pomerRozliseni + odsazeniVysky), text,
                                 velikostFontu, Color.White, Color.Black, 0.07f, 8, true);
+                            pocetVykreslenychPismen += text.Length;
 
                             i = j + 1;
                             j = i;
                             odsazeniVysky += Hra.pixeloidSans.MeasureString(text).Y * velikostFontu;
+
+                            if (pocetVykreslenychPismen >= pocetNactenychPismen)
+                                break;
+
                             continue;
                         }
                     }
                     j++;
                 }
+
+                float vyskaTextu = Hra.pixeloidSans.MeasureString("ABCDE").Y * velikostFontu;
+                float odsazeniVoleb = vyskaTextu * aktualniDialog.ChildNodes.Count + ODSAZENI_TEXTU * pomerRozliseni;
+                if (pocetNactenychPismen >= aktualniDialog.Attributes["message"].Value.Length)
+                {
+                    for (int k = 0; k < aktualniDialog.ChildNodes.Count; k++)
+                    {
+                        hra.VykresliTextSOkrajem(Hra.pixeloidSans, poziceDialogu + new Vector2(ODSAZENI_TEXTU * pomerRozliseni,
+                            VELIKOST_DIALOGU_Y * pomerRozliseni - odsazeniVoleb + vyskaTextu * k), aktualniDialog.ChildNodes[k].Attributes["message"].Value,
+                            velikostFontu, k == zvolenaVolba ? Color.Yellow : Color.White, Color.Black, 0.07f, 8, true);
+                    }
+                }
+
             }
 
             hra._spriteBatch.End();

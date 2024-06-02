@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 
 namespace Labyrinth_of_Secrets
 {
@@ -14,11 +15,11 @@ namespace Labyrinth_of_Secrets
         public string jmeno;
         public Vector2 pozice;
         public Point velikost = new Point(KomponentaHrac.VELIKOST_HRACE_X, KomponentaHrac.VELIKOST_HRACE_Y);
-        public List<List<string>> dialogy;
+        public XmlNodeList dialogy;
         public int kolikatyDialog = 0;
         public bool jeProdavac = false;
 
-        public Postava(string jmeno, Vector2 pozice, List<List<string>> dialogy)
+        public Postava(string jmeno, Vector2 pozice, XmlNodeList dialogy)
         {
             this.jmeno = jmeno;
             this.pozice = pozice;

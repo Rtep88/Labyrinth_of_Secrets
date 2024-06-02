@@ -1,32 +1,35 @@
-Basic chars:
-^ = separation of arguments
-§ = end of screen
-; = end of conversation
-new line = does not do anything
-something else = text
+Dialogs are saved in XML format
 
-Body of file:
-[Name of salesmen]^
-[Character name]^
-[Distance expressed as a percentage from the start]^
-[Text]^
-[Character name]^
-[Distance expressed as a percentage from the start]^
-[Text]
+Elements:
+<dialogs> - body of the whole file
+<npc> - info about a npc
+<dialog> - one dialog, can contain multiple pages
+<page> - one page of text
+<choice> - gives player choice
+
 
 Note: If you talk to character more times, that is the count of all conversations, the last text is repeated.
 
 Example file:
-Salesman^
-Jeff^
-0.5^
-Hello, this is example text 1&
-Hello, this is example text 2&
-Hello, this is example text 3;
-Why are you talking to me again?^
-Peter^
-0.7^
-Hello, this is example text 4&
-Hello, this is example text 5&
-Hello, this is example text 6;
-Why are you talking to me again?
+<dialogs sellerName="Seller name">
+    <npc name="Jeff" distanceFromStart="0">
+        <dialog>
+            <page message="Hello this is dialog test"/>
+            <page message="Do you like this game?">
+                <choice message="Yes">
+                    <page message="Great!"/>
+                </choice>
+                <choice message="No">
+                    <page message="Why?">
+                        <choice message="Just because">
+                            <page message="Ok"/>
+                        </choice>
+                        <choice message="Because I don't like it">
+                            <page message="At least you're honest"/>
+                        </choice>
+                    </page>
+                </choice>
+            </page>
+        </dialog>
+    </npc>
+</dialogs>
