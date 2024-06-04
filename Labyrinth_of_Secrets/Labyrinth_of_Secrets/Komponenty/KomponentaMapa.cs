@@ -748,7 +748,7 @@ namespace Labyrinth_of_Secrets
             }
             return Encoding.UTF8.GetBytes(Convert.ToBase64String(mapaVBytech.ToArray()));
         }
-        
+
         public void PrevedBytyNaMapu(byte[] prichoziMapaVBytech)
         {
             byte[] mapaVBytech = Convert.FromBase64String(Encoding.UTF8.GetString(prichoziMapaVBytech));
@@ -805,7 +805,7 @@ namespace Labyrinth_of_Secrets
 
             hra.komponentaSvetlo.SpustPocitaniSvetla();
         }
-    
+
         public void UlozMapuNaDisk(string cesta)
         {
             byte[] mapaVBytech = PrevedMapuNaBytovePole();

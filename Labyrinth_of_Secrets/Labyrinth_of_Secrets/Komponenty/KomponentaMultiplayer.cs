@@ -148,6 +148,8 @@ namespace Labyrinth_of_Secrets
             }
 
             hra.komponentaMapa.PrevedBytyNaMapu(mapaVBytech);
+
+            hra.komponentaPostavy.NactiPostavy();
         }
 
         public void PosliData(byte[] data)
@@ -217,7 +219,7 @@ namespace Labyrinth_of_Secrets
             }
         }
 
-        public void PripojSeNaServer(IPAddress adresa)
+        public void PripojSeNaServer(IPAddress adresa, bool mohuHoditVyjimkuPriNeuspechu)
         {
             if (typZarizeni != TypZarizeni.SinglePlayer)
             {
@@ -266,6 +268,8 @@ namespace Labyrinth_of_Secrets
             }
             else
             {
+                if (mohuHoditVyjimkuPriNeuspechu)
+                    throw new Exception("Can't connect to this server");
                 hra.komponentaKonzole.radky.Insert(0, new Radek("Na tuto adresu se nelze připojit!", Color.Red));
                 typZarizeni = TypZarizeni.SinglePlayer;
             }
@@ -342,7 +346,7 @@ namespace Labyrinth_of_Secrets
             {
                 if (serverSpusten)
                 {
-                    PripojSeNaServer(IPAddress.Parse("127.0.0.1"));
+                    PripojSeNaServer(IPAddress.Parse("127.0.0.1"), false);
                     break;
                 }
 

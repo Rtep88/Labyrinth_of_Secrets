@@ -18,7 +18,6 @@ namespace Labyrinth_of_Secrets
         private Hra hra;
         public bool jeOtevrena = false;
         private string zprava = "";
-        private Keys[] naposledyZmackleKlavesy;
         public List<Radek> radky = new List<Radek>();
         public List<string> historie = new List<string>();
         public int pozice = -1;
@@ -53,7 +52,6 @@ namespace Labyrinth_of_Secrets
 
             if (hra.NoveZmacknutaKlavesa(Keys.OemTilde) || hra.NoveZmacknutaKlavesa(Keys.OemSemicolon))
             {
-                naposledyZmackleKlavesy = Keyboard.GetState().GetPressedKeys();
                 if (jeOtevrena)
                     jeOtevrena = false;
                 else
@@ -211,7 +209,7 @@ namespace Labyrinth_of_Secrets
                     }
                     else if (rozebranaMessage[0] == "joinserver" || rozebranaMessage[0] == "js")
                     {
-                        hra.komponentaMultiplayer.PripojSeNaServer(IPAddress.Parse(rozebranaMessage[1]));
+                        hra.komponentaMultiplayer.PripojSeNaServer(IPAddress.Parse(rozebranaMessage[1]), false);
                     }
                     else if (rozebranaMessage[0] == "echoname" || rozebranaMessage[0] == "en")
                     {
@@ -354,8 +352,8 @@ namespace Labyrinth_of_Secrets
                 {
                     foreach (Keys klavesa in zmackleKlavesy)
                     {
-                        char znak = KeyToChar(klavesa, (Keyboard.GetState().CapsLock ^ Keyboard.GetState().IsKeyDown(Keys.LeftShift)));
-                        if (!Contains(naposledyZmackleKlavesy, klavesa) && ((znak >= 32 && 12 + Hra.comicSans.MeasureString("> " + zprava + znak + " ").X * 0.05f < 550) || klavesa == Keys.Left || klavesa == Keys.Right || klavesa == Keys.Back || klavesa == Keys.Delete))
+                        char znak = Hra.KeyToChar(klavesa, (Keyboard.GetState().CapsLock ^ Keyboard.GetState().IsKeyDown(Keys.LeftShift)));
+                        if (!Hra.Contains(hra.naposledyZmackleKlavesy, klavesa) && ((znak >= 32 && 12 + Hra.comicSans.MeasureString("> " + zprava + znak + " ").X * 0.05f < 550) || klavesa == Keys.Left || klavesa == Keys.Right || klavesa == Keys.Back || klavesa == Keys.Delete))
                         {
                             if (klavesa != Keys.Left && klavesa != Keys.Right && klavesa != Keys.Back && klavesa != Keys.Delete)
                             {
@@ -379,7 +377,7 @@ namespace Labyrinth_of_Secrets
                     }
 
                 }
-                naposledyZmackleKlavesy = zmackleKlavesy;
+                hra.naposledyZmackleKlavesy = zmackleKlavesy;
             }
             while (radky.Count * Hra.comicSans.MeasureString("abcde").Y * 0.05f > 595 - 18 && radky.Count > 0)
             {
@@ -408,103 +406,6 @@ namespace Labyrinth_of_Secrets
             }
             hra._spriteBatch.End();
             base.Draw(gameTime);
-        }
-
-        public bool Contains(Keys[] klavesy, Keys klavesa)
-        {
-            foreach (Keys klavesa2 in klavesy)
-            {
-                if (klavesa == klavesa2)
-                    return true;
-            }
-            return false;
-        }
-
-        public char KeyToChar(Keys Key, bool Shift = false)
-        {
-            if (Key == Keys.Space)
-            {
-                return ' ';
-            }
-            else
-            {
-                string String = Key.ToString();
-
-                if (String.Length == 1)
-                {
-                    Char Character = Char.Parse(String);
-                    byte Byte = Convert.ToByte(Character);
-
-                    if (
-                        (Byte >= 65 && Byte <= 90) ||
-                        (Byte >= 97 && Byte <= 122)
-                        )
-                    {
-                        return (!Shift ? Character.ToString().ToLower() : Character.ToString())[0];
-                    }
-                }
-
-                switch (Key)
-                {
-                    case Keys.D0:
-                        if (Shift) { return ')'; } else { return '0'; }
-                    case Keys.D1:
-                        if (Shift) { return '!'; } else { return '1'; }
-                    case Keys.D2:
-                        if (Shift) { return '@'; } else { return '2'; }
-                    case Keys.D3:
-                        if (Shift) { return '#'; } else { return '3'; }
-                    case Keys.D4:
-                        if (Shift) { return '$'; } else { return '4'; }
-                    case Keys.D5:
-                        if (Shift) { return '%'; } else { return '5'; }
-                    case Keys.D6:
-                        if (Shift) { return '^'; } else { return '6'; }
-                    case Keys.D7:
-                        if (Shift) { return '&'; } else { return '7'; }
-                    case Keys.D8:
-                        if (Shift) { return '*'; } else { return '8'; }
-                    case Keys.D9:
-                        if (Shift) { return '('; } else { return '9'; }
-
-                    case Keys.NumPad0: return '0';
-                    case Keys.NumPad1: return '1';
-                    case Keys.NumPad2: return '2';
-                    case Keys.NumPad3: return '3';
-                    case Keys.NumPad4: return '4';
-                    case Keys.NumPad5: return '5';
-                    case Keys.NumPad6: return '6';
-                    case Keys.NumPad7: return '7'; ;
-                    case Keys.NumPad8: return '8';
-                    case Keys.NumPad9: return '9';
-
-                    case Keys.OemTilde:
-                        if (Shift) { return '~'; } else { return '`'; }
-                    case Keys.OemSemicolon:
-                        if (Shift) { return ':'; } else { return ';'; }
-                    case Keys.OemQuotes:
-                        if (Shift) { return '"'; } else { return '\''; }
-                    case Keys.OemQuestion:
-                        if (Shift) { return '?'; } else { return '/'; }
-                    case Keys.OemPlus:
-                        if (Shift) { return '+'; } else { return '='; }
-                    case Keys.OemPipe:
-                        if (Shift) { return '|'; } else { return '\\'; }
-                    case Keys.OemPeriod:
-                        if (Shift) { return '>'; } else { return '.'; }
-                    case Keys.OemOpenBrackets:
-                        if (Shift) { return '{'; } else { return '['; }
-                    case Keys.OemCloseBrackets:
-                        if (Shift) { return '}'; } else { return ']'; }
-                    case Keys.OemMinus:
-                        if (Shift) { return '_'; } else { return '-'; }
-                    case Keys.OemComma:
-                        if (Shift) { return '<'; } else { return ','; }
-                }
-
-                return (Char)0;
-
-            }
         }
     }
 }

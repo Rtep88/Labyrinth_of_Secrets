@@ -18,11 +18,15 @@ namespace Labyrinth_of_Secrets
 
         //Konstanty
 
+        //Enumy
+
         //Promenne
         public Point velikostOkna = new Point(1280, 720);
         public Point minulaVelikostOkna = new Point(1280, 720);
         public bool fullscreen = false;
         public Random rnd = new Random();
+        public Keys[] aktualneZmackleKlavesy;
+        public Keys[] naposledyZmackleKlavesy;
         public KeyboardState klavesy, klavesyMinule;
         public MouseState tlacitkaMysi, tlacitkaMysiMinule;
         public bool ukonceno = false;
@@ -39,6 +43,7 @@ namespace Labyrinth_of_Secrets
         public KomponentaDialogy komponentaDialogy;
         public KomponentaObchod komponentaObchod;
         public KomponentaMenu komponentaMenu;
+        public KomponentaHlavniMenu komponentaHlavniMenu;
 
         public Hra()
         {
@@ -52,32 +57,8 @@ namespace Labyrinth_of_Secrets
 
         protected override void Initialize()
         {
-            komponentaMapa = new KomponentaMapa(this);
-            komponentaZbrane = new KomponentaZbrane(this);
-            komponentaMonstra = new KomponentaMonstra(this);
-            komponentaPostavy = new KomponentaPostavy(this);
-            komponentaMultiplayer = new KomponentaMultiplayer(this);
-            komponentaHrac = new KomponentaHrac(this);
-            komponentaKamera = new KomponentaKamera(this);
-            komponentaSvetlo = new KomponentaSvetlo(this);
-            komponentaMinimapa = new KomponentaMinimapa(this);
-            komponentaKonzole = new KomponentaKonzole(this);
-            komponentaDialogy = new KomponentaDialogy(this);
-            komponentaObchod = new KomponentaObchod(this);
-            komponentaMenu = new KomponentaMenu(this);
-            Components.Add(komponentaMapa);
-            Components.Add(komponentaZbrane);
-            Components.Add(komponentaMonstra);
-            Components.Add(komponentaPostavy);
-            Components.Add(komponentaMultiplayer);
-            Components.Add(komponentaHrac);
-            Components.Add(komponentaKamera);
-            Components.Add(komponentaSvetlo);
-            Components.Add(komponentaMinimapa);
-            Components.Add(komponentaDialogy);
-            Components.Add(komponentaObchod);
-            Components.Add(komponentaKonzole);
-            Components.Add(komponentaMenu);
+            komponentaHlavniMenu = new KomponentaHlavniMenu(this);
+            Components.Add(komponentaHlavniMenu);
             _graphics.HardwareModeSwitch = false;
             NastavRozliseni();
 
@@ -96,6 +77,8 @@ namespace Labyrinth_of_Secrets
 
         protected override void Update(GameTime gameTime)
         {
+            naposledyZmackleKlavesy = aktualneZmackleKlavesy;
+            aktualneZmackleKlavesy = Keyboard.GetState().GetPressedKeys();
             klavesyMinule = klavesy;
             tlacitkaMysiMinule = tlacitkaMysi;
             klavesy = Keyboard.GetState();
@@ -182,10 +165,18 @@ namespace Labyrinth_of_Secrets
             _graphics.IsFullScreen = fullscreen;
             _graphics.ApplyChanges();
 
-            if (komponentaKamera._kamera == null)
-                komponentaKamera._kamera = new Kamera(GraphicsDevice.Viewport, 1);
-            else
-                komponentaKamera._kamera = new Kamera(GraphicsDevice.Viewport, komponentaKamera._kamera.zoom);
+            NastavKameru();
+        }
+
+        private void NastavKameru()
+        {
+            if (komponentaKamera != null)
+            {
+                if (komponentaKamera._kamera == null)
+                    komponentaKamera._kamera = new Kamera(GraphicsDevice.Viewport, 1);
+                else
+                    komponentaKamera._kamera = new Kamera(GraphicsDevice.Viewport, komponentaKamera._kamera.zoom);
+            }
         }
 
         //Vrati zda je funkce zmacknuta poprve
@@ -344,6 +335,168 @@ namespace Labyrinth_of_Secrets
 
                 velikostOkna.X = _graphics.PreferredBackBufferWidth;
                 velikostOkna.Y = _graphics.PreferredBackBufferHeight;
+            }
+        }
+        
+        //Spusti komponenty co zajistuji chod hru
+        public void SpustKomponentyHry()
+        {
+            komponentaMapa = new KomponentaMapa(this);
+            komponentaZbrane = new KomponentaZbrane(this);
+            komponentaMonstra = new KomponentaMonstra(this);
+            komponentaPostavy = new KomponentaPostavy(this);
+            komponentaMultiplayer = new KomponentaMultiplayer(this);
+            komponentaHrac = new KomponentaHrac(this);
+            komponentaKamera = new KomponentaKamera(this);
+            komponentaSvetlo = new KomponentaSvetlo(this);
+            komponentaMinimapa = new KomponentaMinimapa(this);
+            komponentaKonzole = new KomponentaKonzole(this);
+            komponentaDialogy = new KomponentaDialogy(this);
+            komponentaObchod = new KomponentaObchod(this);
+            komponentaMenu = new KomponentaMenu(this);
+            Components.Add(komponentaMapa);
+            Components.Add(komponentaZbrane);
+            Components.Add(komponentaMonstra);
+            Components.Add(komponentaPostavy);
+            Components.Add(komponentaMultiplayer);
+            Components.Add(komponentaHrac);
+            Components.Add(komponentaKamera);
+            Components.Add(komponentaSvetlo);
+            Components.Add(komponentaMinimapa);
+            Components.Add(komponentaDialogy);
+            Components.Add(komponentaObchod);
+            Components.Add(komponentaKonzole);
+            Components.Add(komponentaMenu);
+
+            NastavKameru();
+        }
+
+        //Vypne komponenty co zajistuji chod hru
+        public void VypniKomponentyHry()
+        {
+            if (komponentaSvetlo != null)
+                komponentaSvetlo.ZastavPocitaniSvetla();
+            
+            Components.Remove(komponentaMapa);
+            Components.Remove(komponentaZbrane);
+            Components.Remove(komponentaMonstra);
+            Components.Remove(komponentaPostavy);
+            Components.Remove(komponentaMultiplayer);
+            Components.Remove(komponentaHrac);
+            Components.Remove(komponentaKamera);
+            Components.Remove(komponentaSvetlo);
+            Components.Remove(komponentaMinimapa);
+            Components.Remove(komponentaDialogy);
+            Components.Remove(komponentaObchod);
+            Components.Remove(komponentaKonzole);
+            Components.Remove(komponentaMenu);
+        }
+
+        //Ukonci celou hru
+        public void VypniHru()
+        {
+            if (komponentaSvetlo != null)
+                komponentaSvetlo.ZastavPocitaniSvetla();
+
+            ukonceno = true;
+
+            Exit();
+        }
+    
+        public static bool Contains(Keys[] klavesy, Keys klavesa)
+        {
+            foreach (Keys klavesa2 in klavesy)
+            {
+                if (klavesa == klavesa2)
+                    return true;
+            }
+            return false;
+        }
+
+        public static char KeyToChar(Keys Key, bool Shift = false)
+        {
+            if (Key == Keys.Space)
+            {
+                return ' ';
+            }
+            else
+            {
+                string String = Key.ToString();
+
+                if (String.Length == 1)
+                {
+                    Char Character = Char.Parse(String);
+                    byte Byte = Convert.ToByte(Character);
+
+                    if (
+                        (Byte >= 65 && Byte <= 90) ||
+                        (Byte >= 97 && Byte <= 122)
+                        )
+                    {
+                        return (!Shift ? Character.ToString().ToLower() : Character.ToString())[0];
+                    }
+                }
+
+                switch (Key)
+                {
+                    case Keys.D0:
+                        if (Shift) { return ')'; } else { return '0'; }
+                    case Keys.D1:
+                        if (Shift) { return '!'; } else { return '1'; }
+                    case Keys.D2:
+                        if (Shift) { return '@'; } else { return '2'; }
+                    case Keys.D3:
+                        if (Shift) { return '#'; } else { return '3'; }
+                    case Keys.D4:
+                        if (Shift) { return '$'; } else { return '4'; }
+                    case Keys.D5:
+                        if (Shift) { return '%'; } else { return '5'; }
+                    case Keys.D6:
+                        if (Shift) { return '^'; } else { return '6'; }
+                    case Keys.D7:
+                        if (Shift) { return '&'; } else { return '7'; }
+                    case Keys.D8:
+                        if (Shift) { return '*'; } else { return '8'; }
+                    case Keys.D9:
+                        if (Shift) { return '('; } else { return '9'; }
+
+                    case Keys.NumPad0: return '0';
+                    case Keys.NumPad1: return '1';
+                    case Keys.NumPad2: return '2';
+                    case Keys.NumPad3: return '3';
+                    case Keys.NumPad4: return '4';
+                    case Keys.NumPad5: return '5';
+                    case Keys.NumPad6: return '6';
+                    case Keys.NumPad7: return '7'; ;
+                    case Keys.NumPad8: return '8';
+                    case Keys.NumPad9: return '9';
+
+                    case Keys.OemTilde:
+                        if (Shift) { return '~'; } else { return '`'; }
+                    case Keys.OemSemicolon:
+                        if (Shift) { return ':'; } else { return ';'; }
+                    case Keys.OemQuotes:
+                        if (Shift) { return '"'; } else { return '\''; }
+                    case Keys.OemQuestion:
+                        if (Shift) { return '?'; } else { return '/'; }
+                    case Keys.OemPlus:
+                        if (Shift) { return '+'; } else { return '='; }
+                    case Keys.OemPipe:
+                        if (Shift) { return '|'; } else { return '\\'; }
+                    case Keys.OemPeriod:
+                        if (Shift) { return '>'; } else { return '.'; }
+                    case Keys.OemOpenBrackets:
+                        if (Shift) { return '{'; } else { return '['; }
+                    case Keys.OemCloseBrackets:
+                        if (Shift) { return '}'; } else { return ']'; }
+                    case Keys.OemMinus:
+                        if (Shift) { return '_'; } else { return '-'; }
+                    case Keys.OemComma:
+                        if (Shift) { return '<'; } else { return ','; }
+                }
+
+                return (Char)0;
+
             }
         }
     }
