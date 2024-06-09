@@ -51,6 +51,9 @@ namespace Labyrinth_of_Secrets
 
         public override void Update(GameTime gameTime)
         {
+            if (hra.komponentaMenu.pauza && hra.komponentaMultiplayer.typZarizeni != KomponentaMultiplayer.TypZarizeni.Klient)
+                return;
+
             List<Postava> postavy = hra.komponentaPostavy.postavy;
             for (int i = 0; i < postavy.Count; i++)
             {

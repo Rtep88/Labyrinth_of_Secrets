@@ -53,7 +53,7 @@ namespace Labyrinth_of_Secrets
                 MouseState stavMysi = Mouse.GetState();
                 foreach (Tlacitko tlacitko in tlacitkaObchodu)
                 {
-                    if (tlacitko.UpdatujTlacitko(stavMysi, poziceObchodu, pomerRozliseni))
+                    if (tlacitko.UpdatujTlacitko(stavMysi, poziceObchodu, pomerRozliseni, hra.IsActive))
                     {
                         int i = int.Parse(tlacitko.data);
                         Zbran zbran = hra.komponentaZbrane.zbrane[i];

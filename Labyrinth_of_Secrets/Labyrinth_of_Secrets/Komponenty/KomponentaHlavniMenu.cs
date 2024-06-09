@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Mime;
 using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -21,18 +23,20 @@ namespace Labyrinth_of_Secrets
         //Konstanty
         const int VELIKOST_TLACITKA_X = 500;
         const int VELIKOST_TLACITKA_Y = 120;
-        const int ODSAZENI_TLACITEK = VELIKOST_TLACITKA_Y + 30;
+        const int ODSAZENI = 30;
         const int VELIKOST_TEXTBOXU_X = 800;
         const int VELIKOST_TEXTBOXU_Y = 80;
-        const int ODSAZENI_TEXTBOXU = VELIKOST_TEXTBOXU_Y + 30;
         const float BEZNE_ROZLISENI_X = 1920;
         const float BEZNE_ROZLISENI_Y = 1080;
+        const int VELIKOST_TLACITKA_SVETA_Y = 80;
+        const int POCET_SVETU_NA_STRANCE = 5;
 
         //Enumy
         public enum StavMenu
         {
             HlavniMenu,
             VyberSveta,
+            VytvareniSveta,
             Nastaveni,
             Multiplayer,
             Hra
@@ -41,7 +45,10 @@ namespace Labyrinth_of_Secrets
         //Promenne
         private List<Tlacitko> tlacitkaMenu = new List<Tlacitko>();
         private List<Textbox> textboxyMenu = new List<Textbox>();
+        private List<Label> labelyMenu = new List<Label>();
         private StavMenu stavMenu = StavMenu.HlavniMenu;
+        private Texture2D pozadiMenu;
+        private int strankaSvetu = 0;
 
         public KomponentaHlavniMenu(Hra hra) : base(hra)
         {
@@ -57,6 +64,8 @@ namespace Labyrinth_of_Secrets
 
         protected override void LoadContent()
         {
+            pozadiMenu = hra.Content.Load<Texture2D>("Images/Menu_background");
+
             base.LoadContent();
         }
 
@@ -69,22 +78,93 @@ namespace Labyrinth_of_Secrets
             Vector2 posunutiMenu = new Vector2((pomerX - 1) / 2 * BEZNE_ROZLISENI_X * pomerRozliseni,
                     (pomerY - 1) / 2 * BEZNE_ROZLISENI_Y * pomerRozliseni);
 
+            Point velikostSvetu = new Point((int)(hra.velikostOkna.X * 2f / 3f / pomerX), (int)(hra.velikostOkna.Y * 2f / 3f / pomerY));
+            Point poziceSvetu = hra.velikostOkna / new Point(2) - velikostSvetu / new Point(2);
+
+            Vector2 posunuti = posunutiMenu;
+
+            if (stavMenu == StavMenu.VyberSveta)
+                posunuti = poziceSvetu.ToVector2();
+
             //Aktualizace tlacitek
             for (int i = 0; i < tlacitkaMenu.Count; i++)
             {
-                if (tlacitkaMenu[i].UpdatujTlacitko(Mouse.GetState(), posunutiMenu, pomerRozliseni))
+                if (tlacitkaMenu[i].UpdatujTlacitko(Mouse.GetState(), posunuti, pomerRozliseni, hra.IsActive))
                 {
                     switch (stavMenu)
                     {
                         case StavMenu.HlavniMenu:
                             if (tlacitkaMenu[i].data == "singleplayer")
-                                PrepniStavMenu(StavMenu.Hra);
+                            {
+                                strankaSvetu = 0;
+                                PrepniStavMenu(StavMenu.VyberSveta);
+                            }
                             else if (tlacitkaMenu[i].data == "multiplayer")
                                 PrepniStavMenu(StavMenu.Multiplayer);
                             else if (tlacitkaMenu[i].data == "nastaveni")
                                 PrepniStavMenu(StavMenu.Nastaveni);
                             else if (tlacitkaMenu[i].data == "odejit")
                                 hra.VypniHru();
+                            break;
+                        case StavMenu.VyberSveta:
+                            if (tlacitkaMenu[i].data == "zpatky")
+                            {
+                                strankaSvetu--;
+                                PrepniStavMenu(StavMenu.HlavniMenu);
+                            }
+                            else if (tlacitkaMenu[i].data == "dozadu")
+                            {
+                                strankaSvetu--;
+                                PrepniStavMenu(StavMenu.VyberSveta);
+                            }
+                            else if (tlacitkaMenu[i].data == "dopredu")
+                            {
+                                strankaSvetu++;
+                                PrepniStavMenu(StavMenu.VyberSveta);
+                            }
+                            else if (tlacitkaMenu[i].data == "vytvorit")
+                            {
+                                PrepniStavMenu(StavMenu.VytvareniSveta);
+                            }
+                            else if (tlacitkaMenu[i].data.StartsWith("svet-"))
+                            {
+                                try
+                                {
+                                    string cestaKSvetu = tlacitkaMenu[i].data.Substring(5);
+                                    PrepniStavMenu(StavMenu.Hra);
+                                    hra.komponentaMapa.NactiMapuZeSouboru(cestaKSvetu);
+                                    hra.komponentaMapa.cestaKSvetu = cestaKSvetu;
+                                }
+                                catch
+                                {
+                                    PrepniStavMenu(StavMenu.VyberSveta);
+                                }
+                            }
+                            break;
+                        case StavMenu.VytvareniSveta:
+                            if (tlacitkaMenu[i].data == "vytvorit")
+                                try
+                                {
+                                    string jmenoSveta = Textbox.VratTextPodleDat(textboxyMenu, "jmenoSveta");
+                                    string cestaKDokumentum = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                                    string cestaKSavu = Path.Combine(new string[] { cestaKDokumentum, ".Labyrinth_of_Secrets", "Saves", jmenoSveta + ".bin" });
+
+                                    if (!Regex.Match(jmenoSveta, @"^[a-zA-Z0-9_]+$").Success || File.Exists(cestaKSavu))
+                                        break;
+
+                                    PrepniStavMenu(StavMenu.Hra);
+                                    hra.komponentaMapa.UlozMapuNaDisk(cestaKSavu);
+                                    PrepniStavMenu(StavMenu.VyberSveta);
+                                }
+                                catch
+                                {
+                                    PrepniStavMenu(StavMenu.VytvareniSveta);
+                                }
+                            else if (tlacitkaMenu[i].data == "zpatky")
+                            {
+                                strankaSvetu = 0;
+                                PrepniStavMenu(StavMenu.VyberSveta);
+                            }
                             break;
                         case StavMenu.Nastaveni:
                             if (tlacitkaMenu[i].data == "fullscreen")
@@ -118,7 +198,7 @@ namespace Labyrinth_of_Secrets
             //Aktualizace textboxu
             for (int i = 0; i < textboxyMenu.Count; i++)
             {
-                textboxyMenu[i].UpdatujTextbox(hra, gameTime, Mouse.GetState(), posunutiMenu, pomerRozliseni);
+                textboxyMenu[i].UpdatujTextbox(hra, gameTime, Mouse.GetState(), posunutiMenu, pomerRozliseni, hra.IsActive);
             }
 
             base.Update(gameTime);
@@ -136,13 +216,19 @@ namespace Labyrinth_of_Secrets
             Vector2 posunutiMenu = new Vector2((pomerX - 1) / 2 * BEZNE_ROZLISENI_X * pomerRozliseni,
                     (pomerY - 1) / 2 * BEZNE_ROZLISENI_Y * pomerRozliseni);
 
-            //Vykresleni tlacitek
-            foreach (Tlacitko tlacitko in tlacitkaMenu)
-                tlacitko.VykresliTlacitko(hra, posunutiMenu, pomerRozliseni);
+            if (stavMenu != StavMenu.Hra)
+            {
+                Point velikostPozadi = hra.velikostOkna;
+                if (pomerX > pomerY)
+                    velikostPozadi.Y = (int)(velikostPozadi.X * BEZNE_ROZLISENI_Y / BEZNE_ROZLISENI_X);
+                else
+                    velikostPozadi.X = (int)(velikostPozadi.Y * BEZNE_ROZLISENI_X / BEZNE_ROZLISENI_Y);
 
-            //Vykresleni textboxu
-            foreach (Textbox textbox in textboxyMenu)
-                textbox.VykresliTextbox(hra, posunutiMenu, pomerRozliseni);
+                Point pozicePozadi = (hra.velikostOkna - velikostPozadi) / new Point(2);
+
+                //Vykresleni pozadi
+                hra._spriteBatch.Draw(pozadiMenu, new Rectangle(pozicePozadi, velikostPozadi), Color.White);
+            }
 
             if (stavMenu == StavMenu.HlavniMenu)
             {
@@ -165,6 +251,39 @@ namespace Labyrinth_of_Secrets
                 hra.VykresliTextSOkrajem(Hra.pixeloidSans, new Vector2(0, hra.velikostOkna.Y - velikostTextuVerze.Y), textVerze, velikostTextu, Color.White, Color.Black, 0.07f, 8, true);
             }
 
+            //Vykresleni vyberu sveta
+            Point velikostSvetu = new Point((int)(hra.velikostOkna.X * 2f / 3f / pomerX), (int)(hra.velikostOkna.Y * 2f / 3f / pomerY));
+            Point poziceSvetu = hra.velikostOkna / new Point(2) - velikostSvetu / new Point(2);
+            if (stavMenu == StavMenu.VyberSveta)
+            {
+                hra._spriteBatch.Draw(Hra.pixel, new Rectangle(poziceSvetu, velikostSvetu), new Color(50, 50, 50, 210));
+            }
+
+            if (stavMenu != StavMenu.VyberSveta)
+            {
+                //Vykresleni tlacitek
+                foreach (Tlacitko tlacitko in tlacitkaMenu)
+                    tlacitko.VykresliTlacitko(hra, posunutiMenu, pomerRozliseni);
+
+                //Vykresleni textboxu
+                foreach (Textbox textbox in textboxyMenu)
+                    textbox.VykresliTextbox(hra, posunutiMenu, pomerRozliseni);
+
+                //Vykresleni labelu
+                foreach (Label label in labelyMenu)
+                    label.VykresliLabel(hra, posunutiMenu, pomerRozliseni);
+            }
+            else
+            {
+                //Vykresleni tlacitek
+                foreach (Tlacitko tlacitko in tlacitkaMenu)
+                    tlacitko.VykresliTlacitko(hra, poziceSvetu.ToVector2(), pomerRozliseni);
+
+                //Vykresleni labelu
+                foreach (Label label in labelyMenu)
+                    label.VykresliLabel(hra, poziceSvetu.ToVector2(), pomerRozliseni);
+            }
+
             hra._spriteBatch.End();
 
             base.Draw(gameTime);
@@ -175,33 +294,81 @@ namespace Labyrinth_of_Secrets
             this.stavMenu = stavMenu;
             tlacitkaMenu.Clear();
             textboxyMenu.Clear();
+            labelyMenu.Clear();
             hra.VypniKomponentyHry();
 
             switch (stavMenu)
             {
                 case StavMenu.HlavniMenu:
                     tlacitkaMenu.Add(new Tlacitko(new Vector2(BEZNE_ROZLISENI_X, BEZNE_ROZLISENI_Y) / 2 - new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y) / 2,
-                        new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y), "Singleplayer", Color.Gray, "singleplayer", 6f));
-                    tlacitkaMenu.Add(new Tlacitko(new Vector2(BEZNE_ROZLISENI_X, BEZNE_ROZLISENI_Y) / 2 - new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y) / 2 + new Vector2(0, ODSAZENI_TLACITEK),
-                        new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y), "Multiplayer", Color.Gray, "multiplayer", 6f));
-                    tlacitkaMenu.Add(new Tlacitko(new Vector2(BEZNE_ROZLISENI_X, BEZNE_ROZLISENI_Y) / 2 - new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y) / 2 + new Vector2(0, ODSAZENI_TLACITEK * 2),
-                        new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y), "Nastavení", Color.Gray, "nastaveni", 6f));
-                    tlacitkaMenu.Add(new Tlacitko(new Vector2(BEZNE_ROZLISENI_X, BEZNE_ROZLISENI_Y) / 2 - new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y) / 2 + new Vector2(0, ODSAZENI_TLACITEK * 3),
-                        new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y), "Odejít", Color.Gray, "odejit", 6f));
+                        new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y), "Singleplayer", new Color(110, 110, 110), "singleplayer", 6f));
+                    tlacitkaMenu.Add(new Tlacitko(new Vector2(BEZNE_ROZLISENI_X, BEZNE_ROZLISENI_Y) / 2 - new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y) / 2 + new Vector2(0, ODSAZENI + VELIKOST_TLACITKA_Y),
+                        new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y), "Multiplayer", new Color(110, 110, 110), "multiplayer", 6f));
+                    tlacitkaMenu.Add(new Tlacitko(new Vector2(BEZNE_ROZLISENI_X, BEZNE_ROZLISENI_Y) / 2 - new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y) / 2 + new Vector2(0, (ODSAZENI + VELIKOST_TLACITKA_Y) * 2),
+                        new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y), "Nastavení", new Color(110, 110, 110), "nastaveni", 6f));
+                    tlacitkaMenu.Add(new Tlacitko(new Vector2(BEZNE_ROZLISENI_X, BEZNE_ROZLISENI_Y) / 2 - new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y) / 2 + new Vector2(0, (ODSAZENI + VELIKOST_TLACITKA_Y) * 3),
+                        new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y), "Odejít", new Color(110, 110, 110), "odejit", 6f));
+                    break;
+                case StavMenu.VyberSveta:
+                    Vector2 velikostSeznamu = new Vector2(BEZNE_ROZLISENI_X, BEZNE_ROZLISENI_Y) * 2 / 3;
+                    List<string> svety = new List<string>();
+                    string cestaKDokumentum = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                    string cestaKSavum = Path.Combine(new string[] { cestaKDokumentum, ".Labyrinth_of_Secrets", "Saves" });
+
+                    if (Directory.Exists(cestaKSavum))
+                        svety = Directory.GetFiles(cestaKSavum).ToList();
+
+                    int maxStranka = Math.Max(0, (svety.Count - 1) / POCET_SVETU_NA_STRANCE);
+                    strankaSvetu = Math.Max(0, Math.Min(maxStranka, strankaSvetu));
+
+                    for (int i = 0; i < POCET_SVETU_NA_STRANCE && (i + POCET_SVETU_NA_STRANCE * strankaSvetu) < svety.Count; i++)
+                    {
+                        tlacitkaMenu.Add(new Tlacitko(new Vector2(ODSAZENI) + new Vector2(0, (VELIKOST_TLACITKA_SVETA_Y + ODSAZENI) * i),
+                            new Vector2(velikostSeznamu.X - ODSAZENI * 2, VELIKOST_TLACITKA_SVETA_Y), Path.GetFileNameWithoutExtension(svety[i + POCET_SVETU_NA_STRANCE * strankaSvetu]),
+                            new Color(110, 110, 110), "svet-" + svety[i + POCET_SVETU_NA_STRANCE * strankaSvetu], 6f));
+                    }
+                    float velikostTlacitka = (velikostSeznamu.X - ODSAZENI * 6) / 5;
+
+                    tlacitkaMenu.Add(new Tlacitko(new Vector2(ODSAZENI) + new Vector2(0, (VELIKOST_TLACITKA_SVETA_Y + ODSAZENI) * 5),
+                        new Vector2(velikostTlacitka, VELIKOST_TLACITKA_SVETA_Y), "Zpátky", new Color(110, 110, 110), "zpatky", 6f));
+
+                    if (strankaSvetu > 0)
+                        tlacitkaMenu.Add(new Tlacitko(new Vector2(ODSAZENI) + new Vector2(velikostTlacitka + ODSAZENI, (VELIKOST_TLACITKA_SVETA_Y + ODSAZENI) * 5),
+                            new Vector2(velikostTlacitka, VELIKOST_TLACITKA_SVETA_Y), "<--", new Color(110, 110, 110), "dozadu", 6f));
+                    if (0 != maxStranka)
+                        labelyMenu.Add(new Label(new Vector2(ODSAZENI) + new Vector2((velikostTlacitka + ODSAZENI) * 2, (VELIKOST_TLACITKA_SVETA_Y + ODSAZENI) * 5),
+                            new Vector2(velikostTlacitka, VELIKOST_TLACITKA_SVETA_Y), strankaSvetu + 1 + " / " + (maxStranka + 1), new Color(110, 110, 110), 6f));
+                    if (strankaSvetu < maxStranka)
+                        tlacitkaMenu.Add(new Tlacitko(new Vector2(ODSAZENI) + new Vector2((velikostTlacitka + ODSAZENI) * 3, (VELIKOST_TLACITKA_SVETA_Y + ODSAZENI) * 5),
+                            new Vector2(velikostTlacitka, VELIKOST_TLACITKA_SVETA_Y), "-->", new Color(110, 110, 110), "dopredu", 6f));
+                    tlacitkaMenu.Add(new Tlacitko(new Vector2(ODSAZENI) + new Vector2((velikostTlacitka + ODSAZENI) * 4, (VELIKOST_TLACITKA_SVETA_Y + ODSAZENI) * 5),
+                        new Vector2(velikostTlacitka, VELIKOST_TLACITKA_SVETA_Y), "Vytvořit", Color.LimeGreen, "vytvorit", 6f));
+                    break;
+                case StavMenu.VytvareniSveta:
+                    labelyMenu.Add(new Label(new Vector2(BEZNE_ROZLISENI_X, BEZNE_ROZLISENI_Y) / 2 + new Vector2(-VELIKOST_TEXTBOXU_X / 2, -ODSAZENI - VELIKOST_TEXTBOXU_Y),
+                            new Vector2(VELIKOST_TEXTBOXU_X, VELIKOST_TEXTBOXU_Y), "Zadejte jméno světa:", new Color(110, 110, 110), 6f));
+                    textboxyMenu.Add(new Textbox(new Vector2(BEZNE_ROZLISENI_X, BEZNE_ROZLISENI_Y) / 2 + new Vector2(-VELIKOST_TEXTBOXU_X / 2, 0),
+                        new Vector2(VELIKOST_TEXTBOXU_X, VELIKOST_TEXTBOXU_Y), new Color(110, 110, 110), "jmenoSveta", 6f));
+                    tlacitkaMenu.Add(new Tlacitko(new Vector2(BEZNE_ROZLISENI_X, BEZNE_ROZLISENI_Y) / 2 + new Vector2(-VELIKOST_TLACITKA_X / 2, ODSAZENI + VELIKOST_TEXTBOXU_Y),
+                        new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y), "Vytvořit", new Color(110, 110, 110), "vytvorit", 6f));
+                    tlacitkaMenu.Add(new Tlacitko(new Vector2(BEZNE_ROZLISENI_X, BEZNE_ROZLISENI_Y) / 2 + new Vector2(-VELIKOST_TLACITKA_X / 2, ODSAZENI + VELIKOST_TEXTBOXU_Y + (ODSAZENI + VELIKOST_TLACITKA_Y)),
+                        new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y), "Zpátky", new Color(110, 110, 110), "zpatky", 6f));
                     break;
                 case StavMenu.Nastaveni:
                     tlacitkaMenu.Add(new Tlacitko(new Vector2(BEZNE_ROZLISENI_X, BEZNE_ROZLISENI_Y) / 2 - new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y) / 2,
-                        new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y), "Přepni fullscreen", Color.Gray, "fullscreen", 6f));
-                    tlacitkaMenu.Add(new Tlacitko(new Vector2(BEZNE_ROZLISENI_X, BEZNE_ROZLISENI_Y) / 2 - new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y) / 2 + new Vector2(0, ODSAZENI_TLACITEK),
-                        new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y), "Zpátky", Color.Gray, "zpatky", 6f));
+                        new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y), "Přepni fullscreen", new Color(110, 110, 110), "fullscreen", 6f));
+                    tlacitkaMenu.Add(new Tlacitko(new Vector2(BEZNE_ROZLISENI_X, BEZNE_ROZLISENI_Y) / 2 - new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y) / 2 + new Vector2(0, ODSAZENI + VELIKOST_TLACITKA_Y),
+                        new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y), "Zpátky", new Color(110, 110, 110), "zpatky", 6f));
                     break;
                 case StavMenu.Multiplayer:
+                    labelyMenu.Add(new Label(new Vector2(BEZNE_ROZLISENI_X, BEZNE_ROZLISENI_Y) / 2 + new Vector2(-VELIKOST_TEXTBOXU_X / 2, -ODSAZENI - VELIKOST_TEXTBOXU_Y),
+                        new Vector2(VELIKOST_TEXTBOXU_X, VELIKOST_TEXTBOXU_Y), "Zadejte IP adresu serveru:", new Color(110, 110, 110), 6f));
                     textboxyMenu.Add(new Textbox(new Vector2(BEZNE_ROZLISENI_X, BEZNE_ROZLISENI_Y) / 2 + new Vector2(-VELIKOST_TEXTBOXU_X / 2, 0),
-                        new Vector2(VELIKOST_TEXTBOXU_X, VELIKOST_TEXTBOXU_Y), Color.Gray, "ipadresa", 6f));
-                    tlacitkaMenu.Add(new Tlacitko(new Vector2(BEZNE_ROZLISENI_X, BEZNE_ROZLISENI_Y) / 2 + new Vector2(-VELIKOST_TLACITKA_X / 2, ODSAZENI_TEXTBOXU),
-                        new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y), "Připojit", Color.Gray, "pripojit", 6f));
-                    tlacitkaMenu.Add(new Tlacitko(new Vector2(BEZNE_ROZLISENI_X, BEZNE_ROZLISENI_Y) / 2 + new Vector2(-VELIKOST_TLACITKA_X / 2, ODSAZENI_TEXTBOXU + ODSAZENI_TLACITEK),
-                        new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y), "Zpátky", Color.Gray, "zpatky", 6f));
+                        new Vector2(VELIKOST_TEXTBOXU_X, VELIKOST_TEXTBOXU_Y), new Color(110, 110, 110), "ipadresa", 6f));
+                    tlacitkaMenu.Add(new Tlacitko(new Vector2(BEZNE_ROZLISENI_X, BEZNE_ROZLISENI_Y) / 2 + new Vector2(-VELIKOST_TLACITKA_X / 2, ODSAZENI + VELIKOST_TEXTBOXU_Y),
+                        new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y), "Připojit", new Color(110, 110, 110), "pripojit", 6f));
+                    tlacitkaMenu.Add(new Tlacitko(new Vector2(BEZNE_ROZLISENI_X, BEZNE_ROZLISENI_Y) / 2 + new Vector2(-VELIKOST_TLACITKA_X / 2, ODSAZENI + VELIKOST_TEXTBOXU_Y + (ODSAZENI + VELIKOST_TLACITKA_Y)),
+                        new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y), "Zpátky", new Color(110, 110, 110), "zpatky", 6f));
                     break;
                 case StavMenu.Hra:
                     hra.SpustKomponentyHry();

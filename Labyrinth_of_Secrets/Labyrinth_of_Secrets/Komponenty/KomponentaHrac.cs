@@ -53,6 +53,9 @@ namespace Labyrinth_of_Secrets
 
         public override void Update(GameTime gameTime)
         {
+            if (hra.komponentaMenu.pauza && hra.komponentaMultiplayer.typZarizeni != KomponentaMultiplayer.TypZarizeni.Klient)
+                return;
+
             int pocetUpdatu = RYCHLOST_HRACE / 20 + 1;
 
             for (int i = 0; i < pocetUpdatu; i++)

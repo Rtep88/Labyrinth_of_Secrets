@@ -40,7 +40,7 @@ namespace Labyrinth_of_Secrets
             this.okraj = okraj;
         }
 
-        public void UpdatujTextbox(Hra hra, GameTime gameTime, MouseState stavMysi, Vector2 relativniPozice, float roztahnutiSouradnic)
+        public void UpdatujTextbox(Hra hra, GameTime gameTime, MouseState stavMysi, Vector2 relativniPozice, float roztahnutiSouradnic, bool hraJeAktivni)
         {
             if (jsemOznacen)
                 casKurzoru += (float)gameTime.ElapsedGameTime.TotalSeconds;
@@ -50,7 +50,7 @@ namespace Labyrinth_of_Secrets
             Vector2 pozice = this.pozice * roztahnutiSouradnic + relativniPozice;
             Vector2 velikost = this.velikost * roztahnutiSouradnic;
 
-            mysJeNaMe = Hra.KolizeObdelniku(pozice.X, pozice.Y, velikost.X, velikost.Y, stavMysi.X, stavMysi.Y, 1, 1);
+            mysJeNaMe = Hra.KolizeObdelniku(pozice.X, pozice.Y, velikost.X, velikost.Y, stavMysi.X, stavMysi.Y, 1, 1) && hraJeAktivni;
 
             if (!mysJeNaMe && mysZmacknutaNaMe)
                 mysZmacknutaNaMe = false;

@@ -34,6 +34,9 @@ namespace Labyrinth_of_Secrets
 
         public override void Update(GameTime gameTime)
         {
+            if (hra.komponentaMenu.pauza && hra.komponentaMultiplayer.typZarizeni != KomponentaMultiplayer.TypZarizeni.Klient)
+                return;
+
             //Velikost vykresleni mapy
             Vector2 velikostMapy = new Vector2(KomponentaMapa.VELIKOST_MAPY_X * KomponentaMapa.VELIKOST_BLOKU, KomponentaMapa.VELIKOST_MAPY_Y * KomponentaMapa.VELIKOST_BLOKU);
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Http.Headers;
@@ -27,6 +28,15 @@ namespace Labyrinth_of_Secrets
         private const int ODSAZENI = 10;
         private const int INVENTAR_SLOT_VEL = 64;
         private const int TEXTURA_PENEZ_VEL = 40;
+        const float BEZNE_ROZLISENI_X = 1920;
+        const float BEZNE_ROZLISENI_Y = 1080;
+        const int VELIKOST_TLACITKA_X = 500;
+        const int VELIKOST_TLACITKA_Y = 120;
+        const int ODSAZENI_TLACITEK = VELIKOST_TLACITKA_Y + 30;
+
+        //Promenne
+        public bool pauza = false;
+        private List<Tlacitko> tlacitkaPauzy = new List<Tlacitko>();
 
         public KomponentaMenu(Hra hra) : base(hra)
         {
@@ -48,6 +58,33 @@ namespace Labyrinth_of_Secrets
 
         public override void Update(GameTime gameTime)
         {
+            if (hra.NoveZmacknutaKlavesa(Keys.Escape) && !hra.komponentaMinimapa.jeOtevrena &&
+                !hra.komponentaKonzole.jeOtevrena && !hra.komponentaObchod.obchodJeOtevreny)
+                PrepniStavPauzy();
+
+            float pomerRozliseni = Math.Min(hra.velikostOkna.X / BEZNE_ROZLISENI_X, hra.velikostOkna.Y / BEZNE_ROZLISENI_Y);
+            float pomerX = hra.velikostOkna.X / BEZNE_ROZLISENI_X / pomerRozliseni;
+            float pomerY = hra.velikostOkna.Y / BEZNE_ROZLISENI_Y / pomerRozliseni;
+
+            Vector2 posunutiMenu = new Vector2((pomerX - 1) / 2 * BEZNE_ROZLISENI_X * pomerRozliseni,
+                    (pomerY - 1) / 2 * BEZNE_ROZLISENI_Y * pomerRozliseni);
+
+
+            for (int i = 0; i < tlacitkaPauzy.Count; i++)
+            {
+                if (tlacitkaPauzy[i].UpdatujTlacitko(Mouse.GetState(), posunutiMenu, pomerRozliseni, hra.IsActive))
+                {
+                    if (tlacitkaPauzy[i].data == "pokracovat")
+                        PrepniStavPauzy();
+                    else
+                    {
+                        if (hra.komponentaMultiplayer.typZarizeni == KomponentaMultiplayer.TypZarizeni.Klient)
+                            hra.komponentaMultiplayer.OdpojSeOdServer();
+
+                        hra.komponentaHlavniMenu.PrepniStavMenu(KomponentaHlavniMenu.StavMenu.HlavniMenu);
+                    }
+                }
+            }
 
             base.Update(gameTime);
         }
@@ -104,9 +141,41 @@ namespace Labyrinth_of_Secrets
                     null, Color.White, 0, Vector2.Zero, new Vector2(texturaPenezVelikost, texturaPenezVelikost) / texturaPenez.Bounds.Size.ToVector2(), SpriteEffects.None, 0);
             }
 
+            if (pauza)
+            {
+                hra._spriteBatch.Draw(Hra.pixel, new Rectangle(Point.Zero, hra.velikostOkna), new Color(20, 20, 20, 140));
+
+                float pomerRozliseni = Math.Min(hra.velikostOkna.X / BEZNE_ROZLISENI_X, hra.velikostOkna.Y / BEZNE_ROZLISENI_Y);
+                float pomerX = hra.velikostOkna.X / BEZNE_ROZLISENI_X / pomerRozliseni;
+                float pomerY = hra.velikostOkna.Y / BEZNE_ROZLISENI_Y / pomerRozliseni;
+
+                Vector2 posunutiMenu = new Vector2((pomerX - 1) / 2 * BEZNE_ROZLISENI_X * pomerRozliseni,
+                        (pomerY - 1) / 2 * BEZNE_ROZLISENI_Y * pomerRozliseni);
+
+                //Vykresleni tlacitek
+                foreach (Tlacitko tlacitko in tlacitkaPauzy)
+                    tlacitko.VykresliTlacitko(hra, posunutiMenu, pomerRozliseni);
+            }
+
             hra._spriteBatch.End();
 
             base.Draw(gameTime);
+        }
+
+        public void PrepniStavPauzy()
+        {
+            pauza = !pauza;
+            tlacitkaPauzy.Clear();
+
+            if (pauza)
+            {
+                tlacitkaPauzy.Add(new Tlacitko(new Vector2(BEZNE_ROZLISENI_X, BEZNE_ROZLISENI_Y) / 2 - new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y) / 2,
+                    new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y), "Pokračovat", new Color(110, 110, 110), "pokracovat", 6f));
+                tlacitkaPauzy.Add(new Tlacitko(new Vector2(BEZNE_ROZLISENI_X, BEZNE_ROZLISENI_Y) / 2 - new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y) / 2 + new Vector2(0, ODSAZENI_TLACITEK),
+                    new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y),
+                    hra.komponentaMultiplayer.typZarizeni == KomponentaMultiplayer.TypZarizeni.SinglePlayer ? "Odejít" : "Odpojit se",
+                    new Color(110, 110, 110), "odejit", 6f));
+            }
         }
     }
 }

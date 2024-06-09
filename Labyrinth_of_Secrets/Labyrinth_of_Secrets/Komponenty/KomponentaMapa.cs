@@ -45,6 +45,7 @@ namespace Labyrinth_of_Secrets
         private bool[,] projite; //Pro hledani cesty
         private List<Node> nody; //Pro hledani cesty
         private int[,] predpocitaneNody; //Pro hledani cesty
+        public string cestaKSvetu = "";
 
         public KomponentaMapa(Hra hra) : base(hra)
         {
@@ -818,6 +819,8 @@ namespace Labyrinth_of_Secrets
             byte[] mapaVBytech = File.ReadAllBytes(cesta);
 
             PrevedBytyNaMapu(mapaVBytech);
+
+            hra.komponentaPostavy.NactiPostavy();
         }
     }
 }

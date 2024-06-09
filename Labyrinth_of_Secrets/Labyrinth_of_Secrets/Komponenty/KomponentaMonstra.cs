@@ -47,6 +47,9 @@ namespace Labyrinth_of_Secrets
 
         public override void Update(GameTime gameTime)
         {
+            if (hra.komponentaMenu.pauza && hra.komponentaMultiplayer.typZarizeni != KomponentaMultiplayer.TypZarizeni.Klient)
+                return;
+
             if (hra.komponentaMultiplayer.typZarizeni == KomponentaMultiplayer.TypZarizeni.SinglePlayer)
             {
                 NaspawnujMonstra();
