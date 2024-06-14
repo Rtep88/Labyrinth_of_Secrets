@@ -40,6 +40,16 @@ namespace Labyrinth_of_Secrets
             this.okraj = okraj;
         }
 
+        public Textbox(Vector2 pozice, Vector2 velikost, string text, Color barva, string data, float okraj)
+        {
+            this.pozice = pozice;
+            this.velikost = velikost;
+            this.text = text;
+            this.barva = barva;
+            this.data = data;
+            this.okraj = okraj;
+        }
+
         public void UpdatujTextbox(Hra hra, GameTime gameTime, MouseState stavMysi, Vector2 relativniPozice, float roztahnutiSouradnic, bool hraJeAktivni)
         {
             if (jsemOznacen)
@@ -62,13 +72,13 @@ namespace Labyrinth_of_Secrets
             {
                 jsemOznacen = true;
                 mysZmacknutaNaMe = false;
+                poziceKurzoru = text.Length;
             }
 
             if (!mysJeNaMe && mysZmacknuta && stavMysi.LeftButton == ButtonState.Released)
             {
                 jsemOznacen = false;
                 casKurzoru = 0.99f;
-                poziceKurzoru = text.Length;
             }
 
             mysZmacknuta = stavMysi.LeftButton == ButtonState.Pressed;

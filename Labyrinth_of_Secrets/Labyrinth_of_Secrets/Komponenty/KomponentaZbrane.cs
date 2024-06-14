@@ -65,14 +65,11 @@ namespace Labyrinth_of_Secrets
                 return;
 
             //Vyber zbrani
-            if (Keyboard.GetState().IsKeyDown(Keys.D1))
-                aktualniZbran = 0;
-            if (Keyboard.GetState().IsKeyDown(Keys.D2))
-                aktualniZbran = 1;
-            if (Keyboard.GetState().IsKeyDown(Keys.D3))
-                aktualniZbran = 2;
-            if (Keyboard.GetState().IsKeyDown(Keys.D4))
-                aktualniZbran = 3;
+            for (int i = 0; i < 9 && i < zbrane.Count; i++)
+            {
+                if (hra.NoveZmacknutaKlavesa(Keys.D1 + i))
+                    aktualniZbran = i;
+            }
 
             if (hra.komponentaMultiplayer.typZarizeni == KomponentaMultiplayer.TypZarizeni.Klient && noveProjektily != null)
             {

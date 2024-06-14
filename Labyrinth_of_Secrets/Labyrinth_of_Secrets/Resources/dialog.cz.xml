@@ -1,42 +1,18 @@
 <dialogs sellerName="Prodavač">
-    <npc name="Jeff" distanceFromStart="0">
+    <npc name="Jeff" distanceFromStart="0.002">
         <dialog>
-            <page message="Ahoj, toto je test dialogů"/>
-            <page message="Můžete překlikávat mezi dalšími stránkami"/>
-            <page message="Máš rád tuto hru?">
+            <page message="Ahoj, vítej v tomto labyrintu"/>
+            <page message="Přeješ si, abych ti vysvětlil co tu máš dělat?">
                 <choice message="Ano">
-                    <page message="Výborně!"/>
+                    <page message="Dobrá, tvůj cíl je najít cestu ven z tohoto bludiště"/>
+                    <page message="Pomocí tlačítka L si můžeš oddálit pohled a pomocí tlačítka Q si můžeš zobrazit mapu"/>
+                    <page message="Po oddálení pohledu si můžeš povšimnout místností se světlem. Tyto místnosti jsou obchody"/>
+                    <page message="V obchodech si můžeš vylepšit se své zbraně za peníze, které získáš ze zabíjení nepřátel"/>
+                    <page message="Vylepšené zbraně se ti budou hodit právě na zabíjení nepřátel"/>
+                    <page message="A to je tak asi všechno. Kdyby jsi něco potřeboval zopakovat neváhej se mnou promluvit znovu"/>
                 </choice>
                 <choice message="Ne">
-                    <page message="Proč">
-                        <choice message="Jen tak">
-                            <page message="Dobrá"/>
-                        </choice>
-                        <choice message="Protože se mi nelíbí">
-                            <page message="Alespoň jsi upřímný"/>
-                        </choice>
-                    </page>
-                </choice>
-            </page>
-            <page message="Zkuste po skončení dialogů se mnou promluvit ještě jednou"/>
-        </dialog>
-        <dialog>
-            <page message="Proč se mnou mluvíš znovu?">
-                <choice message="Protože můžu">
-                    <page message="LOL"/>
-                </choice>
-                <choice message="Protože si mi to řekl">
-                    <page message="Tak to je dobře"/>
-                </choice>
-            </page>
-        </dialog>
-        <dialog>
-            <page message="Proč se mnou mluvíš znovu?">
-                <choice message="Protože můžu">
-                    <page message="LOL"/>
-                </choice>
-                <choice message="Protože si mi to řekl">
-                    <page message="Řekl jsem ale jen jednou"/>
+                    <page message="Dobrá, kdyby sis to rozmyslel tak neváhej se mnou promluvit znovu."/>
                 </choice>
             </page>
         </dialog>

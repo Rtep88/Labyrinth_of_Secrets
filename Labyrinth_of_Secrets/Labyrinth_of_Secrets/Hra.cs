@@ -3,6 +3,10 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Xml;
 
 namespace Labyrinth_of_Secrets
 {
@@ -44,6 +48,7 @@ namespace Labyrinth_of_Secrets
         public KomponentaObchod komponentaObchod;
         public KomponentaMenu komponentaMenu;
         public KomponentaHlavniMenu komponentaHlavniMenu;
+        public string jmeno;
 
         public Hra()
         {
@@ -61,6 +66,22 @@ namespace Labyrinth_of_Secrets
             Components.Add(komponentaHlavniMenu);
             _graphics.HardwareModeSwitch = false;
             NastavRozliseni();
+
+            string cestaKDokumentum = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            string cestaKeHernimDatum = Path.Combine(new string[] { cestaKDokumentum, ".Labyrinth_of_Secrets" });
+
+            if (!Directory.Exists(cestaKeHernimDatum))
+                Directory.CreateDirectory(cestaKeHernimDatum);
+
+            string cestaKeKonfigu = Path.Combine(cestaKeHernimDatum, "config.ini");
+
+            jmeno = ZiskejHodnotuZIni(cestaKeKonfigu, "playerName");
+
+            if (jmeno == null || jmeno == " " || jmeno.Length > 20 || !Regex.Match(jmeno, @"^[a-zA-Z0-9_]+$").Success)
+            {
+                ZapisHodnotuDoIni(cestaKeKonfigu, "playerName", "DefaultUser_" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString().Substring(6));
+                jmeno = ZiskejHodnotuZIni(cestaKeKonfigu, "playerName");
+            }
 
             base.Initialize();
         }
@@ -337,7 +358,7 @@ namespace Labyrinth_of_Secrets
                 velikostOkna.Y = _graphics.PreferredBackBufferHeight;
             }
         }
-        
+
         //Spusti komponenty co zajistuji chod hru
         public void SpustKomponentyHry()
         {
@@ -376,7 +397,7 @@ namespace Labyrinth_of_Secrets
         {
             if (komponentaSvetlo != null)
                 komponentaSvetlo.ZastavPocitaniSvetla();
-            
+
             Components.Remove(komponentaMapa);
             Components.Remove(komponentaZbrane);
             Components.Remove(komponentaMonstra);
@@ -402,7 +423,7 @@ namespace Labyrinth_of_Secrets
 
             Exit();
         }
-    
+
         public static bool Contains(Keys[] klavesy, Keys klavesa)
         {
             foreach (Keys klavesa2 in klavesy)
@@ -499,5 +520,63 @@ namespace Labyrinth_of_Secrets
 
             }
         }
+
+        public static void ZapisHodnotuDoIni(string cesta, string klic, string hodnota)
+        {
+            if (File.Exists(cesta))
+            {
+                try
+                {
+                    List<string> radkySouboru = File.ReadAllLines(cesta).ToList();
+                    bool nalezeno = false;
+                    for (int i = 0; i < radkySouboru.Count; i++)
+                    {
+                        string klicVSouboru = radkySouboru[i].Split('=')[0];
+                        if (klicVSouboru == klic)
+                        {
+                            radkySouboru[i] = klic + "=" + hodnota;
+                            nalezeno = true;
+                        }
+                    }
+                    if (!nalezeno)
+                        radkySouboru.Add(klic + "=" + hodnota);
+
+                    File.WriteAllLines(cesta, radkySouboru);
+                }
+                catch
+                {
+                    throw new Exception("Config file is not in correct format!");
+                }
+            }
+            else
+            {
+                File.WriteAllText(cesta, klic + "=" + hodnota);
+            }
+        }
+
+        public static string ZiskejHodnotuZIni(string cesta, string klic)
+        {
+            if (File.Exists(cesta))
+            {
+                try
+                {
+                    List<string> radkySouboru = File.ReadAllLines(cesta).ToList();
+                    for (int i = 0; i < radkySouboru.Count; i++)
+                    {
+                        string klicVSouboru = radkySouboru[i].Split('=')[0];
+                        if (klicVSouboru == klic)
+                            return radkySouboru[i].Split('=')[1];
+                    }
+                    return null;
+                }
+                catch
+                {
+                    throw new Exception("Config file is not in correct format!");
+                }
+            }
+            else
+                return null;
+        }
+
     }
 }

@@ -88,7 +88,7 @@ namespace Labyrinth_of_Secrets
                         radky.Insert(0, new Radek("setname/sn [jméno] - Nastaví jméno hráče", Color.White));
                         radky.Insert(0, new Radek("disconnect/dc - Odpojí se od serveru", Color.White));
                         radky.Insert(0, new Radek("server/sv [příkaz] - Pokud hostuji server, předám mu příkaz", Color.White));
-                        radky.Insert(0, new Radek("save/sa [název souboru] [nahradit - \"true\"] - Uloží mapu na disk", Color.White));
+                        radky.Insert(0, new Radek("save/sa [název souboru] - Uloží mapu na disk", Color.White));
                         radky.Insert(0, new Radek("load/lo [název souboru] - Načte mapy z disku", Color.White));
                         radky.Insert(0, new Radek("lsmaps/lm - Vypíše mapy na disku", Color.White));
                     }
@@ -213,13 +213,13 @@ namespace Labyrinth_of_Secrets
                     }
                     else if (rozebranaMessage[0] == "echoname" || rozebranaMessage[0] == "en")
                     {
-                        radky.Insert(0, new Radek("Jméno hráče je " + hra.komponentaMultiplayer.jmeno, Color.White));
+                        radky.Insert(0, new Radek("Jméno hráče je " + hra.jmeno, Color.White));
                     }
                     else if (rozebranaMessage[0] == "setname" || rozebranaMessage[0] == "sn")
                     {
                         if (hra.komponentaMultiplayer.typZarizeni == KomponentaMultiplayer.TypZarizeni.SinglePlayer)
                         {
-                            hra.komponentaMultiplayer.jmeno = rozebranaMessage[1];
+                            hra.jmeno = rozebranaMessage[1];
                             radky.Insert(0, new Radek("Jméno úspěšně změněno.", Color.LimeGreen));
                         }
                         else
@@ -230,7 +230,7 @@ namespace Labyrinth_of_Secrets
                         if (hra.komponentaMultiplayer.typZarizeni == KomponentaMultiplayer.TypZarizeni.Klient)
                         {
                             for (int j = 0; j < 10; j++)
-                                hra.komponentaMultiplayer.PosliData(Encoding.UTF8.GetBytes($"{(short)KomponentaMultiplayer.TypPacketu.OdpojilSeKlient};{hra.komponentaMultiplayer.jmeno}"));
+                                hra.komponentaMultiplayer.PosliData(Encoding.UTF8.GetBytes($"{(short)KomponentaMultiplayer.TypPacketu.OdpojilSeKlient};{hra.jmeno}"));
 
                             radky.Insert(0, new Radek("Odpojeno od serveru"));
                             hra.komponentaMultiplayer.OdpojSeOdServer();
@@ -258,20 +258,8 @@ namespace Labyrinth_of_Secrets
                     {
                         if (Regex.Match(rozebranaMessage[1], @"^[a-zA-Z0-9_]+$").Success)
                         {
-                            string cestaKDokumentum = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-                            string cestaKSavum = Path.Combine(new string[] { cestaKDokumentum, ".Labyrinth_of_Secrets", "Saves" });
-                            string cestaKSavu = Path.Combine(cestaKSavum, rozebranaMessage[1]) + ".bin";
-
-                            if (!Directory.Exists(cestaKSavum))
-                                Directory.CreateDirectory(cestaKSavum);
-
-                            if (!File.Exists(cestaKSavu) || (rozebranaMessage.Length > 2 && rozebranaMessage[2] == "true"))
-                            {
-                                hra.komponentaMapa.UlozMapuNaDisk(cestaKSavu);
-                                radky.Insert(0, new Radek("Mapa úspěšně uložena.", Color.LimeGreen));
-                            }
-                            else
-                                radky.Insert(0, new Radek("Tento soubor už existuje! (Pokud ho chcete nahradit připište nakonec \"true\")", Color.Yellow));
+                            hra.komponentaMapa.UlozMapuNaDisk(rozebranaMessage[1]);
+                            radky.Insert(0, new Radek("Mapa úspěšně uložena.", Color.LimeGreen));
                         }
                         else
                         {
@@ -284,11 +272,10 @@ namespace Labyrinth_of_Secrets
                         {
                             string cestaKDokumentum = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
                             string cestaKSavum = Path.Combine(new string[] { cestaKDokumentum, ".Labyrinth_of_Secrets", "Saves" });
-                            string cestaKSavu = Path.Combine(cestaKSavum, rozebranaMessage[1]) + ".bin";
 
                             if (Directory.Exists(cestaKSavum))
                             {
-                                hra.komponentaMapa.NactiMapuZeSouboru(cestaKSavu);
+                                hra.komponentaMapa.NactiMapuZeSouboru(rozebranaMessage[1]);
                                 radky.Insert(0, new Radek("Mapa úspěšně načtena.", Color.LimeGreen));
                             }
                             else
@@ -306,7 +293,7 @@ namespace Labyrinth_of_Secrets
 
                         if (Directory.Exists(cestaKSavum))
                         {
-                            string[] savy = Directory.GetFiles(cestaKSavum);
+                            string[] savy = Directory.GetDirectories(cestaKSavum);
                             if (savy.Length == 0)
                                 radky.Insert(0, new Radek("Žádne mapy zatím nejsou uloženy.", Color.Yellow));
                             else

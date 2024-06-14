@@ -126,14 +126,14 @@ namespace Labyrinth_of_Secrets
                             {
                                 PrepniStavMenu(StavMenu.VytvareniSveta);
                             }
-                            else if (tlacitkaMenu[i].data.StartsWith("svet-"))
+                            else if (tlacitkaMenu[i].data == "svet")
                             {
                                 try
                                 {
-                                    string cestaKSvetu = tlacitkaMenu[i].data.Substring(5);
+                                    string jmenoSveta = tlacitkaMenu[i].text;
                                     PrepniStavMenu(StavMenu.Hra);
-                                    hra.komponentaMapa.NactiMapuZeSouboru(cestaKSvetu);
-                                    hra.komponentaMapa.cestaKSvetu = cestaKSvetu;
+                                    hra.komponentaMapa.NactiMapuZeSouboru(jmenoSveta);
+                                    hra.komponentaMapa.jmenoSveta = jmenoSveta;
                                 }
                                 catch
                                 {
@@ -147,13 +147,13 @@ namespace Labyrinth_of_Secrets
                                 {
                                     string jmenoSveta = Textbox.VratTextPodleDat(textboxyMenu, "jmenoSveta");
                                     string cestaKDokumentum = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-                                    string cestaKSavu = Path.Combine(new string[] { cestaKDokumentum, ".Labyrinth_of_Secrets", "Saves", jmenoSveta + ".bin" });
+                                    string cestaKSavu = Path.Combine(new string[] { cestaKDokumentum, ".Labyrinth_of_Secrets", "Saves", jmenoSveta });
 
-                                    if (!Regex.Match(jmenoSveta, @"^[a-zA-Z0-9_]+$").Success || File.Exists(cestaKSavu))
+                                    if (!Regex.Match(jmenoSveta, @"^[a-zA-Z0-9_]+$").Success || Directory.Exists(cestaKSavu))
                                         break;
 
                                     PrepniStavMenu(StavMenu.Hra);
-                                    hra.komponentaMapa.UlozMapuNaDisk(cestaKSavu);
+                                    hra.komponentaMapa.UlozMapuNaDisk(jmenoSveta);
                                     PrepniStavMenu(StavMenu.VyberSveta);
                                 }
                                 catch
@@ -173,7 +173,21 @@ namespace Labyrinth_of_Secrets
                                 hra.NastavRozliseni();
                             }
                             else if (tlacitkaMenu[i].data == "zpatky")
-                                PrepniStavMenu(StavMenu.HlavniMenu);
+                            {
+                                string noveJmeno = Textbox.VratTextPodleDat(textboxyMenu, "jmenoHrace");
+
+                                if (noveJmeno != null && noveJmeno != "" && noveJmeno.Length <= 20 && Regex.Match(noveJmeno, @"^[a-zA-Z0-9_]+$").Success)
+                                {
+                                    string cestaKDokumentum = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                                    string cestaKeHernimDatum = Path.Combine(new string[] { cestaKDokumentum, ".Labyrinth_of_Secrets" });
+                                    string cestaKeKonfigu = Path.Combine(cestaKeHernimDatum, "config.ini");
+
+                                    Hra.ZapisHodnotuDoIni(cestaKeKonfigu, "playerName", noveJmeno);
+                                    hra.jmeno = noveJmeno;
+
+                                    PrepniStavMenu(StavMenu.HlavniMenu);
+                                }
+                            }
                             break;
                         case StavMenu.Multiplayer:
                             if (tlacitkaMenu[i].data == "pripojit")
@@ -316,7 +330,9 @@ namespace Labyrinth_of_Secrets
                     string cestaKSavum = Path.Combine(new string[] { cestaKDokumentum, ".Labyrinth_of_Secrets", "Saves" });
 
                     if (Directory.Exists(cestaKSavum))
-                        svety = Directory.GetFiles(cestaKSavum).ToList();
+                        svety = Directory.GetDirectories(cestaKSavum).ToList();
+
+                    svety = svety.Where(x => File.Exists(Path.Combine(x, "world.bin"))).ToList();
 
                     int maxStranka = Math.Max(0, (svety.Count - 1) / POCET_SVETU_NA_STRANCE);
                     strankaSvetu = Math.Max(0, Math.Min(maxStranka, strankaSvetu));
@@ -325,7 +341,7 @@ namespace Labyrinth_of_Secrets
                     {
                         tlacitkaMenu.Add(new Tlacitko(new Vector2(ODSAZENI) + new Vector2(0, (VELIKOST_TLACITKA_SVETA_Y + ODSAZENI) * i),
                             new Vector2(velikostSeznamu.X - ODSAZENI * 2, VELIKOST_TLACITKA_SVETA_Y), Path.GetFileNameWithoutExtension(svety[i + POCET_SVETU_NA_STRANCE * strankaSvetu]),
-                            new Color(110, 110, 110), "svet-" + svety[i + POCET_SVETU_NA_STRANCE * strankaSvetu], 6f));
+                            new Color(110, 110, 110), "svet", 6f));
                     }
                     float velikostTlacitka = (velikostSeznamu.X - ODSAZENI * 6) / 5;
 
@@ -355,10 +371,14 @@ namespace Labyrinth_of_Secrets
                         new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y), "Zpátky", new Color(110, 110, 110), "zpatky", 6f));
                     break;
                 case StavMenu.Nastaveni:
-                    tlacitkaMenu.Add(new Tlacitko(new Vector2(BEZNE_ROZLISENI_X, BEZNE_ROZLISENI_Y) / 2 - new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y) / 2,
+                    labelyMenu.Add(new Label(new Vector2(BEZNE_ROZLISENI_X, BEZNE_ROZLISENI_Y) / 2 - new Vector2(VELIKOST_TEXTBOXU_X / 2, (VELIKOST_TEXTBOXU_Y + ODSAZENI) * 2),
+                                new Vector2(VELIKOST_TEXTBOXU_X, VELIKOST_TEXTBOXU_Y), "Jméno hráče:", new Color(110, 110, 110), 6f));
+                    textboxyMenu.Add(new Textbox(new Vector2(BEZNE_ROZLISENI_X, BEZNE_ROZLISENI_Y) / 2 - new Vector2(VELIKOST_TEXTBOXU_X / 2, VELIKOST_TEXTBOXU_Y + ODSAZENI),
+                        new Vector2(VELIKOST_TEXTBOXU_X, VELIKOST_TEXTBOXU_Y), hra.jmeno, new Color(110, 110, 110), "jmenoHrace", 6f));
+                    tlacitkaMenu.Add(new Tlacitko(new Vector2(BEZNE_ROZLISENI_X, BEZNE_ROZLISENI_Y) / 2 - new Vector2(VELIKOST_TLACITKA_X, 0) / 2,
                         new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y), "Přepni fullscreen", new Color(110, 110, 110), "fullscreen", 6f));
-                    tlacitkaMenu.Add(new Tlacitko(new Vector2(BEZNE_ROZLISENI_X, BEZNE_ROZLISENI_Y) / 2 - new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y) / 2 + new Vector2(0, ODSAZENI + VELIKOST_TLACITKA_Y),
-                        new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y), "Zpátky", new Color(110, 110, 110), "zpatky", 6f));
+                    tlacitkaMenu.Add(new Tlacitko(new Vector2(BEZNE_ROZLISENI_X, BEZNE_ROZLISENI_Y) / 2 - new Vector2(VELIKOST_TLACITKA_X, 0) / 2 + new Vector2(0, ODSAZENI + VELIKOST_TLACITKA_Y),
+                        new Vector2(VELIKOST_TLACITKA_X, VELIKOST_TLACITKA_Y), "Uložit", new Color(110, 110, 110), "zpatky", 6f));
                     break;
                 case StavMenu.Multiplayer:
                     labelyMenu.Add(new Label(new Vector2(BEZNE_ROZLISENI_X, BEZNE_ROZLISENI_Y) / 2 + new Vector2(-VELIKOST_TEXTBOXU_X / 2, -ODSAZENI - VELIKOST_TEXTBOXU_Y),

@@ -49,7 +49,6 @@ namespace Labyrinth_of_Secrets
         }
 
         //Promenne
-        public string jmeno = "";
         public TypZarizeni typZarizeni = TypZarizeni.SinglePlayer;
         public Dictionary<string, Hrac> hraci = new Dictionary<string, Hrac>();
         private UdpClient udpKlient;
@@ -68,7 +67,6 @@ namespace Labyrinth_of_Secrets
 
         public override void Initialize()
         {
-            jmeno = "DefaultUser_" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString().Substring(6);
             base.Initialize();
         }
 
@@ -94,7 +92,7 @@ namespace Labyrinth_of_Secrets
                 Vector2 opravdovaPoziceKamery = new Vector2(-_kamera.GetViewMatrix().Translation.X / _kamera.zoom, -_kamera.GetViewMatrix().Translation.Y / _kamera.zoom);
                 Vector2 opravdovaVelikostOkna = new Vector2(hra.velikostOkna.X / _kamera.zoom, hra.velikostOkna.Y / _kamera.zoom);
                 Vector2 opravdovaPoziceMysi = opravdovaPoziceKamery + Mouse.GetState().Position.ToVector2() * opravdovaVelikostOkna / hra.velikostOkna.ToVector2();
-                PosliData(Encoding.UTF8.GetBytes($"{(short)TypPacketu.PohybHrace};{jmeno};{PrevedFloatNaString(hra.komponentaHrac.poziceHrace.X)};{PrevedFloatNaString(hra.komponentaHrac.poziceHrace.Y)};{PrevedFloatNaString(opravdovaPoziceMysi.X)};{PrevedFloatNaString(opravdovaPoziceMysi.Y)};{(short)hra.komponentaZbrane.aktualniZbran}"));
+                PosliData(Encoding.UTF8.GetBytes($"{(short)TypPacketu.PohybHrace};{hra.jmeno};{PrevedFloatNaString(hra.komponentaHrac.poziceHrace.X)};{PrevedFloatNaString(hra.komponentaHrac.poziceHrace.Y)};{PrevedFloatNaString(opravdovaPoziceMysi.X)};{PrevedFloatNaString(opravdovaPoziceMysi.Y)};{(short)hra.komponentaZbrane.aktualniZbran}"));
             }
 
             base.Update(gameTime);
@@ -175,7 +173,7 @@ namespace Labyrinth_of_Secrets
                 case TypPacketu.PohybHrace:
                     Vector2 poziceHrace = new Vector2(PrevedStringNaFloat(dataVStringu[2]), PrevedStringNaFloat(dataVStringu[3]));
                     Vector2 poziceMysiHrace = new Vector2(PrevedStringNaFloat(dataVStringu[4]), PrevedStringNaFloat(dataVStringu[5]));
-                    if (dataVStringu[1] != jmeno)
+                    if (dataVStringu[1] != hra.jmeno)
                     {
                         if (!hraci.ContainsKey(dataVStringu[1]))
                             hraci.Add(dataVStringu[1], new Hrac(dataVStringu[1]) { pozice = poziceHrace, poziceMysi = poziceMysiHrace, vybranaZbran = (Zbran.TypZbrane)int.Parse(dataVStringu[6]) });
@@ -237,16 +235,16 @@ namespace Labyrinth_of_Secrets
             bool navazanoSpojeni = false;
             for (int i = 0; i < 10; i++)
             {
-                byte[] data = Encoding.UTF8.GetBytes((short)TypPacketu.ZadostOPripojeni + ";" + jmeno);
+                byte[] data = Encoding.UTF8.GetBytes((short)TypPacketu.ZadostOPripojeni + ";" + hra.jmeno);
                 PosliData(data);
 
                 try
                 {
                     data = udpKlient.Receive(ref odesilatel);
-                    if (Encoding.UTF8.GetString(data) == (short)TypPacketu.PotvrzujiPripojeni + ";" + jmeno && PorovnejIPAdresy(odesilatel, adresaServeru))
+                    if (Encoding.UTF8.GetString(data) == (short)TypPacketu.PotvrzujiPripojeni + ";" + hra.jmeno && PorovnejIPAdresy(odesilatel, adresaServeru))
                     {
                         navazanoSpojeni = true;
-                        data = Encoding.UTF8.GetBytes((short)TypPacketu.DobrePripojujiSe + ";" + jmeno);
+                        data = Encoding.UTF8.GetBytes((short)TypPacketu.DobrePripojujiSe + ";" + hra.jmeno);
                         for (int j = 0; j < 10; j++)
                         {
                             PosliData(data);
@@ -381,7 +379,7 @@ namespace Labyrinth_of_Secrets
             return ipAdresa1.Address.Equals(ipAdresa2.Address) && ipAdresa1.Port == ipAdresa2.Port;
         }
 
-        string PrevedFloatNaString(float cislo)
+        public string PrevedFloatNaString(float cislo)
         {
             int minus = cislo < 0 ? 1 : 0;
             cislo = Math.Abs(cislo);
@@ -389,7 +387,7 @@ namespace Labyrinth_of_Secrets
             return Convert.ToBase64String(floatVBytech);
         }
 
-        float PrevedStringNaFloat(string cislo)
+        public float PrevedStringNaFloat(string cislo)
         {
             byte[] floatVBytech = Convert.FromBase64String(cislo);
             int znamenko = floatVBytech[0] >= 128 ? -1 : 1;
@@ -398,7 +396,7 @@ namespace Labyrinth_of_Secrets
 
         public void PosliInfoONovemProjektilu(Vector2 poziceMysi, Zbran.TypZbrane typZbrane)
         {
-            PosliData(Encoding.UTF8.GetBytes($"{(short)TypPacketu.NovyProjektil};{hra.komponentaMultiplayer.jmeno};{PrevedFloatNaString(poziceMysi.X)};{PrevedFloatNaString(poziceMysi.Y)};{(int)typZbrane}"));
+            PosliData(Encoding.UTF8.GetBytes($"{(short)TypPacketu.NovyProjektil};{hra.jmeno};{PrevedFloatNaString(poziceMysi.X)};{PrevedFloatNaString(poziceMysi.Y)};{(int)typZbrane}"));
         }
     }
 }

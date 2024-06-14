@@ -81,6 +81,9 @@ namespace Labyrinth_of_Secrets
                         if (hra.komponentaMultiplayer.typZarizeni == KomponentaMultiplayer.TypZarizeni.Klient)
                             hra.komponentaMultiplayer.OdpojSeOdServer();
 
+                        if (hra.komponentaMapa.jmenoSveta != "")
+                            hra.komponentaMapa.UlozMapuNaDisk(hra.komponentaMapa.jmenoSveta);
+
                         hra.komponentaHlavniMenu.PrepniStavMenu(KomponentaHlavniMenu.StavMenu.HlavniMenu);
                     }
                 }

@@ -45,7 +45,7 @@ namespace Labyrinth_of_Secrets
         private bool[,] projite; //Pro hledani cesty
         private List<Node> nody; //Pro hledani cesty
         private int[,] predpocitaneNody; //Pro hledani cesty
-        public string cestaKSvetu = "";
+        public string jmenoSveta = "";
 
         public KomponentaMapa(Hra hra) : base(hra)
         {
@@ -807,18 +807,38 @@ namespace Labyrinth_of_Secrets
             hra.komponentaSvetlo.SpustPocitaniSvetla();
         }
 
-        public void UlozMapuNaDisk(string cesta)
+        public void UlozMapuNaDisk(string jmenoSveta)
         {
+            string cestaKDokumentum = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            string cestaKSavu = Path.Combine(new string[] { cestaKDokumentum, ".Labyrinth_of_Secrets", "Saves", jmenoSveta });
+            string cestaKHracum = Path.Combine(cestaKSavu, "players");
+
             byte[] mapaVBytech = PrevedMapuNaBytovePole();
 
-            File.WriteAllBytes(cesta, mapaVBytech);
+            if (!Directory.Exists(cestaKSavu))
+                Directory.CreateDirectory(cestaKSavu);
+
+            if (!Directory.Exists(cestaKHracum))
+                Directory.CreateDirectory(cestaKHracum);
+
+            if (!File.Exists(Path.Combine(cestaKSavu, "world.bin")))
+                File.WriteAllBytes(Path.Combine(cestaKSavu, "world.bin"), mapaVBytech);
+
+            File.WriteAllBytes(Path.Combine(cestaKHracum, hra.jmeno + ".bin"), hra.komponentaHrac.PrevedHraceNaBytovePole());
         }
 
-        public void NactiMapuZeSouboru(string cesta)
+        public void NactiMapuZeSouboru(string jmenoSveta)
         {
-            byte[] mapaVBytech = File.ReadAllBytes(cesta);
+            string cestaKDokumentum = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            string cestaKSavu = Path.Combine(new string[] { cestaKDokumentum, ".Labyrinth_of_Secrets", "Saves", jmenoSveta });
+            string cestaKHracovi = Path.Combine(new string[] { cestaKSavu, "players", hra.jmeno + ".bin" });
+
+            byte[] mapaVBytech = File.ReadAllBytes(Path.Combine(cestaKSavu, "world.bin"));
 
             PrevedBytyNaMapu(mapaVBytech);
+
+            if (File.Exists(cestaKHracovi))
+                hra.komponentaHrac.PrevedBytovePoleNaHrace(File.ReadAllBytes(cestaKHracovi));
 
             hra.komponentaPostavy.NactiPostavy();
         }

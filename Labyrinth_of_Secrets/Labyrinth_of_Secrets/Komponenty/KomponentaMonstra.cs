@@ -112,7 +112,15 @@ namespace Labyrinth_of_Secrets
         {
             while (monstra.Count < MAX_POCET_MONSTER)
             {
-                monstra.Add(new Monstrum(new Vector2(hra.rnd.Next(0, KomponentaMapa.VELIKOST_MAPY_X * KomponentaMapa.VELIKOST_BLOKU), hra.rnd.Next(0, KomponentaMapa.VELIKOST_MAPY_Y * KomponentaMapa.VELIKOST_BLOKU))));
+                Vector2 poziceMonstra;
+                int pokusy = 0;
+                do
+                {
+                    poziceMonstra = new Vector2(hra.rnd.Next(0, KomponentaMapa.VELIKOST_MAPY_X * KomponentaMapa.VELIKOST_BLOKU), hra.rnd.Next(0, KomponentaMapa.VELIKOST_MAPY_Y * KomponentaMapa.VELIKOST_BLOKU));
+                    pokusy++;
+                } while (Vector2.Distance(poziceMonstra, hra.komponentaHrac.poziceHrace) < 15 * KomponentaMapa.VELIKOST_BLOKU && pokusy < 100);
+
+                monstra.Add(new Monstrum(poziceMonstra));
             }
         }
 
@@ -152,7 +160,17 @@ namespace Labyrinth_of_Secrets
                 (Vector2, bool) odpudivaSila = VypocitejOdpudivouSilu(monstra[i].pozice, monstra[i].velikost.ToVector2(), hra.komponentaHrac.poziceHrace, new Vector2(KomponentaHrac.VELIKOST_HRACE_X, KomponentaHrac.VELIKOST_HRACE_Y));
                 monstra[i].pozice += odpudivaSila.Item1 * 0.3f * 60 * deltaTime;
                 if (odpudivaSila.Item2)
+                {
                     hra.komponentaHrac.zivoty -= 180 * deltaTime;
+
+                    if (hra.komponentaHrac.zivoty <= 0)
+                    {
+                        hra.komponentaHrac.poziceHrace = new Vector2((hra.komponentaMapa.start.X + 0.5f) * KomponentaMapa.VELIKOST_BLOKU - KomponentaHrac.VELIKOST_HRACE_X / 2f,
+                            (hra.komponentaMapa.start.Y + 0.5f) * KomponentaMapa.VELIKOST_BLOKU - KomponentaHrac.VELIKOST_HRACE_Y / 2f);
+
+                        hra.komponentaHrac.zivoty = KomponentaHrac.MAX_ZIVOTY;
+                    }
+                }
 
             }
             for (int i = 0; i < monstra.Count; i++)
