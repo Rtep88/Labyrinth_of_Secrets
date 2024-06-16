@@ -22,7 +22,7 @@ namespace Labyrinth_of_Secrets
 
         //Promenne
         public RenderTarget2D minimapa;
-        public int[,] svetloMinimapy;
+        public Color[,] svetloMinimapy;
         public Color dataMinimapy;
         public bool jeOtevrena = false;
 
@@ -115,7 +115,7 @@ namespace Labyrinth_of_Secrets
 
             minimapa = new RenderTarget2D(GraphicsDevice, pocetPixelu.X, pocetPixelu.Y, false, SurfaceFormat.Vector4,
                 DepthFormat.Depth24, 0, RenderTargetUsage.PreserveContents);
-            svetloMinimapy = new int[KomponentaMapa.VELIKOST_MAPY_X, KomponentaMapa.VELIKOST_MAPY_Y];
+            svetloMinimapy = new Color[KomponentaMapa.VELIKOST_MAPY_X, KomponentaMapa.VELIKOST_MAPY_Y];
 
             GraphicsDevice.SetRenderTarget(minimapa);
             GraphicsDevice.Clear(Color.Black);
@@ -143,17 +143,13 @@ namespace Labyrinth_of_Secrets
                         }
                     }
 
-                    if (barvaNaPolicku.R + barvaNaPolicku.G + barvaNaPolicku.B > svetloMinimapy[x, y])
+                    if (barvaNaPolicku.R + barvaNaPolicku.G + barvaNaPolicku.B > svetloMinimapy[x, y].R + svetloMinimapy[x, y].G + svetloMinimapy[x, y].B)
                     {
-                        svetloMinimapy[x, y] = barvaNaPolicku.R + barvaNaPolicku.G + barvaNaPolicku.B;
+                        svetloMinimapy[x, y] = barvaNaPolicku;
 
                         if (hra.komponentaMapa.mapa[x, y].typPole == Pole.TypPole.Zed)
                             hra._spriteBatch.Draw(KomponentaMapa.brick, new Rectangle(x * KomponentaMapa.VELIKOST_BLOKU, y * KomponentaMapa.VELIKOST_BLOKU,
                                 KomponentaMapa.VELIKOST_BLOKU, KomponentaMapa.VELIKOST_BLOKU), barvaNaPolicku);
-                        else if (hra.komponentaMapa.mapa[x, y].typPole == Pole.TypPole.Obchodnik)
-                            hra._spriteBatch.Draw(KomponentaMapa.brick, new Rectangle(x * KomponentaMapa.VELIKOST_BLOKU, y * KomponentaMapa.VELIKOST_BLOKU,
-                                KomponentaMapa.VELIKOST_BLOKU, KomponentaMapa.VELIKOST_BLOKU),
-                                new Color(barvaNaPolicku.R * 128 / 255, barvaNaPolicku.G * 128 / 255, barvaNaPolicku.B * 128 / 255));
                         else
                             hra._spriteBatch.Draw(Hra.pixel, new Rectangle(x * KomponentaMapa.VELIKOST_BLOKU, y * KomponentaMapa.VELIKOST_BLOKU,
                                 KomponentaMapa.VELIKOST_BLOKU, KomponentaMapa.VELIKOST_BLOKU), barvaNaPolicku);
@@ -163,6 +159,62 @@ namespace Labyrinth_of_Secrets
 
             hra._spriteBatch.End();
 
+            GraphicsDevice.SetRenderTarget(null);
+        }
+
+        public byte[] PrevedMinimapuNaBytovePole()
+        {
+            List<byte> minimapaVBytech = new List<byte>();
+
+            minimapaVBytech.AddRange(BitConverter.GetBytes(svetloMinimapy.GetLength(0)));
+            minimapaVBytech.AddRange(BitConverter.GetBytes(svetloMinimapy.GetLength(1)));
+
+            for (int x = 0; x < svetloMinimapy.GetLength(0); x++)
+            {
+                for (int y = 0; y < svetloMinimapy.GetLength(1); y++)
+                {
+                    minimapaVBytech.Add(svetloMinimapy[x, y].R);
+                    minimapaVBytech.Add(svetloMinimapy[x, y].G);
+                    minimapaVBytech.Add(svetloMinimapy[x, y].B);
+                }
+            }
+
+            return Encoding.UTF8.GetBytes(Convert.ToBase64String(minimapaVBytech.ToArray()));
+        }
+
+        public void PrevedBytovePoleNaMinimapu(byte[] bytovePole)
+        {
+            bytovePole = Convert.FromBase64String(Encoding.UTF8.GetString(bytovePole));
+
+            svetloMinimapy = new Color[BitConverter.ToInt32(Hra.SubArray(bytovePole, 0, 4)), BitConverter.ToInt32(Hra.SubArray(bytovePole, 4, 4))];
+
+            int i = 8;
+            for (int x = 0; x < svetloMinimapy.GetLength(0); x++)
+            {
+                for (int y = 0; y < svetloMinimapy.GetLength(1); y++)
+                {
+                    svetloMinimapy[x, y].R = bytovePole[i];
+                    svetloMinimapy[x, y].G = bytovePole[i + 1];
+                    svetloMinimapy[x, y].B = bytovePole[i + 2];
+                    i += 3;
+                }
+            }
+
+            GraphicsDevice.SetRenderTarget(minimapa);
+            hra._spriteBatch.Begin();
+            for (int x = 0; x < KomponentaMapa.VELIKOST_MAPY_X; x++)
+            {
+                for (int y = 0; y < KomponentaMapa.VELIKOST_MAPY_Y; y++)
+                {
+                    if (hra.komponentaMapa.mapa[x, y].typPole == Pole.TypPole.Zed)
+                        hra._spriteBatch.Draw(KomponentaMapa.brick, new Rectangle(x * KomponentaMapa.VELIKOST_BLOKU, y * KomponentaMapa.VELIKOST_BLOKU,
+                            KomponentaMapa.VELIKOST_BLOKU, KomponentaMapa.VELIKOST_BLOKU), svetloMinimapy[x, y]);
+                    else
+                        hra._spriteBatch.Draw(Hra.pixel, new Rectangle(x * KomponentaMapa.VELIKOST_BLOKU, y * KomponentaMapa.VELIKOST_BLOKU,
+                            KomponentaMapa.VELIKOST_BLOKU, KomponentaMapa.VELIKOST_BLOKU), svetloMinimapy[x, y]);
+                }
+            }
+            hra._spriteBatch.End();
             GraphicsDevice.SetRenderTarget(null);
         }
     }

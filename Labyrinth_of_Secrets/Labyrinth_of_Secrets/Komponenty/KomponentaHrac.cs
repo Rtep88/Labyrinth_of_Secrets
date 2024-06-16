@@ -59,7 +59,10 @@ namespace Labyrinth_of_Secrets
                 PrevedBytovePoleNaHrace(PrevedHraceNaBytovePole());
 
             //Regenerace
-            zivoty += (float)gameTime.ElapsedGameTime.TotalSeconds * RYCHLOST_REGENERACE;
+            if (zivoty < MAX_ZIVOTY)
+                zivoty += (float)gameTime.ElapsedGameTime.TotalSeconds * RYCHLOST_REGENERACE;
+            if (zivoty > MAX_ZIVOTY)
+                zivoty = MAX_ZIVOTY;
 
             if (hra.komponentaMenu.pauza && hra.komponentaMultiplayer.typZarizeni != KomponentaMultiplayer.TypZarizeni.Klient)
                 return;

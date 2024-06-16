@@ -228,6 +228,37 @@ namespace Labyrinth_of_Secrets
             }
         }
 
+        public byte[] PrevedMonstraNaByty()
+        {
+            List<byte> monstrumVBytech = new List<byte>
+            {
+                (byte)(monstra.Count / 255),
+                (byte)(monstra.Count % 255)
+            };
+
+            for (int i = 0; i < monstra.Count; i++)
+            {
+                monstrumVBytech.Add((byte)monstra[i].velikost.X);
+                monstrumVBytech.Add((byte)monstra[i].velikost.Y);
+                monstrumVBytech.Add((byte)(monstra[i].pozice.X / 255));
+                monstrumVBytech.Add((byte)(monstra[i].pozice.X % 255));
+                monstrumVBytech.Add((byte)(monstra[i].pozice.X % 1 * 255));
+                monstrumVBytech.Add((byte)(monstra[i].pozice.Y / 255));
+                monstrumVBytech.Add((byte)(monstra[i].pozice.Y % 255));
+                monstrumVBytech.Add((byte)(monstra[i].pozice.Y % 1 * 255));
+                monstrumVBytech.Add((byte)(monstra[i].zivoty / 255 / 255));
+                monstrumVBytech.Add((byte)(monstra[i].zivoty % (255 * 255) / 255));
+                monstrumVBytech.Add((byte)(monstra[i].zivoty % 255));
+                monstrumVBytech.Add((byte)(monstra[i].maxZivoty / 255 / 255));
+                monstrumVBytech.Add((byte)(monstra[i].maxZivoty % (255 * 255) / 255));
+                monstrumVBytech.Add((byte)(monstra[i].maxZivoty % 255));
+                monstrumVBytech.Add((byte)monstra[i].rychlost);
+                monstrumVBytech.Add((byte)monstra[i].typMonstra);
+            }
+
+            return Encoding.UTF8.GetBytes(Convert.ToBase64String(monstrumVBytech.ToArray()));
+        }
+
         public void PrevedBytyNaMonstra(byte[] prichoziBytyMonster)
         {
             byte[] bytyMonster = Convert.FromBase64String(Encoding.UTF8.GetString(prichoziBytyMonster));
@@ -249,7 +280,10 @@ namespace Labyrinth_of_Secrets
                 monstraZBytu.Add(monstrum);
             }
 
-            novaMonstra = monstraZBytu;
+            if (hra.komponentaMultiplayer.typZarizeni == KomponentaMultiplayer.TypZarizeni.SinglePlayer)
+                monstra = monstraZBytu;
+            else if (hra.komponentaMultiplayer.typZarizeni == KomponentaMultiplayer.TypZarizeni.Klient)
+                novaMonstra = monstraZBytu;
         }
     }
 }

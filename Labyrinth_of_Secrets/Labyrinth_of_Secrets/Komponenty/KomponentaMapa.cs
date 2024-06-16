@@ -824,7 +824,11 @@ namespace Labyrinth_of_Secrets
             if (!File.Exists(Path.Combine(cestaKSavu, "world.bin")))
                 File.WriteAllBytes(Path.Combine(cestaKSavu, "world.bin"), mapaVBytech);
 
+            File.WriteAllBytes(Path.Combine(cestaKSavu, "monsters.bin"), hra.komponentaMonstra.PrevedMonstraNaByty());
+
             File.WriteAllBytes(Path.Combine(cestaKHracum, hra.jmeno + ".bin"), hra.komponentaHrac.PrevedHraceNaBytovePole());
+
+            File.WriteAllBytes(Path.Combine(cestaKHracum, hra.jmeno + ".map"), hra.komponentaMinimapa.PrevedMinimapuNaBytovePole());
         }
 
         public void NactiMapuZeSouboru(string jmenoSveta)
@@ -832,13 +836,18 @@ namespace Labyrinth_of_Secrets
             string cestaKDokumentum = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
             string cestaKSavu = Path.Combine(new string[] { cestaKDokumentum, ".Labyrinth_of_Secrets", "Saves", jmenoSveta });
             string cestaKHracovi = Path.Combine(new string[] { cestaKSavu, "players", hra.jmeno + ".bin" });
+            string cestaKHracoveMape = Path.Combine(new string[] { cestaKSavu, "players", hra.jmeno + ".map" });
 
-            byte[] mapaVBytech = File.ReadAllBytes(Path.Combine(cestaKSavu, "world.bin"));
+            PrevedBytyNaMapu(File.ReadAllBytes(Path.Combine(cestaKSavu, "world.bin")));
 
-            PrevedBytyNaMapu(mapaVBytech);
+            if (File.Exists(Path.Combine(cestaKSavu, "monsters.bin")))
+                hra.komponentaMonstra.PrevedBytyNaMonstra(File.ReadAllBytes(Path.Combine(cestaKSavu, "monsters.bin")));
 
             if (File.Exists(cestaKHracovi))
                 hra.komponentaHrac.PrevedBytovePoleNaHrace(File.ReadAllBytes(cestaKHracovi));
+
+            if (File.Exists(cestaKHracoveMape))
+                hra.komponentaMinimapa.PrevedBytovePoleNaMinimapu(File.ReadAllBytes(cestaKHracoveMape));
 
             hra.komponentaPostavy.NactiPostavy();
         }
