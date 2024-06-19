@@ -38,6 +38,7 @@ namespace Labyrinth_of_Secrets
         private bool[,] projite; //Pro hledani cesty
         private List<Node> nody; //Pro hledani cesty
         private int[,] predpocitaneNody; //Pro hledani cesty
+        public string jmenoSveta;
 
         public KomponentaMapa(Hra hra)
         {
@@ -637,6 +638,55 @@ namespace Labyrinth_of_Secrets
             return pozice;
         }
 
+        public void PrevedBytyNaMapu(byte[] prichoziMapaVBytech)
+        {
+            byte[] mapaVBytech = Convert.FromBase64String(Encoding.UTF8.GetString(prichoziMapaVBytech));
+
+            VELIKOST_MAPY_X = mapaVBytech[0] * 255 + mapaVBytech[1];
+            VELIKOST_MAPY_Y = mapaVBytech[2] * 255 + mapaVBytech[3];
+
+            int pozice = 4;
+
+            mapa = new Pole[VELIKOST_MAPY_X, VELIKOST_MAPY_Y];
+            for (int y = 0; y < VELIKOST_MAPY_Y; y++)
+            {
+                for (int x = 0; x < VELIKOST_MAPY_X; x++)
+                {
+                    mapa[x, y] = new Pole((Pole.TypPole)mapaVBytech[pozice]);
+                    if (mapa[x, y].typPole == Pole.TypPole.Start)
+                        start = new Point(x, y);
+                    else if (mapa[x, y].typPole == Pole.TypPole.Vychod)
+                        vychod = new Point(x, y);
+                    pozice++;
+                }
+            }
+
+            cestaZeStartuDoCile = NajdiCestuMeziBody(start, vychod);
+
+            foreach (Point bod in cestaZeStartuDoCile)
+                mapa[bod.X, bod.Y].naHlavniCeste = true;
+
+            int pocetSvetel = mapaVBytech[pozice] * 255 * 255;
+            pocetSvetel += mapaVBytech[pozice + 1] * 255;
+            pocetSvetel += mapaVBytech[pozice + 2];
+            pozice += 3;
+
+            List<KomponentaSvetlo.ZdrojSvetla> odkazNaZdrojeSvetla = hra.komponentaSvetlo.svetelneZdroje;
+
+            for (int i = 0; i < pocetSvetel; i++)
+            {
+                KomponentaSvetlo.ZdrojSvetla noveSvetlo = new KomponentaSvetlo.ZdrojSvetla();
+                noveSvetlo.silaSvetla = BitConverter.ToInt32(mapaVBytech, pozice);
+                noveSvetlo.odkud = new Point(BitConverter.ToInt32(mapaVBytech, pozice + 4), BitConverter.ToInt32(mapaVBytech, pozice + 8));
+                noveSvetlo.barvaSvetla = new Color(mapaVBytech[pozice + 12], mapaVBytech[pozice + 13], mapaVBytech[pozice + 14], mapaVBytech[pozice + 15]);
+                pozice += 16;
+                odkazNaZdrojeSvetla.Add(noveSvetlo);
+            }
+
+            VytvorStrom();
+            PredpocitejNody();
+        }
+
         public byte[] PrevedMapuNaBytovePole()
         {
             List<byte> mapaVBytech = new List<byte>
@@ -672,6 +722,52 @@ namespace Labyrinth_of_Secrets
                 mapaVBytech.Add(odkazNaZdrojeSvetla[i].barvaSvetla.A);
             }
             return Encoding.UTF8.GetBytes(Convert.ToBase64String(mapaVBytech.ToArray()));
+        }
+
+        public void NactiMapuZeSouboru(string jmenoSveta)
+        {
+            string cestaKDokumentum = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            string cestaKSavu = Path.Combine(new string[] { cestaKDokumentum, ".Labyrinth_of_Secrets", "Saves", jmenoSveta });
+
+            PrevedBytyNaMapu(File.ReadAllBytes(Path.Combine(cestaKSavu, "world.bin")));
+
+            if (File.Exists(Path.Combine(cestaKSavu, "monsters.bin")))
+                hra.komponentaMonstra.PrevedBytyNaMonstra(File.ReadAllBytes(Path.Combine(cestaKSavu, "monsters.bin")));
+
+            string cestaKHracum = Path.Combine(cestaKSavu, "players");
+            string[] hraci = Directory.GetFiles(cestaKHracum, "*.bin");
+
+            for (int i = 0; i < hraci.Length; i++)
+            {
+                if (!hra.komponentaMultiplayer.hraci.ContainsKey(Path.GetFileNameWithoutExtension(hraci[i])))
+                    hra.komponentaMultiplayer.hraci.Add(Path.GetFileNameWithoutExtension(hraci[i]), new Hrac(Path.GetFileNameWithoutExtension(hraci[i])));
+
+                if (File.Exists(hraci[i]))
+                    hra.PrevedBytovePoleNaHrace(File.ReadAllBytes(hraci[i]), hra.komponentaMultiplayer.hraci[Path.GetFileNameWithoutExtension(hraci[i])]);
+            }
+        }
+
+        public void UlozMapuNaDisk(string jmenoSveta)
+        {
+            string cestaKDokumentum = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            string cestaKSavu = Path.Combine(new string[] { cestaKDokumentum, ".Labyrinth_of_Secrets", "Saves", jmenoSveta });
+            string cestaKHracum = Path.Combine(cestaKSavu, "players");
+
+            byte[] mapaVBytech = PrevedMapuNaBytovePole();
+
+            if (!Directory.Exists(cestaKSavu))
+                Directory.CreateDirectory(cestaKSavu);
+
+            if (!Directory.Exists(cestaKHracum))
+                Directory.CreateDirectory(cestaKHracum);
+
+            if (!File.Exists(Path.Combine(cestaKSavu, "world.bin")))
+                File.WriteAllBytes(Path.Combine(cestaKSavu, "world.bin"), mapaVBytech);
+
+            File.WriteAllBytes(Path.Combine(cestaKSavu, "monsters.bin"), hra.komponentaMonstra.PrevedMonstraNaByty());
+
+            foreach (var hrac in hra.komponentaMultiplayer.hraci)
+                File.WriteAllBytes(Path.Combine(cestaKHracum, hrac.Value.jmeno + ".bin"), hra.PrevedHraceNaBytovePole(hrac.Value, true));
         }
     }
 }

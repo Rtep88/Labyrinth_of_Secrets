@@ -161,6 +161,11 @@ namespace Labyrinth_of_Secrets
         {
             ukonceno = true;
 
+            if (komponentaHlavniMenu.stavMenu == KomponentaHlavniMenu.StavMenu.Hra && komponentaMapa.jmenoSveta != null && komponentaMapa.jmenoSveta != "")
+            {
+                komponentaMapa.UlozMapuNaDisk(komponentaMapa.jmenoSveta);
+            }
+
             base.OnExiting(sender, args);
         }
 
@@ -577,6 +582,6 @@ namespace Labyrinth_of_Secrets
             else
                 return null;
         }
-
+    
     }
 }

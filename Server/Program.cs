@@ -10,6 +10,7 @@ namespace Server
         const int FPS = 60;
         static float opravdovaFPS = FPS;
         static int idParenta = -1;
+        static Hra hra;
 
         static void Main(string[] args)
         {
@@ -111,8 +112,9 @@ namespace Server
             if (idParenta == -1)
                 Console.Clear();
 
-            Hra hra = new Hra();
-            hra.komponentaMapa.VygenerujMapu();
+            hra = new Hra();
+            VyberSvet();
+
             hra.komponentaMultiplayer.SpustServer();
 
             Thread kontrolaPrikazu = new Thread(KontrolujPrikazy);
@@ -142,11 +144,76 @@ namespace Server
             {
                 string prikaz = Console.ReadLine();
                 if (prikaz == "exit")
+                {
+                    hra.komponentaMapa.UlozMapuNaDisk(hra.komponentaMapa.jmenoSveta);
                     Environment.Exit(0);
-                if (prikaz == "fps")
+                }
+                else if (prikaz == "save")
+                {
+                    hra.komponentaMapa.UlozMapuNaDisk(hra.komponentaMapa.jmenoSveta);
+                    Console.WriteLine("Uloženo");
+                }
+                else if (prikaz == "fps")
                     Console.WriteLine("FPS: " + opravdovaFPS);
                 else
                     Console.WriteLine("Neznámý příkaz: " + prikaz);
+            }
+        }
+
+        static void VyberSvet()
+        {
+            List<string> svety = new List<string>();
+            string cestaKDokumentum = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            string cestaKSavum = Path.Combine(new string[] { cestaKDokumentum, ".Labyrinth_of_Secrets", "Saves" });
+            Console.Clear();
+
+            while (true)
+            {
+                if (Directory.Exists(cestaKSavum))
+                    svety = Directory.GetDirectories(cestaKSavum).ToList();
+
+                svety = svety.Where(x => File.Exists(Path.Combine(x, "world.bin"))).ToList();
+
+                for (int i = 0; i < svety.Count; i++)
+                {
+                    Console.WriteLine(i + 1 + " - " + Path.GetFileNameWithoutExtension(svety[i]));
+                }
+                Console.WriteLine(Path.GetFileNameWithoutExtension(svety.Count + 1 + " - Vytvořit nový svět"));
+
+                Console.Write("Vyberte číslo světa: ");
+                string cisloSveta = Console.ReadLine();
+
+                Console.Clear();
+
+                int cisloSvetaInt = 0;
+                try
+                {
+                    cisloSvetaInt = int.Parse(cisloSveta);
+                }
+                catch
+                {
+                    Console.WriteLine("To není číslo!");
+                    continue;
+                }
+
+                if (cisloSvetaInt < 1 || cisloSvetaInt > svety.Count + 1)
+                {
+                    Console.WriteLine("Toto číslo není v rozsahu!");
+                    continue;
+                }
+
+                if (cisloSvetaInt == svety.Count + 1)
+                {
+                    hra.komponentaMapa.jmenoSveta = "placeholder";
+                    hra.komponentaMapa.VygenerujMapu();
+                }
+                else
+                {
+                    hra.komponentaMapa.jmenoSveta = Path.GetFileNameWithoutExtension(svety[cisloSvetaInt - 1]);
+                    hra.komponentaMapa.NactiMapuZeSouboru(Path.GetFileNameWithoutExtension(svety[cisloSvetaInt - 1]));
+                }
+
+                break;
             }
         }
     }

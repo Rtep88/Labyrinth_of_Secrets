@@ -159,7 +159,7 @@ namespace Labyrinth_of_Secrets
             {
                 (Vector2, bool) odpudivaSila = VypocitejOdpudivouSilu(monstra[i].pozice, monstra[i].velikost.ToVector2(), hra.komponentaHrac.poziceHrace, new Vector2(KomponentaHrac.VELIKOST_HRACE_X, KomponentaHrac.VELIKOST_HRACE_Y));
                 monstra[i].pozice += odpudivaSila.Item1 * 0.3f * 60 * deltaTime;
-                if (odpudivaSila.Item2)
+                if (odpudivaSila.Item2 && hra.komponentaMultiplayer.typZarizeni != KomponentaMultiplayer.TypZarizeni.Klient)
                 {
                     hra.komponentaHrac.zivoty -= 180 * deltaTime;
 

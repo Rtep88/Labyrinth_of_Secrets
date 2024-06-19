@@ -29,6 +29,15 @@ namespace Labyrinth_of_Secrets
         {
             NaspawnujMonstra();
 
+            //Regenerace hracu
+            foreach (var hrac in hra.komponentaMultiplayer.hraci)
+            {
+                if (hrac.Value.zivoty < Hra.MAX_ZIVOTY)
+                    hrac.Value.zivoty += deltaTime * Hra.RYCHLOST_REGENERACE;
+                if (hrac.Value.zivoty > Hra.MAX_ZIVOTY)
+                    hrac.Value.zivoty = Hra.MAX_ZIVOTY;
+            }
+
             if (deltaTime != 0)
             {
                 int pocet = Math.Max(1, (int)(360f * deltaTime));
@@ -80,10 +89,25 @@ namespace Labyrinth_of_Secrets
             {
                 foreach (var hrac in hra.komponentaMultiplayer.hraci)
                 {
-                    if (Hra.KolizeObdelniku(hrac.Value.pozice.X, hrac.Value.pozice.Y, Hra.VELIKOST_HRACE_X, Hra.VELIKOST_HRACE_Y, monstra[i].pozice.X, monstra[i].pozice.Y, monstra[i].velikost.X, monstra[i].velikost.Y))
+                    if (hrac.Value.jePripojen && Hra.KolizeObdelniku(hrac.Value.pozice.X, hrac.Value.pozice.Y, Hra.VELIKOST_HRACE_X, Hra.VELIKOST_HRACE_Y, monstra[i].pozice.X, monstra[i].pozice.Y, monstra[i].velikost.X, monstra[i].velikost.Y))
                     {
                         (Vector2, bool) odpudivaSila = VypocitejOdpudivouSilu(monstra[i].pozice, monstra[i].velikost.ToVector2(), hrac.Value.pozice, new Vector2(Hra.VELIKOST_HRACE_X, Hra.VELIKOST_HRACE_Y));
                         monstra[i].pozice += odpudivaSila.Item1 * 0.3f * 60 * deltaTime;
+
+                        if (odpudivaSila.Item2)
+                        {
+                            hrac.Value.zivoty -= 180 * deltaTime;
+
+                            if (hrac.Value.zivoty <= 0)
+                            {
+                                hrac.Value.pozice = new Vector2((hra.komponentaMapa.start.X + 0.5f) * KomponentaMapa.VELIKOST_BLOKU - Hra.VELIKOST_HRACE_X / 2f,
+                                    (hra.komponentaMapa.start.Y + 0.5f) * KomponentaMapa.VELIKOST_BLOKU - Hra.VELIKOST_HRACE_Y / 2f);
+
+                                hrac.Value.pozicePrebrana = false;
+
+                                hrac.Value.zivoty = Hra.MAX_ZIVOTY;
+                            }
+                        }
                     }
                 }
             }
@@ -99,12 +123,16 @@ namespace Labyrinth_of_Secrets
 
                 foreach (var hrac in hra.komponentaMultiplayer.hraci)
                 {
-                    if (Vector2.Distance(cil, monstra[i].pozice) > Vector2.Distance(hrac.Value.pozice, monstra[i].pozice))
+                    if (hrac.Value.jePripojen && Vector2.Distance(cil, monstra[i].pozice) > Vector2.Distance(hrac.Value.pozice, monstra[i].pozice))
                         cil = hrac.Value.pozice;
                 }
 
+
                 Point startovniKostka = (monstra[i].pozice + monstra[i].velikost.ToVector2() / 2).ToPoint() / new Point(KomponentaMapa.VELIKOST_BLOKU);
                 Point cilovaKostka = (cil + new Vector2(Hra.VELIKOST_HRACE_X, Hra.VELIKOST_HRACE_Y) / 2).ToPoint() / new Point(KomponentaMapa.VELIKOST_BLOKU);
+
+                if (cil == new Vector2(float.MaxValue))
+                    cilovaKostka = (monstra[i].pozice + monstra[i].velikost.ToVector2() / 2).ToPoint() / new Point(KomponentaMapa.VELIKOST_BLOKU);
 
                 if (startovniKostka != cilovaKostka)
                 {
@@ -161,6 +189,30 @@ namespace Labyrinth_of_Secrets
             }
 
             return Encoding.UTF8.GetBytes(Convert.ToBase64String(monstrumVBytech.ToArray()));
+        }
+
+        public void PrevedBytyNaMonstra(byte[] prichoziBytyMonster)
+        {
+            byte[] bytyMonster = Convert.FromBase64String(Encoding.UTF8.GetString(prichoziBytyMonster));
+
+            int pocetMonster = bytyMonster[0] * 255 + bytyMonster[1];
+            List<Monstrum> monstraZBytu = new List<Monstrum>(pocetMonster);
+
+            for (int i = 0; i < pocetMonster; i++)
+            {
+                Monstrum monstrum = new Monstrum();
+                monstrum.velikost.X = bytyMonster[2 + i * 16];
+                monstrum.velikost.Y = bytyMonster[2 + i * 16 + 1];
+                monstrum.pozice.X = bytyMonster[2 + i * 16 + 2] * 255 + bytyMonster[2 + i * 16 + 3] + bytyMonster[2 + i * 16 + 4] / 255f;
+                monstrum.pozice.Y = bytyMonster[2 + i * 16 + 5] * 255 + bytyMonster[2 + i * 16 + 6] + bytyMonster[2 + i * 16 + 7] / 255f;
+                monstrum.zivoty = bytyMonster[2 + i * 16 + 8] * 255 * 255 + bytyMonster[2 + i * 16 + 9] * 255 + bytyMonster[2 + i * 16 + 10];
+                monstrum.maxZivoty = bytyMonster[2 + i * 16 + 11] * 255 * 255 + bytyMonster[2 + i * 16 + 12] * 255 + bytyMonster[2 + i * 16 + 13];
+                monstrum.rychlost = bytyMonster[2 + i * 16 + 14];
+                monstrum.typMonstra = bytyMonster[2 + i * 16 + 15];
+                monstraZBytu.Add(monstrum);
+            }
+
+            monstra = monstraZBytu;
         }
     }
 }

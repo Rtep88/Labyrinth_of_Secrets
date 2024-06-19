@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace Labyrinth_of_Secrets
 {
@@ -18,6 +19,7 @@ namespace Labyrinth_of_Secrets
         public const int VELIKOST_HRACE_Y = 12; //Velikost vykresleni hrace
         public const int RYCHLOST_HRACE = 50;
         public const int MAX_ZIVOTY = 10000;
+        public const int RYCHLOST_REGENERACE = 50;
 
         public Hra()
         {
@@ -142,6 +144,88 @@ namespace Labyrinth_of_Secrets
             );
 
             return otocenyBod + origin;
+        }
+
+        //Vrátí podpole podle indexu a délky
+        public static T[] SubArray<T>(T[] data, int index, int length)
+        {
+            T[] result = new T[length];
+            Array.Copy(data, index, result, 0, length);
+            return result;
+        }
+
+        public byte[] PrevedHraceNaBytovePole(Hrac hrac, bool pripsatPozici)
+        {
+            List<byte> hracVBytech = new List<byte>();
+
+            //Zapsani penez
+            hracVBytech.AddRange(BitConverter.GetBytes(hrac.penize));
+
+            byte[] zivotyByty = Encoding.UTF8.GetBytes(komponentaMultiplayer.PrevedFloatNaString(hrac.zivoty));
+            byte[] xByty = Encoding.UTF8.GetBytes(komponentaMultiplayer.PrevedFloatNaString(pripsatPozici ? hrac.pozice.X : (-1)));
+            byte[] yByty = Encoding.UTF8.GetBytes(komponentaMultiplayer.PrevedFloatNaString(pripsatPozici ? hrac.pozice.Y : (-1)));
+
+            //Zapsani zivotu
+            hracVBytech.AddRange(BitConverter.GetBytes(zivotyByty.Length));
+            hracVBytech.AddRange(zivotyByty);
+
+            //Zapsani pozice X
+            hracVBytech.AddRange(BitConverter.GetBytes(xByty.Length));
+            hracVBytech.AddRange(xByty);
+
+            //Zapsani pozice Y
+            hracVBytech.AddRange(BitConverter.GetBytes(yByty.Length));
+            hracVBytech.AddRange(yByty);
+
+            //Zapsani zbrani
+            hracVBytech.AddRange(BitConverter.GetBytes(hrac.zbrane.Count));
+            foreach (Zbran zbran in hrac.zbrane)
+            {
+                hracVBytech.AddRange(BitConverter.GetBytes((int)zbran.typZbrane));
+                hracVBytech.Add((byte)zbran.levelZbrane);
+            }
+
+            return Encoding.UTF8.GetBytes(Convert.ToBase64String(hracVBytech.ToArray()));
+        }
+
+        public void PrevedBytovePoleNaHrace(byte[] bytovePole, Hrac hrac)
+        {
+            bytovePole = Convert.FromBase64String(Encoding.UTF8.GetString(bytovePole));
+
+            //Nacteni penez
+            int i = 0;
+            hrac.penize = Math.Max(0, BitConverter.ToInt32(Hra.SubArray(bytovePole, i, 4)));
+            i += 4;
+
+            //Nacteni zivotu
+            int pocetBytuNaZivoty = BitConverter.ToInt32(Hra.SubArray(bytovePole, i, 4));
+            i += 4;
+            hrac.zivoty = komponentaMultiplayer.PrevedStringNaFloat(Encoding.UTF8.GetString(Hra.SubArray(bytovePole, i, pocetBytuNaZivoty)));
+            i += pocetBytuNaZivoty;
+
+            //Nacteni pozice X
+            int pocetBytuNaXPozici = BitConverter.ToInt32(Hra.SubArray(bytovePole, i, 4));
+            i += 4;
+            hrac.pozice.X = komponentaMultiplayer.PrevedStringNaFloat(Encoding.UTF8.GetString(Hra.SubArray(bytovePole, i, pocetBytuNaXPozici)));
+            i += pocetBytuNaXPozici;
+
+            //Nacteni pozice Y
+            int pocetBytuNaYPozici = BitConverter.ToInt32(Hra.SubArray(bytovePole, i, 4));
+            i += 4;
+            hrac.pozice.Y = komponentaMultiplayer.PrevedStringNaFloat(Encoding.UTF8.GetString(Hra.SubArray(bytovePole, i, pocetBytuNaYPozici)));
+            i += pocetBytuNaXPozici;
+
+            //Nacteni zbrani
+            hrac.zbrane.Clear();
+            int pocetZbrani = BitConverter.ToInt32(Hra.SubArray(bytovePole, i, 4));
+            i += 4;
+            for (int j = 0; j < pocetZbrani; j++)
+            {
+                Zbran zbran = new Zbran((Zbran.TypZbrane)BitConverter.ToInt32(Hra.SubArray(bytovePole, i, 4)));
+                i += 4;
+                zbran.levelZbrane = bytovePole[i++];
+                hrac.zbrane.Add(zbran);
+            }
         }
     }
 }

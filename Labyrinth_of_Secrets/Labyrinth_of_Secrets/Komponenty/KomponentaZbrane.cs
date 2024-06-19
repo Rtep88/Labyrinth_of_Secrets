@@ -88,7 +88,7 @@ namespace Labyrinth_of_Secrets
             Vector2 opravdovaVelikostOkna = new Vector2(hra.velikostOkna.X / _kamera.zoom, hra.velikostOkna.Y / _kamera.zoom);
             Vector2 opravdovaPoziceMysi = opravdovaPoziceKamery + Mouse.GetState().Position.ToVector2() * opravdovaVelikostOkna / hra.velikostOkna.ToVector2();
 
-            if (zbrane[aktualniZbran].aktCas <= 0 && Mouse.GetState().LeftButton == ButtonState.Pressed && hra.IsActive && !hra.komponentaObchod.obchodJeOtevreny)
+            if (aktualniZbran < zbrane.Count && zbrane[aktualniZbran].aktCas <= 0 && Mouse.GetState().LeftButton == ButtonState.Pressed && hra.IsActive && !hra.komponentaObchod.obchodJeOtevreny)
             {
                 Vector2 poziceVystreleni;
                 Vector2 poziceZacatkuHlavne;

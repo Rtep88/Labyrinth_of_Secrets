@@ -58,13 +58,15 @@ namespace Labyrinth_of_Secrets
                         int i = int.Parse(tlacitko.data);
                         Zbran zbran = hra.komponentaZbrane.zbrane[i];
 
-                        if (zbran.levelZbrane < 10)
+                        if (hra.komponentaMultiplayer.typZarizeni == KomponentaMultiplayer.TypZarizeni.SinglePlayer && zbran.levelZbrane < 10 && hra.komponentaHrac.penize - zbran.cenaUpgradu >= 0)
                         {
                             hra.komponentaHrac.penize -= zbran.cenaUpgradu;
                             zbran.levelZbrane++;
-                            zbran.zraneniZbrane = zbran.zraneniZbrane * zbran.levelZbrane / (zbran.levelZbrane - 1);//dodelat
+                            zbran.zraneniZbrane = zbran.zraneniZbrane * zbran.levelZbrane / (zbran.levelZbrane - 1);
                             zbran.cenaUpgradu = (int)(zbran.cenaUpgradu * 1.75f);
                         }
+                        else if (hra.komponentaMultiplayer.typZarizeni == KomponentaMultiplayer.TypZarizeni.Klient)
+                            hra.komponentaMultiplayer.PosliInfoONakupu(zbran.typZbrane);
                     }
                 }
             }

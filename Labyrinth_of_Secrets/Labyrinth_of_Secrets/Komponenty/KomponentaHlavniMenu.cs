@@ -46,7 +46,7 @@ namespace Labyrinth_of_Secrets
         private List<Tlacitko> tlacitkaMenu = new List<Tlacitko>();
         private List<Textbox> textboxyMenu = new List<Textbox>();
         private List<Label> labelyMenu = new List<Label>();
-        private StavMenu stavMenu = StavMenu.HlavniMenu;
+        public StavMenu stavMenu = StavMenu.HlavniMenu;
         private Texture2D pozadiMenu;
         private int strankaSvetu = 0;
 

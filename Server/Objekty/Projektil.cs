@@ -16,28 +16,29 @@
         public int zraneni;
         public TypProjektilu typProjektilu;
 
-        public Projektil(Vector2 pozice, Vector2 smer, TypProjektilu typProjektilu)
+        public Projektil(Vector2 pozice, Vector2 smer, TypProjektilu typProjektilu, int zraneniZbrane)
         {
             this.pozice = pozice;
             this.smer = smer;
             this.typProjektilu = typProjektilu;
+            zraneni = zraneniZbrane;
 
             switch (typProjektilu)
             {
                 case TypProjektilu.Normalni:
                     velikost = new Vector2(1, 2);
                     rychlost = 110f;
-                    zraneni = 10;
+                    zraneni += 10;
                     break;
                 case TypProjektilu.Odstrelovaci:
                     velikost = new Vector2(1, 3);
                     rychlost = 160f;
-                    zraneni = 60;
+                    zraneni += 60;
                     break;
                 case TypProjektilu.Lehka:
                     velikost = new Vector2(1, 1);
                     rychlost = 80f;
-                    zraneni = 4;
+                    zraneni += 4;
                     break;
             }
         }

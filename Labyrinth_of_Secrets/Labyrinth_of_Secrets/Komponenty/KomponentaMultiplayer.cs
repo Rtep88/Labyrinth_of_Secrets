@@ -45,7 +45,9 @@ namespace Labyrinth_of_Secrets
             OdpojilSeKlient,
             UpdateMonster,
             NovyProjektil,
-            UpdateProjektilu
+            UpdateProjektilu,
+            UpdateHrace,
+            KoupitZbran
         }
 
         //Promenne
@@ -83,6 +85,8 @@ namespace Labyrinth_of_Secrets
             {
                 hra.komponentaKonzole.radky.Insert(0, new Radek("Server přestal odpovídat proto se odpojuji!", Color.Red));
                 OdpojSeOdServer();
+
+                hra.komponentaHlavniMenu.PrepniStavMenu(KomponentaHlavniMenu.StavMenu.HlavniMenu);
             }
 
             //Poslani pozice
@@ -213,6 +217,10 @@ namespace Labyrinth_of_Secrets
                     break;
                 case TypPacketu.UpdateProjektilu:
                     hra.komponentaZbrane.PrevedBytyNaProjektily(Encoding.UTF8.GetBytes(dataVStringu[1]));
+                    break;
+                case TypPacketu.UpdateHrace:
+                    if (hra.jmeno == dataVStringu[1])
+                        hra.komponentaHrac.PrevedBytovePoleNaHrace(Encoding.UTF8.GetBytes(dataVStringu[2]));
                     break;
             }
         }
@@ -397,6 +405,11 @@ namespace Labyrinth_of_Secrets
         public void PosliInfoONovemProjektilu(Vector2 poziceMysi, Zbran.TypZbrane typZbrane)
         {
             PosliData(Encoding.UTF8.GetBytes($"{(short)TypPacketu.NovyProjektil};{hra.jmeno};{PrevedFloatNaString(poziceMysi.X)};{PrevedFloatNaString(poziceMysi.Y)};{(int)typZbrane}"));
+        }
+
+        public void PosliInfoONakupu(Zbran.TypZbrane typZbrane)
+        {
+            PosliData(Encoding.UTF8.GetBytes($"{(short)TypPacketu.KoupitZbran};{hra.jmeno};{(int)typZbrane}"));
         }
     }
 }

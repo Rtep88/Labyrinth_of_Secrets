@@ -59,10 +59,13 @@ namespace Labyrinth_of_Secrets
                 PrevedBytovePoleNaHrace(PrevedHraceNaBytovePole());
 
             //Regenerace
-            if (zivoty < MAX_ZIVOTY)
-                zivoty += (float)gameTime.ElapsedGameTime.TotalSeconds * RYCHLOST_REGENERACE;
-            if (zivoty > MAX_ZIVOTY)
-                zivoty = MAX_ZIVOTY;
+            if (hra.komponentaMultiplayer.typZarizeni != KomponentaMultiplayer.TypZarizeni.Klient)
+            {
+                if (zivoty < MAX_ZIVOTY)
+                    zivoty += (float)gameTime.ElapsedGameTime.TotalSeconds * RYCHLOST_REGENERACE;
+                if (zivoty > MAX_ZIVOTY)
+                    zivoty = MAX_ZIVOTY;
+            }
 
             if (hra.komponentaMenu.pauza && hra.komponentaMultiplayer.typZarizeni != KomponentaMultiplayer.TypZarizeni.Klient)
                 return;
@@ -110,7 +113,9 @@ namespace Labyrinth_of_Secrets
                 Vector2 opravdovaPoziceKamery = new Vector2(-_kamera.GetViewMatrix().Translation.X / _kamera.zoom, -_kamera.GetViewMatrix().Translation.Y / _kamera.zoom);
                 Vector2 opravdovaVelikostOkna = new Vector2(hra.velikostOkna.X / _kamera.zoom, hra.velikostOkna.Y / _kamera.zoom);
                 Vector2 opravdovaPoziceMysi = opravdovaPoziceKamery + Mouse.GetState().Position.ToVector2() * opravdovaVelikostOkna / hra.velikostOkna.ToVector2();
-                hra.komponentaZbrane.VykresliZbranUHrace(hra.komponentaZbrane.zbrane[hra.komponentaZbrane.aktualniZbran].typZbrane, hra.komponentaHrac.poziceHrace, opravdovaPoziceMysi);
+
+                if (hra.komponentaZbrane.zbrane.Count > hra.komponentaZbrane.aktualniZbran)
+                    hra.komponentaZbrane.VykresliZbranUHrace(hra.komponentaZbrane.zbrane[hra.komponentaZbrane.aktualniZbran].typZbrane, hra.komponentaHrac.poziceHrace, opravdovaPoziceMysi);
             }
             hra._spriteBatch.End();
 
@@ -175,7 +180,7 @@ namespace Labyrinth_of_Secrets
 
             //Nacteni penez
             int i = 0;
-            penize = BitConverter.ToInt32(Hra.SubArray(bytovePole, i, 4));
+            penize = Math.Max(0, BitConverter.ToInt32(Hra.SubArray(bytovePole, i, 4)));
             i += 4;
 
             //Nacteni zivotu
@@ -187,25 +192,51 @@ namespace Labyrinth_of_Secrets
             //Nacteni pozice X
             int pocetBytuNaXPozici = BitConverter.ToInt32(Hra.SubArray(bytovePole, i, 4));
             i += 4;
-            poziceHrace.X = hra.komponentaMultiplayer.PrevedStringNaFloat(Encoding.UTF8.GetString(Hra.SubArray(bytovePole, i, pocetBytuNaXPozici)));
+            if (hra.komponentaMultiplayer.PrevedStringNaFloat(Encoding.UTF8.GetString(Hra.SubArray(bytovePole, i, pocetBytuNaXPozici))) != -1)
+                poziceHrace.X = hra.komponentaMultiplayer.PrevedStringNaFloat(Encoding.UTF8.GetString(Hra.SubArray(bytovePole, i, pocetBytuNaXPozici)));
             i += pocetBytuNaXPozici;
 
             //Nacteni pozice Y
             int pocetBytuNaYPozici = BitConverter.ToInt32(Hra.SubArray(bytovePole, i, 4));
             i += 4;
-            poziceHrace.Y = hra.komponentaMultiplayer.PrevedStringNaFloat(Encoding.UTF8.GetString(Hra.SubArray(bytovePole, i, pocetBytuNaYPozici)));
+            if (hra.komponentaMultiplayer.PrevedStringNaFloat(Encoding.UTF8.GetString(Hra.SubArray(bytovePole, i, pocetBytuNaYPozici))) != -1)
+                poziceHrace.Y = hra.komponentaMultiplayer.PrevedStringNaFloat(Encoding.UTF8.GetString(Hra.SubArray(bytovePole, i, pocetBytuNaYPozici)));
             i += pocetBytuNaXPozici;
 
             //Nacteni zbrani
-            hra.komponentaZbrane.zbrane.Clear();
             int pocetZbrani = BitConverter.ToInt32(Hra.SubArray(bytovePole, i, 4));
             i += 4;
             for (int j = 0; j < pocetZbrani; j++)
             {
+                bool uzExistuje = false;
                 Zbran zbran = new Zbran((Zbran.TypZbrane)BitConverter.ToInt32(Hra.SubArray(bytovePole, i, 4)));
+                if (hra.komponentaZbrane.zbrane.Any(x => x.typZbrane == (Zbran.TypZbrane)BitConverter.ToInt32(Hra.SubArray(bytovePole, i, 4))))
+                {
+                    Zbran existujiciZbran = hra.komponentaZbrane.zbrane.Find(x => x.typZbrane == (Zbran.TypZbrane)BitConverter.ToInt32(Hra.SubArray(bytovePole, i, 4)));
+                    existujiciZbran.levelZbrane = zbran.levelZbrane;
+                    existujiciZbran.zraneniZbrane = zbran.zraneniZbrane;
+                    existujiciZbran.cenaUpgradu = zbran.cenaUpgradu;
+                    zbran = existujiciZbran;
+                    uzExistuje = true;
+                }
+
                 i += 4;
-                zbran.levelZbrane = bytovePole[i++];
-                hra.komponentaZbrane.zbrane.Add(zbran);
+                int levelZbrane = bytovePole[i++];
+                while (zbran.levelZbrane < levelZbrane)
+                {
+                    zbran.levelZbrane++;
+                    zbran.zraneniZbrane = zbran.zraneniZbrane * zbran.levelZbrane / (zbran.levelZbrane - 1);
+                    zbran.cenaUpgradu = (int)(zbran.cenaUpgradu * 1.75f);
+                }
+                while (zbran.levelZbrane > levelZbrane)
+                {
+                    zbran.cenaUpgradu = (int)(zbran.cenaUpgradu / 1.75f);
+                    zbran.zraneniZbrane = zbran.zraneniZbrane * (zbran.levelZbrane - 1) / zbran.levelZbrane;
+                    zbran.levelZbrane--;
+                }
+
+                if (!uzExistuje)
+                    hra.komponentaZbrane.zbrane.Add(zbran);
             }
         }
     }

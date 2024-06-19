@@ -37,7 +37,9 @@ namespace Labyrinth_of_Secrets
             OdpojilSeKlient,
             UpdateMonster,
             NovyProjektil,
-            UpdateProjektilu
+            UpdateProjektilu,
+            UpdateHrace,
+            KoupitZbran
         }
 
         //Promenne
@@ -64,7 +66,8 @@ namespace Labyrinth_of_Secrets
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine($"Klient {klienti[i].jmeno} přestal odpovídat proto ho odpojuji!");
                     Console.ForegroundColor = ConsoleColor.White;
-                    hraci.Remove(klienti[i].jmeno);
+                    hraci[klienti[i].jmeno].jePripojen = false;
+                    hraci[klienti[i].jmeno].pozicePrebrana = false;
 
                     for (int j = 0; j < 10; j++)
                         PosliVsemKlientum(Encoding.UTF8.GetBytes($"{(short)TypPacketu.OdpojilSeKlient};{klienti[i].jmeno}"));
@@ -84,6 +87,7 @@ namespace Labyrinth_of_Secrets
             {
                 PosliUpdateMonster();
                 PosliUpdateProjektilu();
+                PosliUpdateHracu();
                 casUpdatu = 0.1f;
             }
         }
@@ -120,12 +124,22 @@ namespace Labyrinth_of_Secrets
                     Vector2 poziceHrace = new Vector2(PrevedStringNaFloat(dataVStringu[2]), PrevedStringNaFloat(dataVStringu[3]));
                     Vector2 poziceMysiHrace = new Vector2(PrevedStringNaFloat(dataVStringu[2]), PrevedStringNaFloat(dataVStringu[3]));
                     if (!hraci.ContainsKey(dataVStringu[1]))
+                    {
                         hraci.Add(dataVStringu[1], new Hrac(dataVStringu[1]) { pozice = poziceHrace, poziceMysi = poziceMysiHrace, vybranaZbran = (Zbran.TypZbrane)int.Parse(dataVStringu[6]) });
+                    }
                     else
                     {
-                        hraci[dataVStringu[1]].pozice = poziceHrace;
-                        hraci[dataVStringu[1]].poziceMysi = poziceMysiHrace;
-                        hraci[dataVStringu[1]].vybranaZbran = (Zbran.TypZbrane)int.Parse(dataVStringu[6]);
+                        hraci[dataVStringu[1]].jePripojen = true;
+                        if (!hraci[dataVStringu[1]].pozicePrebrana && Math.Abs(hraci[dataVStringu[1]].pozice.X - poziceHrace.X) < 1 && Math.Abs(hraci[dataVStringu[1]].pozice.Y - poziceHrace.Y) < 1)
+                        {
+                            hraci[dataVStringu[1]].pozicePrebrana = true;
+                        }
+                        if (hraci[dataVStringu[1]].pozicePrebrana)
+                        {
+                            hraci[dataVStringu[1]].pozice = poziceHrace;
+                            hraci[dataVStringu[1]].poziceMysi = poziceMysiHrace;
+                            hraci[dataVStringu[1]].vybranaZbran = (Zbran.TypZbrane)int.Parse(dataVStringu[6]);
+                        }
                     }
                     PosliVsemKlientum(data);
                     break;
@@ -147,7 +161,8 @@ namespace Labyrinth_of_Secrets
                     if (klienti.Count(x => PorovnejIPAdresy(odesilatel, x.ipAdresa) &&
                         x.jmeno == dataVStringu[1]) > 0)
                     {
-                        hraci.Remove(dataVStringu[1]);
+                        hraci[dataVStringu[1]].jePripojen = false;
+                        hraci[dataVStringu[1]].pozicePrebrana = false;
                         klienti.Remove(klienti.First(x => PorovnejIPAdresy(odesilatel, x.ipAdresa) && x.jmeno == dataVStringu[1]));
                         Console.WriteLine("Odpojil se klient " + dataVStringu[1]);
 
@@ -215,6 +230,23 @@ namespace Labyrinth_of_Secrets
                             zbran.PouzijZbran(poziceVystreleni, rotaceVystreleniJakoVector, hra.komponentaZbrane.noveProjektily);
                     }
                     break;
+                case TypPacketu.KoupitZbran:
+                    string jmenoHrace = dataVStringu[1];
+                    if (hraci.ContainsKey(jmenoHrace))
+                    {
+                        Zbran zbran = hraci[jmenoHrace].zbrane.Find(x => x.typZbrane == (Zbran.TypZbrane)int.Parse(dataVStringu[2]));
+                        if (zbran != null)
+                        {
+                            if (zbran.levelZbrane < 10 && hraci[jmenoHrace].penize - zbran.cenaUpgradu >= 0)
+                            {
+                                hraci[jmenoHrace].penize -= zbran.cenaUpgradu;
+                                zbran.levelZbrane++;
+                                zbran.zraneniZbrane = zbran.zraneniZbrane * zbran.levelZbrane / (zbran.levelZbrane - 1);
+                                zbran.cenaUpgradu = (int)(zbran.cenaUpgradu * 1.75f);
+                            }
+                        }
+                    }
+                    break;
             }
         }
 
@@ -230,6 +262,19 @@ namespace Labyrinth_of_Secrets
             byte[] projektilyVBytech = hra.komponentaZbrane.PrevedProjektilyNaByty();
             string projektilyJakoString = Encoding.UTF8.GetString(projektilyVBytech);
             PosliVsemKlientum(Encoding.UTF8.GetBytes($"{(short)TypPacketu.UpdateProjektilu};{projektilyJakoString}"));
+        }
+
+        void PosliUpdateHracu()
+        {
+            foreach (var hrac in hraci)
+            {
+                if (!hrac.Value.jePripojen)
+                    continue;
+
+                byte[] hracVBytech = hra.PrevedHraceNaBytovePole(hrac.Value, !hrac.Value.pozicePrebrana);
+                string hracJakoString = Encoding.UTF8.GetString(hracVBytech);
+                PosliVsemKlientum(Encoding.UTF8.GetBytes($"{(short)TypPacketu.UpdateHrace};{hrac.Value.jmeno};{hracJakoString}"));
+            }
         }
 
         //Zpracovani dotazu clienta
@@ -285,7 +330,7 @@ namespace Labyrinth_of_Secrets
             return ipAdresa1.Address.Equals(ipAdresa2.Address) && ipAdresa1.Port == ipAdresa2.Port;
         }
 
-        string PrevedFloatNaString(float cislo)
+        public string PrevedFloatNaString(float cislo)
         {
             int minus = cislo < 0 ? 1 : 0;
             cislo = Math.Abs(cislo);
@@ -293,7 +338,7 @@ namespace Labyrinth_of_Secrets
             return Convert.ToBase64String(floatVBytech);
         }
 
-        float PrevedStringNaFloat(string cislo)
+        public float PrevedStringNaFloat(string cislo)
         {
             byte[] floatVBytech = Convert.FromBase64String(cislo);
             int znamenko = floatVBytech[0] >= 128 ? -1 : 1;
